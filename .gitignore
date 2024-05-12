@@ -1,0 +1,14 @@
+# ignore data dumps
+*.pkl
+
+# ignore all venv's
+.venv/
+
+# ignore plots
+*.png
+*.pdf
+*.jpeg
+*.jpg
+
+# ignore jupyter notebook checkpoints
+*.ipynb_checkpoints
