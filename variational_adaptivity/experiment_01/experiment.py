@@ -50,9 +50,6 @@ def uD(r: np.ndarray) -> np.ndarray:
     return np.zeros(r.shape[0])
 
 
-def 
-
-
 def main() -> None:
 
     # ------------------------------------------------
