@@ -23,3 +23,13 @@ and we save intermediate results (`solution`), i.e.
 - mesh (elements and coordinates),
 - solution $u_h$,
 - energy $a(u_h, u_h)$.
+
+## perform an experiment
+
+Note that you need to pass a value of `theta` to the script `experiment.py`.
+This value indicates the `theta` value used in the Dörfler Marking.
+After installing all dependencies in `requirements.txt`, 
+performing an experiment is as simple as doing the following on the command line
+```bash
+python experiment.py --theta 0.5
+```

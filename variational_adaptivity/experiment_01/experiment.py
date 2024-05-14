@@ -20,6 +20,7 @@ import datetime
 import time
 import pickle
 import pandas as pd
+import argparse
 
 
 sigma_x = 100.
@@ -27,7 +28,6 @@ sigma_y = 40.
 mu_x = 37./73
 mu_y = 41./73.
 
-THETA = 0.5
 N_REFINEMENTS = 8
 N_INITIAL_REFINEMENTS = 2
 
@@ -51,6 +51,12 @@ def uD(r: np.ndarray) -> np.ndarray:
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--theta", type=float, required=True,
+                        help="value of theta used in the Dörfler marking")
+    args = parser.parse_args()
+
+    THETA = args.theta
 
     # ------------------------------------------------
     # Setup
