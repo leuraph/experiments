@@ -114,7 +114,7 @@ def main() -> None:
     # variational adaptivity
     # ------------------------------------------------
 
-    for n_refinement in np.arange(0, N_REFINEMENTS + 1):
+    for n_refinement in np.arange(1, N_REFINEMENTS + 1):
         start_time = time.process_time_ns()
 
         # compute all local energy gains
