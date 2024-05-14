@@ -16,7 +16,6 @@ from p1afempy import io_helpers, refinement, solvers
 from p1afempy.mesh import get_element_to_neighbours
 from pathlib import Path
 from variational_adaptivity import algo_4_1, markers
-import datetime
 import time
 import pickle
 import pandas as pd
@@ -65,7 +64,6 @@ def main() -> None:
     path_to_elements = base_path / Path('elements.dat')
     path_to_coordinates = base_path / Path('coordinates.dat')
     path_to_dirichlet = base_path / Path('dirichlet.dat')
-    now_string = datetime.datetime.now().strftime("%Y-%m-%d:%H:%M:%S")
 
     base_results_path = Path('results') / Path(f'theta_{THETA}')
 
@@ -180,7 +178,7 @@ def main() -> None:
     }
 
     dump_object(obj=pd.DataFrame(result),
-                path_to_file=Path(now_string+'.pkl'))
+                path_to_file=base_results_path / Path('results.pkl'))
 
 
 # ----------------
