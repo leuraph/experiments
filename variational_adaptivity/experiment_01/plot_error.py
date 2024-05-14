@@ -77,7 +77,7 @@ def main() -> None:
     ax.set_xlabel(r'$n_{\text{DOF}}$')
     ax.set_ylabel(r'$\| u_h - u \|_a^2$')
     ax.grid(True)
-    ax.loglog(n_dofs, errs_squared, 'b--', marker='s', markerfacecolor=(0, 0, 1, 0.5), markersize=4, linewidth=0.5, label = 'energy error')
+    ax.loglog(n_dofs, errs_squared, 'b--', marker='s', markerfacecolor=(0, 0, 1, 0.5), markersize=4, linewidth=0.5)
     ax.loglog(n_dofs, np.exp(model(np.log(n_dofs), m_optimized)), 'k--', linewidth=0.8) #, label=r'$\propto -\log n_{\text{elements}} $')
     ax.legend()
 

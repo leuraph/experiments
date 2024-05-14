@@ -12,8 +12,8 @@ def main() -> None:
 
     fig, ax = plt.subplots()
     ax.set_title('Variational Adaptivity (VA)')
-    ax.set_xlabel('number of degrees of freedom')
-    ax.set_ylabel('energy error')
+    ax.set_xlabel(r'$n_{\text{DOF}}$')
+    ax.set_ylabel(r'$\| u_h - u \|_a^2$')
     ax.grid(True)
 
     THETAS = [0.6, 0.5, 0.4, 0.2]
