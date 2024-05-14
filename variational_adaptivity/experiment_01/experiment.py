@@ -27,7 +27,7 @@ sigma_y = 40.
 mu_x = 37./73
 mu_y = 41./73.
 
-N_REFINEMENTS = 8
+N_REFINEMENTS = 9
 N_INITIAL_REFINEMENTS = 2
 
 
