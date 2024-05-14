@@ -19,7 +19,6 @@ def main() -> None:
     n_coordinates = []
     n_dofs = []
 
-    # TODO read n refinement from results' directory
     for n_dir in base_path.iterdir():
         path_to_coordinates = \
             n_dir / Path('coordinates.pkl')
@@ -82,7 +81,7 @@ def main() -> None:
     ax.loglog(n_dofs, np.exp(model(np.log(n_dofs), m_optimized)), 'k--', linewidth=0.8) #, label=r'$\propto -\log n_{\text{elements}} $')
     ax.legend()
 
-    fig.savefig('err.png', dpi=300)
+    fig.savefig(f'energy_error_theta_{THETA}.png', dpi=300)
 
 
 if __name__ == '__main__':
