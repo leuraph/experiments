@@ -12,3 +12,5 @@
 
 # ignore jupyter notebook checkpoints
 *.ipynb_checkpoints
+
+__pycache__/
