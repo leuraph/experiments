@@ -65,7 +65,7 @@ def main() -> None:
     path_to_coordinates = base_path / Path('coordinates.dat')
     path_to_dirichlet = base_path / Path('dirichlet.dat')
 
-    base_results_path = Path('results') / Path(f'theta_{THETA}')
+    base_results_path = Path('results/experiment_01') / Path(f'theta_{THETA}')
 
     coordinates, elements = io_helpers.read_mesh(
         path_to_coordinates=path_to_coordinates,
