@@ -1,0 +1,11 @@
+{
+    "n_initial_refinements": 2,
+    "n_refinements": 9,
+    "sigma_x": 100,
+    "sigma_y": 40,
+    "mu_x_numerator": 37,
+    "mu_x_denominator": 73,
+    "mu_y_numerator": 41,
+    "mu_y_denominator": 73
+    
+}
