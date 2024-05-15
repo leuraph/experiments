@@ -1,23 +1,19 @@
 # Summary
 
 This experiment considers the problem
-
 $$
 \begin{alignat*}{2}
 - \Delta u (x, y) &= f(x, y), & \quad & (x, y) \in (0, 1)^2, \\
 u(x, y) &= 0, & \quad & (x, y) \in \partial (0, 1)^2,
 \end{alignat*}
 $$
-
 where the function $u(x, y)$ is imposed to be
-
 $$
 u(x, y)
 =
 x(x-1)y(y-1)
 \exp\left[ -\sigma_x (x-\mu_x)^2 -\sigma_y (y-\mu_y)^2 \right].
 $$
-
 The function $f(x, y)$ is defined accordingly
 (its symbolic computation is outsourced to the jupyter notebook
 `variational_adaptivity/gauss_kick/experiment_notes.ipynb`).
