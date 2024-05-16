@@ -1,25 +1,31 @@
 import pickle
 import numpy as np
 import matplotlib.pyplot as plt
+import argparse
+from configuration import energy_squared_exact
 from pathlib import Path
 from p1afempy import solvers
 from scipy.optimize import curve_fit
 
 
 def main() -> None:
-
-    exact_energy_squared = 0.01305598516695022655
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--path", type=str, required=True,
+                        help="path to the experiment's results directory")
+    parser.add_argument("-o", type=str, required=False,
+                        default='energy_errors_squared.pdf',
+                        help="path to the outputted plot")
+    args = parser.parse_args()
 
     fig, ax = plt.subplots()
-    ax.set_title('Variational Adaptivity (VA)')
     ax.set_xlabel(r'$n_{\text{DOF}}$')
     ax.set_ylabel(r'$\| u_h - u \|_a^2$')
     ax.grid(True)
 
-    THETAS = [0.6, 0.5, 0.4, 0.2]
+    THETAS = [0.6, 0.5, 0.4]
     for THETA in THETAS:
 
-        base_path = Path(f'results/theta_{THETA}/')
+        base_path = Path(args.path) / Path(f'theta_{THETA}/')
 
         energies_squared = []
         n_elements = []
@@ -27,6 +33,9 @@ def main() -> None:
         n_dofs = []
 
         for n_dir in base_path.iterdir():
+            # exclude the initial solution
+            if not n_dir.is_dir() or n_dir.name == '0':
+                continue
             path_to_coordinates = \
                 n_dir / Path('coordinates.pkl')
             path_to_elements = \
@@ -65,7 +74,7 @@ def main() -> None:
         energies_squared = energies_squared[sort_indices]
         n_dofs = n_dofs[sort_indices]
 
-        errs_squared = exact_energy_squared - energies_squared
+        errs_squared = energy_squared_exact - energies_squared
 
         ax.loglog(n_dofs, errs_squared, '--',
                   marker='s',
@@ -90,7 +99,7 @@ def main() -> None:
 
     ax.legend()
 
-    fig.savefig('energy_errors.png', dpi=300)
+    fig.savefig(args.o, dpi=300)
 
 
 if __name__ == '__main__':
