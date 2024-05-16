@@ -1,18 +1,25 @@
 import pickle
 import numpy as np
 import matplotlib.pyplot as plt
+import sys
+import argparse
 from pathlib import Path
 from p1afempy import solvers
 from scipy.optimize import curve_fit
+from configuration import energy_squared_exact
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--path", type=str, required=True,
+                        help="path to the result's `.pkl` files")
+    parser.add_argument("-o", type=str, required=False,
+                        default='energy_error_squared.pdf',
+                        help="path to the outputted plot")
+    args = parser.parse_args()
 
-    THETA = 0.5
-
-    base_path = Path(f'results/theta_{THETA}/')
-
-    exact_energy_squared = 0.01305598516695022655
+    base_path = Path(args.path)
+    output_path = Path(args.o)
 
     energies_squared = []
     n_elements = []
@@ -20,6 +27,9 @@ def main() -> None:
     n_dofs = []
 
     for n_dir in base_path.iterdir():
+        # exclude the initial solution
+        if not n_dir.is_dir() or n_dir.name == '0':
+            continue
         path_to_coordinates = \
             n_dir / Path('coordinates.pkl')
         path_to_elements = \
@@ -58,7 +68,7 @@ def main() -> None:
     energies_squared = energies_squared[sort_indices]
     n_dofs = n_dofs[sort_indices]
 
-    errs_squared = exact_energy_squared - energies_squared
+    errs_squared = energy_squared_exact - energies_squared
 
     def model(x, m):
         return -x + m
@@ -73,15 +83,14 @@ def main() -> None:
     plt.rcParams['legend.fontsize'] = 12
 
     fig, ax = plt.subplots()
-    ax.set_title(fr'Variational Adaptivity (VA) $\theta=$ {THETA}')
     ax.set_xlabel(r'$n_{\text{DOF}}$')
     ax.set_ylabel(r'$\| u_h - u \|_a^2$')
     ax.grid(True)
     ax.loglog(n_dofs, errs_squared, 'b--', marker='s', markerfacecolor=(0, 0, 1, 0.5), markersize=4, linewidth=0.5)
     ax.loglog(n_dofs, np.exp(model(np.log(n_dofs), m_optimized)), 'k--', linewidth=0.8) #, label=r'$\propto -\log n_{\text{elements}} $')
-    ax.legend()
+    # ax.legend()
 
-    fig.savefig(f'energy_error_theta_{THETA}.png', dpi=300)
+    fig.savefig(output_path, dpi=300)
 
 
 if __name__ == '__main__':
