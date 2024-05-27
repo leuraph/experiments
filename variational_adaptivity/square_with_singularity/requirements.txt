@@ -1,0 +1,3 @@
+pandas
+variational_adaptivity @ git+ssh://git@github.com/leuraph/variational_adaptivity@v0.0.5
+numpy-stl
