@@ -1,15 +1,14 @@
 """
-This script considers the problem
--laplace u = f, on (0,1)^2
-u=0 on boundary of (0,1)^2
+This script considers the problem, on an L-shaped domain
+Omega := (-1,1)x(0,1) union (-1,0)x(-1,0)
 
-where the exact solution is imposed to be
-u(x, y) = y(y-1)x(x-1) exp(-sigma_x(x-mu_x)^2 -sigma_y(y-mu_y)^2)
-f(x, y) = -laplace u
+-laplace u = 1, on Omega
+u=0, on boundary of Omega
 
 Notes
 -----
-- the symbolic computations are outsourced to a jupyter notebook using `sympy`
+- We expect the adaptive refinement to refine near (0, 0)
+  due to a singularity
 """
 import numpy as np
 from p1afempy import io_helpers, refinement, solvers
