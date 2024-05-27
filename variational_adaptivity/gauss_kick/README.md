@@ -63,7 +63,7 @@ Notes
 -----
 Looking at the results, we notice the refined mesh to be non-symmetric, e.g.
 ```sh
-python plot_mesh.py results/theta_0.6/5
+python plot_mesh.py results/experiment_01/theta_0.6/5
 ```
 
 # Experiment 02 (Gauss kick: initial order 2)
@@ -73,6 +73,16 @@ the ordering of the edges in the initial mesh.
 
 Notes
 -----
+Looking at the results, again we notice the refined mesh to be non-symmetric, e.g.
+```sh
+python plot_mesh.py results/experiment_02/theta_0.6/5
+```
+shows a mesh that has some sort of cut-off in the lower middle.
+However, the mesh appears sort of symmetric when $\theta$ is increased, i.e.
+```sh
+python plot_mesh.py results/experiment_02/theta_0.7/5
+```
+reveals a more symmetric mesh.
 
 # Experiment 03 (Gauss kick: shuffle)
 This experiment considers the same problem as in Experiment 01
@@ -83,6 +93,19 @@ of the resulting refined mesh.
 
 Notes
 -----
+Looking at the result, we notice that shuffling the elements
+does not seem to have any influence of the non-symmetric behaviour
+of the resulting refined mesh, i.e.
+```sh
+python plot_mesh.py results/experiment_03/theta_0.6/5
+```
+reveals the same result as
+```sh
+python plot_mesh.py results/experiment_02/theta_0.6/5
+```
+This makes me think that maybe the resulting shape is actually
+really due to the shape of the solution and is not an artefact of
+Dörfler marking or any other implementation details.
 
 # Experiment 04 (Gauss kick: jiggle)
 This experiment considers the same problem as in Experiment 01
