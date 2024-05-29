@@ -20,6 +20,8 @@ in terms of an Eigenfunction expansion, see [1].
 ## L-shape with singularity revisited
 A mere copy of `L-Shape with singularity`, performed with an
 updated version of the VA algorithm.
+Namely, in this experiment, when solving the local 4x4 matrix equation
+to get the potential energy gain, we respect any Dirichlet boundary conditions.
 
 # References
 
