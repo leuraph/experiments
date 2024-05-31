@@ -17,6 +17,13 @@ def main() -> None:
                         help="path to the outputted plot")
     args = parser.parse_args()
 
+    plt.rcParams["mathtext.fontset"] = "cm"
+    plt.rcParams['xtick.labelsize'] = 12
+    plt.rcParams['ytick.labelsize'] = 12
+    plt.rcParams['axes.labelsize'] = 14
+    plt.rcParams['axes.titlesize'] = 12
+    plt.rcParams['legend.fontsize'] = 12
+
     fig, ax = plt.subplots()
     ax.set_xlabel(r'$n_{\text{DOF}}$')
     ax.set_ylabel(r'$\| u_h - u \|_a^2$')
@@ -89,13 +96,6 @@ def main() -> None:
             m_optimized = popt[0]
             ax.loglog(n_dofs, np.exp(model(np.log(n_dofs), m_optimized)),
                       'k--', linewidth=0.8)
-
-    plt.rcParams["mathtext.fontset"] = "cm"
-    plt.rcParams['xtick.labelsize'] = 12
-    plt.rcParams['ytick.labelsize'] = 12
-    plt.rcParams['axes.labelsize'] = 14
-    plt.rcParams['axes.titlesize'] = 12
-    plt.rcParams['legend.fontsize'] = 12
 
     ax.legend()
 
