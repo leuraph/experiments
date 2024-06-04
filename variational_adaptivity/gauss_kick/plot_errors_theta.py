@@ -2,7 +2,6 @@ import pickle
 import numpy as np
 import matplotlib.pyplot as plt
 import argparse
-from configuration import energy_squared_exact
 from pathlib import Path
 from p1afempy import solvers
 from scipy.optimize import curve_fit
@@ -10,19 +9,27 @@ from scipy.optimize import curve_fit
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--path", type=str, required=True,
-                        help="path to the experiment's results directory")
+    parser.add_argument("--results-path", type=str, required=True,
+                        help="path to the experiment's results directory "
+                        "holding the directories corresponding to "
+                        "different Dörfler parameters (theta's)")
+    parser.add_argument("--energy-path", type=str, required=True,
+                        help="path to the file holding the numerical value of "
+                        "the solution's energy norm squared")
     parser.add_argument("-o", type=str, required=False,
                         default='energy_errors_squared.pdf',
                         help="path to the outputted plot")
     args = parser.parse_args()
 
+    with open(args.energy_path) as f:
+        energy_squared_exact = float(f.readline())
+
     plt.rcParams["mathtext.fontset"] = "cm"
-    plt.rcParams['xtick.labelsize'] = 12
-    plt.rcParams['ytick.labelsize'] = 12
-    plt.rcParams['axes.labelsize'] = 14
+    plt.rcParams['xtick.labelsize'] = 16
+    plt.rcParams['ytick.labelsize'] = 16
+    plt.rcParams['axes.labelsize'] = 20
     plt.rcParams['axes.titlesize'] = 12
-    plt.rcParams['legend.fontsize'] = 12
+    plt.rcParams['legend.fontsize'] = 16
 
     fig, ax = plt.subplots()
     ax.set_xlabel(r'$n_{\text{DOF}}$')
@@ -30,9 +37,12 @@ def main() -> None:
     ax.grid(True)
 
     THETAS = [0.6, 0.5, 0.4]
-    for THETA in THETAS:
+    COLORS = ['#2ec4b6', '#e71d36', '#ff9f1c']
+    merged = []
+    labels = []
+    for k, THETA in enumerate(THETAS):
 
-        base_path = Path(args.path) / Path(f'theta_{THETA}/')
+        base_path = Path(args.results_path) / Path(f'theta_{THETA}/')
 
         energies_squared = []
         n_elements = []
@@ -83,10 +93,13 @@ def main() -> None:
 
         errs_squared = energy_squared_exact - energies_squared
 
-        ax.loglog(n_dofs, errs_squared, '--',
-                  marker='s',
-                  markersize=2, linewidth=0.5,
-                  label=fr'$\theta = ${THETA}')
+        line, = ax.loglog(n_dofs, errs_squared, '--', linewidth=1.2,
+                          color=COLORS[k], alpha=1)
+        mark, = ax.loglog(n_dofs, errs_squared, linestyle=None, marker='s',
+                          markersize=8, linewidth=0, alpha=0.3,
+                          color=COLORS[k])
+        merged.append((line, mark))
+        labels.append(fr'$\theta = ${THETA}')
 
         if THETA == max(THETAS):
             # fitting y = -x + q to the highest value of THETA
@@ -95,11 +108,10 @@ def main() -> None:
             popt, pcov = curve_fit(model, np.log(n_dofs), np.log(errs_squared))
             m_optimized = popt[0]
             ax.loglog(n_dofs, np.exp(model(np.log(n_dofs), m_optimized)),
-                      'k--', linewidth=0.8)
+                      'k--', linewidth=1)
 
-    ax.legend()
-
-    fig.savefig(args.o, dpi=300)
+    ax.legend(merged, labels)
+    fig.savefig(args.o, dpi=300, bbox_inches="tight")
 
 
 if __name__ == '__main__':
