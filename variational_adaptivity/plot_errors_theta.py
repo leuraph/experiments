@@ -37,7 +37,7 @@ def main() -> None:
     ax.grid(True)
 
     THETAS = [0.6, 0.5, 0.4]
-    COLORS = ['#2ec4b6', '#e71d36', '#ff9f1c']
+    COLORS = ['#ef476f', '#ffd166', '#06d6a0']
     merged = []
     labels = []
     for k, THETA in enumerate(THETAS):
@@ -96,7 +96,7 @@ def main() -> None:
         line, = ax.loglog(n_dofs, errs_squared, '--', linewidth=1.2,
                           color=COLORS[k], alpha=1)
         mark, = ax.loglog(n_dofs, errs_squared, linestyle=None, marker='s',
-                          markersize=8, linewidth=0, alpha=0.3,
+                          markersize=8, linewidth=0, alpha=0.6,
                           color=COLORS[k])
         merged.append((line, mark))
         labels.append(fr'$\theta = ${THETA}')
