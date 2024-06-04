@@ -6,17 +6,21 @@ from pathlib import Path
 from p1afempy import solvers
 from scipy.optimize import curve_fit
 
-energy_squared_exact = 0.035144253738788451
-
 
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--path", type=str, required=True,
                         help="path to the result's `.pkl` files")
+    parser.add_argument("--energy-path", type=str, required=True,
+                        help="path to the file holding the numerical value of "
+                        "the solution's energy norm squared")
     parser.add_argument("-o", type=str, required=False,
                         default='energy_error_squared.pdf',
                         help="path to the outputted plot")
     args = parser.parse_args()
+
+    with open(args.energy_path) as f:
+        energy_squared_exact = float(f.readline())
 
     base_path = Path(args.path)
     output_path = Path(args.o)
@@ -86,9 +90,10 @@ def main() -> None:
     ax.set_xlabel(r'$n_{\text{DOF}}$')
     ax.set_ylabel(r'$\| u_h - u \|_a^2$')
     ax.grid(True)
-    ax.loglog(n_dofs, errs_squared, 'b--', marker='s', markerfacecolor=(0, 0, 1, 0.5), markersize=4, linewidth=0.5)
-    ax.loglog(n_dofs, np.exp(model(np.log(n_dofs), m_optimized)), 'k--', linewidth=0.8) #, label=r'$\propto -\log n_{\text{elements}} $')
-    # ax.legend()
+    ax.loglog(n_dofs, errs_squared, 'b--', marker='s',
+              markerfacecolor=(0, 0, 1, 0.5), markersize=4, linewidth=0.5)
+    ax.loglog(n_dofs, np.exp(model(np.log(n_dofs), m_optimized)),
+              'k--', linewidth=0.8)
 
     fig.savefig(output_path, dpi=300)
 
