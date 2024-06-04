@@ -80,11 +80,11 @@ def main() -> None:
     m_optimized = popt[0]
 
     plt.rcParams["mathtext.fontset"] = "cm"
-    plt.rcParams['xtick.labelsize'] = 12
-    plt.rcParams['ytick.labelsize'] = 12
-    plt.rcParams['axes.labelsize'] = 14
+    plt.rcParams['xtick.labelsize'] = 16
+    plt.rcParams['ytick.labelsize'] = 16
+    plt.rcParams['axes.labelsize'] = 20
     plt.rcParams['axes.titlesize'] = 12
-    plt.rcParams['legend.fontsize'] = 12
+    plt.rcParams['legend.fontsize'] = 16
 
     fig, ax = plt.subplots()
     ax.set_xlabel(r'$n_{\text{DOF}}$')
@@ -95,7 +95,7 @@ def main() -> None:
     ax.loglog(n_dofs, np.exp(model(np.log(n_dofs), m_optimized)),
               'k--', linewidth=0.8)
 
-    fig.savefig(output_path, dpi=300)
+    fig.savefig(output_path, dpi=300, bbox_inches="tight")
 
 
 if __name__ == '__main__':
