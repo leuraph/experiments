@@ -3,3 +3,4 @@ variational_adaptivity @ git+ssh://git@github.com/leuraph/variational_adaptivity
 jupyter
 sympy
 pydantic
+numpy<2.0.0
