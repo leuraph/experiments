@@ -1,0 +1,3 @@
+iterative_methods @ git+ssh://git@github.com/leuraph/iterative_methods@5c8cb138e4ff1aad4119ea5f7f9c0466b9994d89
+tqdm
+matplotlib
