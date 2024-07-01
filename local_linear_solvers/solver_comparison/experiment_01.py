@@ -3,13 +3,13 @@ an experiment setup for
 u(x, y) = sin(2 pi x) sin(3 pi y)
 on (0, 1)^2
 """
-from iterative_methods.local_solvers.local_jacobi_solver \
+from iterative_methods.local_solvers \
     import LocalJacobiSolver
-from iterative_methods.local_solvers.local_block_jacobi_solver\
+from iterative_methods.local_solvers \
      import LocalBlockJacobiSolver
-from iterative_methods.local_solvers.local_gauss_seidel_solver\
+from iterative_methods.local_solvers \
     import LocalGaussSeidelSolver
-from iterative_methods.local_solvers.local_context_solver\
+from iterative_methods.local_solvers \
     import LocalContextSolver
 from scipy.sparse import csr_matrix
 from pathlib import Path
@@ -48,7 +48,7 @@ def main() -> None:
     n_elements = elements.shape[0]
 
     # dumping the mesh as it is fixed throughout the experiment
-    base_path_to_mesh = Path('results/mesh')
+    base_path_to_mesh = Path('01/results/mesh')
     path_to_elements = base_path_to_mesh / Path('elements.pkl')
     path_to_coordinates = base_path_to_mesh / Path('coordinates.pkl')
     dump_object(obj=coordinates, path_to_file=path_to_coordinates)
@@ -109,11 +109,11 @@ def main() -> None:
     ]
 
     base_result_paths = [
-        Path('results/local_jacobi/solutions'),
-        Path('results/local_block_jacobi/solutions'),
-        Path('results/local_gauss_seidel/solutions'),
-        Path('results/local_context_solver_non_simultaneous/solutions'),
-        Path('results/local_context_solver_simultaneous/solutions')
+        Path('results/01/local_jacobi/solutions'),
+        Path('results/01/local_block_jacobi/solutions'),
+        Path('results/01/local_gauss_seidel/solutions'),
+        Path('results/01/local_context_solver_non_simultaneous/solutions'),
+        Path('results/01/local_context_solver_simultaneous/solutions')
     ]
 
     n_full_sweeps = 30
