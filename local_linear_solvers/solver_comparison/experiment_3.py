@@ -58,7 +58,7 @@ def main() -> None:
     n_elements = elements.shape[0]
 
     # dumping the mesh as it is fixed throughout the experiment
-    base_path_to_mesh = Path('results/2/mesh')
+    base_path_to_mesh = Path('results/3/mesh')
     path_to_elements = base_path_to_mesh / Path('elements.pkl')
     path_to_coordinates = base_path_to_mesh / Path('coordinates.pkl')
     dump_object(obj=coordinates, path_to_file=path_to_coordinates)
@@ -119,13 +119,13 @@ def main() -> None:
     ]
 
     base_result_paths = [
-        Path(f'results/2/{THETA}/local_jacobi/solutions'),
-        Path(f'results/2/{THETA}/local_block_jacobi/solutions'),
-        Path(f'results/2/{THETA}/local_gauss_seidel/solutions'),
+        Path(f'results/3/{THETA}/local_jacobi/solutions'),
+        Path(f'results/3/{THETA}/local_block_jacobi/solutions'),
+        Path(f'results/3/{THETA}/local_gauss_seidel/solutions'),
         Path(
-            f'results/2/{THETA}'
+            f'results/3/{THETA}'
             '/local_context_solver_non_simultaneous/solutions'),
-        Path(f'results/2/{THETA}/local_context_solver_simultaneous/solutions')
+        Path(f'results/3/{THETA}/local_context_solver_simultaneous/solutions')
     ]
 
     n_full_sweeps = 30
