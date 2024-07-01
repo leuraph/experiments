@@ -1,14 +1,9 @@
 # Summary
 
-In these experiments, we consider the following algorithms.
+In these experiments, we consider two different approaches
+of sweeping over and solving on the elements $T \in \mathcal{T}$.
 
 ## ALGORITHM-1
-- sweep over all elements $T \in \mathcal{T}$
-  - using a local solver, compute the local increment $d_n^{(T)}$
-  - update the local element's degrees of freedom (DOF) using $d_n^{(T)}$
-- repeat for $N$ sweeps 
-
-## ALGORITHM-2
 - sweep over all elements $T \in \mathcal{T}$
   - using a local solver, compute the local increment $d_n^{(T)}$
   - compute the local energy difference $\Delta E^{(T)}$
@@ -22,7 +17,7 @@ In these experiments, we consider the following algorithms.
 - perform one global update $x_{n+1} = x_n + d_n$
 - repeat for $N$ sweeps
 
-## ALGORITHM-3
+## ALGORITHM-2
 - sweep over all elements $T \in \mathcal{T}$
   - using a local solver, compute the local increment $d_n^{(T)}$
   - compute the local energy difference $\Delta E^{(T)}$
