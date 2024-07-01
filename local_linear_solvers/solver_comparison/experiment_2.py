@@ -20,9 +20,19 @@ import numpy as np
 import tqdm
 from experiment_setup import f
 from load_save_dumps import dump_object
+from variational_adaptivity.markers import doerfler_marking
+from iterative_methods.energy_norm import calculate_energy_norm_error
+from triangle_cubature.cubature_rule import CubatureRuleEnum
+from experiment_setup import grad_u
+import argparse
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--theta", type=float, required=True,
+                        help="dörfler parameter to be used")
+    args = parser.parse_args()
+    THETA = args.theta
     # -------------------
     # generating the mesh
     # -------------------
@@ -109,25 +119,80 @@ def main() -> None:
     ]
 
     base_result_paths = [
-        Path('results/2/local_jacobi/solutions'),
-        Path('results/2/local_block_jacobi/solutions'),
-        Path('results/2/local_gauss_seidel/solutions'),
-        Path('results/2/local_context_solver_non_simultaneous/solutions'),
-        Path('results/2/local_context_solver_simultaneous/solutions')
+        Path(f'results/2/{THETA}/local_jacobi/solutions'),
+        Path(f'results/2/{THETA}/local_block_jacobi/solutions'),
+        Path(f'results/2/{THETA}/local_gauss_seidel/solutions'),
+        Path(
+            f'results/2/{THETA}'
+            '/local_context_solver_non_simultaneous/solutions'),
+        Path(f'results/2/{THETA}/local_context_solver_simultaneous/solutions')
     ]
 
     n_full_sweeps = 30
 
     for base_result_path, solver in \
             zip(base_result_paths, solvers_to_test):
+
         current_iterate = np.zeros(n_vertices)
         n_total_local_solves = 0
+        n_solves = []
+        energy_norm_errors_squared = []
+
         for _ in tqdm.tqdm(range(n_full_sweeps)):
+            local_energy_differences = []
+            local_increments = []
+
             for k in range(n_elements):
-                current_iterate = solver.get_next_iterate(
+                local_increment, local_energy_difference = \
+                    solver.get_local_increment_and_energy_difference(
+                        current_iterate=current_iterate,
+                        element=k)
+                local_energy_differences.append(local_energy_difference)
+                local_increments.append(local_increment)
+            local_energy_differences = np.array(local_energy_differences)
+            local_increments = np.array(local_increments)
+
+            # ---------------------------------
+            # Dörfler marking and global update
+            # ---------------------------------
+            # energy gains are energy differences
+            marked = doerfler_marking(
+                input=local_energy_differences,
+                theta=THETA)
+
+            global_increment = np.zeros_like(current_iterate)
+
+            reduced_local_increments = local_increments[marked]
+            reduced_elements = elements[marked]
+            reduced_energy_differences = local_energy_differences[marked]
+
+            # sorting such that local increments corresponding
+            # to biggest energy gain come last
+            energy_based_sorting = np.argsort(reduced_energy_differences)
+            reduced_elements = reduced_elements[energy_based_sorting]
+            reduced_local_increments = reduced_local_increments[
+                energy_based_sorting]
+
+            # collect all local increments in a single vector
+            # in a way that local increments corresponding to the
+            # same node are overwritten by the one corresponding
+            # to the bigger change in energy
+            for element, local_increment in zip(
+                    reduced_elements, reduced_local_increments):
+                global_increment[element] = local_increment
+
+            # performing the global update
+            current_iterate += global_increment
+            n_total_local_solves += np.sum(marked)
+            n_solves.append(n_total_local_solves)
+
+            energy_norm_errors_squared.append(
+                calculate_energy_norm_error(
                     current_iterate=current_iterate,
-                    element=k)
-                n_total_local_solves += 1
+                    gradient_u=grad_u,
+                    elements=elements,
+                    coordinates=coordinates,
+                    cubature_rule=CubatureRuleEnum.SMPLX1))
 
             path_to_dump = base_result_path \
                 / Path(f'{n_total_local_solves}.pkl')
