@@ -4,19 +4,28 @@ from iterative_methods.energy_norm import calculate_energy_norm_error
 from load_save_dumps import load_dump, dump_object
 from pathlib import Path
 from tqdm import tqdm
+import argparse
 
 
 def main() -> None:
-    base_mesh_path = Path('results/mesh')
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--experiment", type=int, required=True,
+                        help="which experiment do you want to process?"
+                        " Available: 1, 2, 3")
+    args = parser.parse_args()
+    experiment_number = args.experiment
+
+    base_mesh_path = Path(f'results/{experiment_number}/mesh')
     path_to_coordinates = base_mesh_path / Path('coordinates.pkl')
     path_to_elements = base_mesh_path / Path('elements.pkl')
 
     base_result_paths = [
-        Path('results/local_jacobi'),
-        Path('results/local_block_jacobi'),
-        Path('results/local_gauss_seidel'),
-        Path('results/local_context_solver_non_simultaneous'),
-        Path('results/local_context_solver_simultaneous')
+        Path(f'results/{experiment_number}/local_jacobi'),
+        Path(f'results/{experiment_number}/local_block_jacobi'),
+        Path(f'results/{experiment_number}/local_gauss_seidel'),
+        Path(f'results/{experiment_number}/'
+            'local_context_solver_non_simultaneous'),
+        Path(f'results/{experiment_number}/local_context_solver_simultaneous')
     ]
 
     coordinates = load_dump(path_to_dump=path_to_coordinates)
