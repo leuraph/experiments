@@ -135,7 +135,6 @@ def main() -> None:
 
         current_iterate = np.zeros(n_vertices)
         n_total_local_solves = 0
-        n_solves = []
         energy_norm_errors_squared = []
 
         for _ in tqdm.tqdm(range(n_full_sweeps)):
@@ -184,7 +183,6 @@ def main() -> None:
             # performing the global update
             current_iterate += global_increment
             n_total_local_solves += np.sum(marked)
-            n_solves.append(n_total_local_solves)
 
             energy_norm_errors_squared.append(
                 calculate_energy_norm_error(
