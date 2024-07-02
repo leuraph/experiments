@@ -10,17 +10,30 @@ def main() -> None:
     parser.add_argument("--experiment", type=int, required=True,
                         help="which experiment do you want to process?"
                         " Available: 1, 2, 3")
+    parser.add_argument("-o", type=str, required=True,
+                        help="path to plot to be generated")
+    parser.add_argument("--theta", type=float, required=False)
     args = parser.parse_args()
     experiment_number = args.experiment
+    path_to_plot = Path(args.o)
 
-    base_result_paths = [
-        Path(f'results/{experiment_number}/local_jacobi'),
-        Path(f'results/{experiment_number}/local_block_jacobi'),
-        # Path(f'results/{experiment_number}/local_gauss_seidel'),
-        Path(
-            f'results/{experiment_number}/'
-            'local_context_solver_non_simultaneous'),
-        Path(f'results/{experiment_number}/local_context_solver_simultaneous')]
+    if experiment_number == 1:
+        base_result_paths = [
+            Path(f'results/{experiment_number}/local_jacobi'),
+            Path(f'results/{experiment_number}/local_block_jacobi'),
+            # Path(f'results/{experiment_number}/local_gauss_seidel'),
+            Path(f'results/{experiment_number}/'
+                'local_context_solver_non_simultaneous'),
+            Path(f'results/{experiment_number}/local_context_solver_simultaneous')
+        ]
+    else:
+        base_result_paths = [
+            Path(f'results/{experiment_number}/{args.theta}/local_jacobi'),
+            Path(f'results/{experiment_number}/{args.theta}/local_block_jacobi'),
+            # Path(f'results/{experiment_number}/{args.theta}/local_gauss_seidel'),
+            Path(f'results/{experiment_number}/{args.theta}/local_context_solver_non_simultaneous'),
+            Path(f'results/{experiment_number}/{args.theta}/local_context_solver_simultaneous')
+        ]
 
     solver_names = [
         'jacobi',
@@ -93,7 +106,7 @@ def main() -> None:
 
     ax.legend(merged, labels)
     fig.savefig(
-        f'plots/solver_comparison_{experiment_number}.pdf',
+        path_to_plot,
         dpi=300, bbox_inches="tight")
     plt.show()
 
