@@ -17,3 +17,5 @@ __pycache__/
 
 *.stl
 *.DS_Store
+
+.vscode/
