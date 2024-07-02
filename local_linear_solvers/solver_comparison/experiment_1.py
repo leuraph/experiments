@@ -116,7 +116,7 @@ def main() -> None:
         Path('results/1/local_context_solver_simultaneous/solutions')
     ]
 
-    n_full_sweeps = 30
+    n_full_sweeps = 100
 
     for base_result_path, solver in \
             zip(base_result_paths, solvers_to_test):

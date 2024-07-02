@@ -128,7 +128,7 @@ def main() -> None:
         Path(f'results/2/{THETA}/local_context_solver_simultaneous/solutions')
     ]
 
-    n_full_sweeps = 30
+    n_full_sweeps = 100
 
     for base_result_path, solver in \
             zip(base_result_paths, solvers_to_test):
