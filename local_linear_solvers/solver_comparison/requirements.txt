@@ -1,4 +1,4 @@
-iterative_methods @ git+ssh://git@github.com/leuraph/iterative_methods@60b6cd288fc2117ed8453475f0757b4859e49c7e
+iterative_methods @ git+ssh://git@github.com/leuraph/iterative_methods@5a52799c31b5d14dc1f7a80bf9da55cac7c61b2e
 variational_adaptivity @ git+ssh://git@github.com/leuraph/variational_adaptivity@v0.0.7
 tqdm
 matplotlib
