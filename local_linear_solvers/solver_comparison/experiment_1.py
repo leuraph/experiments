@@ -51,8 +51,10 @@ def main() -> None:
     base_path_to_mesh = Path('results/1/mesh')
     path_to_elements = base_path_to_mesh / Path('elements.pkl')
     path_to_coordinates = base_path_to_mesh / Path('coordinates.pkl')
+    path_to_dirichlet = base_path_to_mesh / Path('dirichlet.pkl')
     dump_object(obj=coordinates, path_to_file=path_to_coordinates)
     dump_object(obj=elements, path_to_file=path_to_elements)
+    dump_object(obj=boundaries[0], path_to_file=path_to_dirichlet)
 
     # --------------
     # setup assembly
