@@ -86,7 +86,7 @@ def main() -> None:
 
     fig, ax = plt.subplots()
     ax.set_xlabel(r'$n_{\text{local solves}}$')
-    ax.set_ylabel(r'$\| u_n - u \|_a^2$')
+    ax.set_ylabel(r'$\| u_n - u_h \|_a^2$')
     ax.grid(True)
 
     for errs, nsolvs, solver_name, color in zip(
