@@ -57,6 +57,9 @@ only experiment 2 and 3 make use of Dörfler marking.
     `python plot_errors_for_all_experiments.py --theta <theta> -o <path/to/output_file>.pdf`
   - for one solver and one experiment, plot the _energy norm error vs. elapsed CPU time_:
     `python plot_energy_norm_error_vs_time.py --path <path_to_dir_holding_solutions_and_elapsed_times_dirs> -o <path/to/output_file>.pdf`
+      > Alternatively, you can use the `generate_all_plots.sh` bash script.
+      > Note that this script assumes you've run all experiments for the theta values specified in the script
+      > and that you have calculated the energy norm errors already for all results.
 
 ## results directory structures
 Running an `experiment_<N>.py` will 
