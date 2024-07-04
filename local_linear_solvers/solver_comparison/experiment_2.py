@@ -25,6 +25,7 @@ from iterative_methods.energy_norm import calculate_energy_norm_error
 from triangle_cubature.cubature_rule import CubatureRuleEnum
 from experiment_setup import grad_u
 import argparse
+import time
 
 
 def main() -> None:
@@ -121,13 +122,13 @@ def main() -> None:
     ]
 
     base_result_paths = [
-        Path(f'results/2/{THETA}/local_jacobi/solutions'),
-        Path(f'results/2/{THETA}/local_block_jacobi/solutions'),
-        Path(f'results/2/{THETA}/local_gauss_seidel/solutions'),
+        Path(f'results/2/{THETA}/local_jacobi/'),
+        Path(f'results/2/{THETA}/local_block_jacobi/'),
+        Path(f'results/2/{THETA}/local_gauss_seidel/'),
         Path(
             f'results/2/{THETA}'
-            '/local_context_solver_non_simultaneous/solutions'),
-        Path(f'results/2/{THETA}/local_context_solver_simultaneous/solutions')
+            '/local_context_solver_non_simultaneous/'),
+        Path(f'results/2/{THETA}/local_context_solver_simultaneous/')
     ]
 
     n_full_sweeps = 100
@@ -138,6 +139,7 @@ def main() -> None:
         current_iterate = np.zeros(n_vertices)
         n_total_local_solves = 0
         energy_norm_errors_squared = []
+        start: int = time.process_time_ns()
 
         for _ in tqdm.tqdm(range(n_full_sweeps)):
             local_energy_differences = []
@@ -184,6 +186,8 @@ def main() -> None:
 
             # performing the global update
             current_iterate += global_increment
+            elapsed_time_s = (time.process_time_ns() - start) * 1e-9
+
             n_total_local_solves += np.sum(marked)
 
             energy_norm_errors_squared.append(
@@ -194,9 +198,15 @@ def main() -> None:
                     coordinates=coordinates,
                     cubature_rule=CubatureRuleEnum.SMPLX1))
 
-            path_to_dump = base_result_path \
-                / Path(f'{n_total_local_solves}.pkl')
-            dump_object(obj=current_iterate, path_to_file=path_to_dump)
+            path_to_solution_dump = base_result_path \
+                / Path(f'solutions/{n_total_local_solves}.pkl')
+            path_to_time_dump = base_result_path \
+                / Path(f'elapsed_times/{n_total_local_solves}.pkl')
+
+            dump_object(
+                obj=current_iterate, path_to_file=path_to_solution_dump)
+            dump_object(
+                obj=elapsed_time_s, path_to_file=path_to_time_dump)
 
 
 if __name__ == "__main__":

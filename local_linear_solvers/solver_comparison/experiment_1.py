@@ -20,6 +20,7 @@ import numpy as np
 import tqdm
 from experiment_setup import f
 from load_save_dumps import dump_object
+import time
 
 
 def main() -> None:
@@ -111,17 +112,18 @@ def main() -> None:
     ]
 
     base_result_paths = [
-        Path('results/1/local_jacobi/solutions'),
-        Path('results/1/local_block_jacobi/solutions'),
-        Path('results/1/local_gauss_seidel/solutions'),
-        Path('results/1/local_context_solver_non_simultaneous/solutions'),
-        Path('results/1/local_context_solver_simultaneous/solutions')
+        Path('results/1/local_jacobi/'),
+        Path('results/1/local_block_jacobi/'),
+        Path('results/1/local_gauss_seidel/'),
+        Path('results/1/local_context_solver_non_simultaneous/'),
+        Path('results/1/local_context_solver_simultaneous/')
     ]
 
     n_full_sweeps = 100
 
     for base_result_path, solver in \
             zip(base_result_paths, solvers_to_test):
+        start = time.process_time_ns()
         current_iterate = np.zeros(n_vertices)
         n_total_local_solves = 0
         for _ in tqdm.tqdm(range(n_full_sweeps)):
@@ -131,9 +133,20 @@ def main() -> None:
                     element=k)
                 n_total_local_solves += 1
 
-            path_to_dump = base_result_path \
-                / Path(f'{n_total_local_solves}.pkl')
-            dump_object(obj=current_iterate, path_to_file=path_to_dump)
+            # capturing (CPU) time needed to reach current solution iterate
+            elapsed_time_s = (time.process_time_ns() - start) * 1e-9
+
+            # paths to elapsed time and solution dumps
+            path_to_time_dump = (
+                base_result_path / Path(f'elapsed_times/{n_total_local_solves}.pkl'))
+            path_to_solution_dump = (
+                base_result_path / Path(f'solutions/{n_total_local_solves}.pkl'))
+
+            # dumping solution and elapsed time
+            dump_object(
+                obj=current_iterate, path_to_file=path_to_solution_dump)
+            dump_object(
+                obj=elapsed_time_s, path_to_file=path_to_time_dump)
 
 
 if __name__ == "__main__":
