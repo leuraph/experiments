@@ -1,0 +1,3 @@
+iterative_methods @ git+ssh://git@github.com/leuraph/iterative_methods@84cc8ad1a7d18e3fcac3d3afde2ace60b5c02b02
+variational_adaptivity @ git+ssh://git@github.com/leuraph/variational_adaptivity@v0.0.7
+p1afempy
