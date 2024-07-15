@@ -77,12 +77,15 @@ In the following, we give a brief description of what is happening
 in the different experiments.
 
 ## `experiment_1.py`
+Update all elements, i.e.
 - sweep over all elements $T \in \mathcal{T}$
   - using a local solver, compute the local increment $d_n^{(T)}$
   - update the local element's degrees of freedom (DOF) using $d_n^{(T)}$
 - repeat for $N$ sweeps
 
 ## `experiment_2.py`
+Calculate all local increments independent of each other,
+update only a subset, i.e.
 - sweep over all elements $T \in \mathcal{T}$
   - using a local solver, compute the local increment $d_n^{(T)}$
   - compute the local energy difference $\Delta E^{(T)}$
@@ -97,6 +100,8 @@ in the different experiments.
 - repeat for $N$ sweeps
 
 ## `experiment_3.py`
+Calculate all local increments, mark a subset of elements,
+recalculate local increments for this subset and update them accordingly, i.e.
 - sweep over all elements $T \in \mathcal{T}$
   - using a local solver, compute the local increment $d_n^{(T)}$
   - compute the local energy difference $\Delta E^{(T)}$
