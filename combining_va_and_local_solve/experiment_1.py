@@ -8,6 +8,7 @@ from load_save_dumps import dump_object
 from iterative_methods.local_solvers \
     import LocalContextSolver
 from scipy.sparse import csr_matrix
+from variational_adaptivity.markers import doerfler_marking
 import argparse
 
 
@@ -104,8 +105,6 @@ def main() -> None:
             local_energy_differences_context)
         local_increments = np.array(local_increments)
 
-        # TODO more stuff
-
         # -------------------------------------
         # compute all local energy gains via VA
         # -------------------------------------
@@ -124,31 +123,62 @@ def main() -> None:
         # if the energy difference is equal, we prefer locally solving
         # instead of adding more expensive degrees of freedom
         solve = local_energy_differences_va <= local_energy_differences_context
+        refine = local_energy_differences_va > local_energy_differences_context
 
-        global_increment = np.zeros(np.sum(solve))
-        for local_increment in local_increments
+        bigger_energy_differences = np.zeros(n_elements)
+        bigger_energy_differences[solve] = local_energy_differences_context[solve]
+        bigger_energy_differences[refine] = local_energy_differences_va[refine]
 
-        # mark elements to be refined, then refine
-        # ---------------------------------------
-        marked = markers.doerfler_marking(
-            local_energy_differences_va,
-            theta=THETA)
+        marked = doerfler_marking(input=bigger_energy_differences, theta=THETA)
+        solve = solve & marked
+        refine = refine & marked
+
+        # -----------------------------------------------------------------
+        # performing a global increment for the elements marked for solving
+        # -----------------------------------------------------------------
+        global_increment = np.zeros_like(current_iterate)
+
+        reduced_local_increments = local_increments[solve]
+        reduced_elements = elements[solve]
+        reduced_energy_differences_solve = local_energy_differences_context[solve]
+
+        # sorting such that local increments corresponding
+        # to biggest energy gain come last
+        energy_based_sorting = np.argsort(reduced_energy_differences_solve)
+        reduced_elements = reduced_elements[energy_based_sorting]
+        reduced_local_increments = reduced_local_increments[
+            energy_based_sorting]
+
+        # collect all local increments in a single vector
+        # in a way that local increments corresponding to the
+        # same node are overwritten by the one corresponding
+        # to the bigger change in energy
+        for element, local_increment in zip(
+                reduced_elements, reduced_local_increments):
+            global_increment[element] = local_increment
+
+        # performing the update
+        current_iterate += global_increment
+
+        # -------------------------------------
+        # refine elements marked for refinement
+        # -------------------------------------
         coordinates, elements, boundaries, solution = refinement.refineNVB(
             coordinates=coordinates,
             elements=elements,
-            marked_elements=(marked != 0),
+            marked_elements=refine,
             boundary_conditions=boundaries,
             to_embed=current_iterate)
 
-        # dump the current iterate
-        dump_object(obj=solution, path_to_file=base_results_path /
-                    Path(f'{n_refinement}/solution.pkl'))
-        dump_object(obj=elements, path_to_file=base_results_path /
-                    Path(f'{n_refinement}/elements.pkl'))
-        dump_object(obj=coordinates, path_to_file=base_results_path /
-                    Path(f'{n_refinement}/coordinates.pkl'))
-        dump_object(obj=boundaries, path_to_file=base_results_path /
-                    Path(f'{n_refinement}/boundaries.pkl'))
+        # # dump the current iterate
+        # dump_object(obj=solution, path_to_file=base_results_path /
+        #             Path(f'{n_refinement}/solution.pkl'))
+        # dump_object(obj=elements, path_to_file=base_results_path /
+        #             Path(f'{n_refinement}/elements.pkl'))
+        # dump_object(obj=coordinates, path_to_file=base_results_path /
+        #             Path(f'{n_refinement}/coordinates.pkl'))
+        # dump_object(obj=boundaries, path_to_file=base_results_path /
+        #             Path(f'{n_refinement}/boundaries.pkl'))
 
 
 if __name__ == '__main__':
