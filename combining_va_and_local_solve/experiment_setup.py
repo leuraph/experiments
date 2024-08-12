@@ -21,6 +21,7 @@ def uD(r: np.ndarray) -> np.ndarray:
 
 
 def grad_u(r: CoordinatesType) -> np.ndarray:
+    """gradient of the exact solution to the problem at hand"""
     xs = r[:, 0]
     ys = r[:, 1]
     tmp_x = np.cos(2. * np.pi * xs) * np.sin(3. * np.pi * ys)
