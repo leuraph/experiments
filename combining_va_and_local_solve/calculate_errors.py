@@ -1,9 +1,11 @@
-from experiment_setup import get_exact_galerkin_solution
+from experiment_setup import get_exact_galerkin_solution, grad_u
 from load_save_dumps import load_dump, dump_object
 from pathlib import Path
 from tqdm import tqdm
 import argparse
 from p1afempy.solvers import get_stiffness_matrix
+from iterative_methods.energy_norm import calculate_energy_norm_error
+from triangle_cubature.cubature_rule import CubatureRuleEnum
 
 
 def main() -> None:
@@ -22,22 +24,17 @@ def main() -> None:
         path_to_solution = path_to_result / Path('solution.pkl')
         path_to_elements = path_to_result / Path('elements.pkl')
         path_to_coordinates = path_to_result / Path('coordinates.pkl')
-        path_to_boundaries = path_to_result / Path('boundaries.pkl')
 
         solution = load_dump(path_to_dump=path_to_solution)
         elements = load_dump(path_to_dump=path_to_elements)
         coordinates = load_dump(path_to_dump=path_to_coordinates)
-        boundaries = load_dump(path_to_dump=path_to_boundaries)
-        dirichlet = boundaries[0]
 
-        stiffness_matrix = get_stiffness_matrix(
-            coordinates=coordinates, elements=elements)
-
-        exact_galerkin_solution = get_exact_galerkin_solution(
-            coordinates=coordinates, elements=elements, boundaries=[dirichlet])
-
-        du = exact_galerkin_solution - solution
-        energy_norm_error_squared = du.dot(stiffness_matrix.dot(du))
+        energy_norm_error_squared = calculate_energy_norm_error(
+            current_iterate=solution,
+            gradient_u=grad_u,
+            elements=elements,
+            coordinates=coordinates,
+            cubature_rule=CubatureRuleEnum.SMPLX1)
 
         dump_object(
             obj=energy_norm_error_squared,
