@@ -5,6 +5,11 @@ from scipy.sparse.linalg import spsolve
 from scipy.sparse import csr_matrix
 
 
+def u(r: CoordinatesType) -> np.ndarray:
+    """exact solution to the problem at hand"""
+    return np.sin(2.*np.pi * r[:, 0])*np.sin(3.*np.pi * r[:, 1])
+
+
 def f(r: CoordinatesType) -> float:
     """returns -((d/dx)^2 + (d/dy)^2)analytical(x,y)"""
     return 13.*np.pi**2*np.sin(2.*np.pi * r[:, 0])*np.sin(3.*np.pi * r[:, 1])
