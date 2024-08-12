@@ -3,22 +3,29 @@ from p1afempy import io_helpers, refinement, solvers
 from p1afempy.mesh import get_element_to_neighbours
 from pathlib import Path
 from variational_adaptivity import algo_4_1, markers
-from experiment_setup import f
+from experiment_setup import f, uD
 from load_save_dumps import dump_object
 from iterative_methods.local_solvers \
     import LocalContextSolver
 from scipy.sparse import csr_matrix
 from variational_adaptivity.markers import doerfler_marking
 import argparse
+from p1afempy.mesh import show_mesh
+import matplotlib.pyplot as plt
+from matplotlib import cm
 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--theta", type=float, required=True,
                         help="value of theta used in the Dörfler marking")
+    parser.add_argument("--fudge", type=float, required=True,
+                        help="fudge parameter used when deciding"
+                        " whether to refine an element or locally solve")
     args = parser.parse_args()
 
     THETA = args.theta
+    FUDGE_PARAMETER = args.fudge
 
     # ------------------------------------------------
     # Setup
@@ -28,7 +35,9 @@ def main() -> None:
     path_to_coordinates = base_path / Path('coordinates.dat')
     path_to_dirichlet = base_path / Path('dirichlet.dat')
 
-    base_results_path = Path('results/experiment_1') / Path(f'theta_{THETA}')
+    base_results_path = (
+        Path('results/experiment_1') /
+        Path(f'theta-{THETA}_fudge-{FUDGE_PARAMETER}'))
 
     coordinates, elements = io_helpers.read_mesh(
         path_to_coordinates=path_to_coordinates,
@@ -40,7 +49,7 @@ def main() -> None:
 
     # initial refinement
     # ------------------
-    n_initial_refinements = 5
+    n_initial_refinements = 3
     for _ in range(n_initial_refinements):
         marked = np.arange(elements.shape[0])
         coordinates, elements, boundaries, _ = \
@@ -53,11 +62,13 @@ def main() -> None:
     # variational adaptivity + Local Solvers
     # ------------------------------------------------
 
-    # initializing the solution to zero
-    current_iterate = np.zeros(coordinates.shape[0])
+    # initializing the solution to random values
+    current_iterate = np.random.rand(coordinates.shape[0])
+    # forcing the boundary values to be zero, nevertheless
+    current_iterate[np.unique(boundaries[0].flatten())] = 0.
 
-    n_full_sweeps = 10
-    for _ in range(n_full_sweeps):
+    n_full_sweeps = 20
+    for n_sweep in range(n_full_sweeps):
         # -------------------------------------
         # Adapting local Solver to current mesh
         # -------------------------------------
@@ -115,15 +126,18 @@ def main() -> None:
             boundaries=boundaries,
             current_iterate=current_iterate,
             element_to_neighbours=element_to_neighbours,
+            uD=uD,
             rhs_function=f, lamba_a=1)
 
         # ---------------------------------------------------
         # deciding where to refine and where to locally solve
         # ---------------------------------------------------
         # if the energy difference is equal, we prefer locally solving
-        # instead of adding more expensive degrees of freedom
-        solve = local_energy_differences_va <= local_energy_differences_context
-        refine = local_energy_differences_va > local_energy_differences_context
+        # instead of adding more "expensive" degrees of freedom
+        refine = (
+            local_energy_differences_va
+            > FUDGE_PARAMETER * local_energy_differences_context)
+        solve = np.logical_not(refine)
 
         bigger_energy_differences = np.zeros(n_elements)
         bigger_energy_differences[solve] = local_energy_differences_context[solve]
@@ -160,25 +174,59 @@ def main() -> None:
         # performing the update
         current_iterate += global_increment
 
+        # show_solution(coordinates=coordinates, solution=current_iterate)
+
+        # dump snapshot of current current state
+        dump_object(obj=current_iterate, path_to_file=base_results_path /
+                    Path(f'{n_sweep+1}/solution.pkl'))
+        dump_object(obj=elements, path_to_file=base_results_path /
+                    Path(f'{n_sweep+1}/elements.pkl'))
+        dump_object(obj=coordinates, path_to_file=base_results_path /
+                    Path(f'{n_sweep+1}/coordinates.pkl'))
+        dump_object(obj=boundaries, path_to_file=base_results_path /
+                    Path(f'{n_sweep+1}/boundaries.pkl'))
+
         # -------------------------------------
         # refine elements marked for refinement
         # -------------------------------------
-        coordinates, elements, boundaries, solution = refinement.refineNVB(
-            coordinates=coordinates,
-            elements=elements,
-            marked_elements=refine,
-            boundary_conditions=boundaries,
-            to_embed=current_iterate)
+        coordinates, elements, boundaries, current_iterate = \
+            refinement.refineNVB(
+                coordinates=coordinates,
+                elements=elements,
+                marked_elements=refine,
+                boundary_conditions=boundaries,
+                to_embed=current_iterate)
 
-        # # dump the current iterate
-        # dump_object(obj=solution, path_to_file=base_results_path /
-        #             Path(f'{n_refinement}/solution.pkl'))
-        # dump_object(obj=elements, path_to_file=base_results_path /
-        #             Path(f'{n_refinement}/elements.pkl'))
-        # dump_object(obj=coordinates, path_to_file=base_results_path /
-        #             Path(f'{n_refinement}/coordinates.pkl'))
-        # dump_object(obj=boundaries, path_to_file=base_results_path /
-        #             Path(f'{n_refinement}/boundaries.pkl'))
+
+def show_solution(coordinates, solution):
+    plt.rcParams["mathtext.fontset"] = "cm"
+    plt.rcParams['xtick.labelsize'] = 12
+    plt.rcParams['ytick.labelsize'] = 12
+    plt.rcParams['axes.labelsize'] = 20
+    plt.rcParams['axes.titlesize'] = 12
+    plt.rcParams['legend.fontsize'] = 12
+
+    x_coords, y_coords = zip(*coordinates)
+
+    # Create a 3D scatter plot
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+
+    # Plot the points with scalar values as colors (adjust colormap as needed)
+    _ = ax.plot_trisurf(x_coords, y_coords, solution, linewidth=0.2,
+                        antialiased=True, cmap=cm.viridis)
+    # Add labels to the axes
+    ax.set_xlabel(r'$x$')
+    ax.set_ylabel(r'$y$')
+    ax.set_zlabel(r'$z$')
+
+    ax.set_xticks([0, 1])
+    ax.set_yticks([0, 1])
+    #ax.set_zticks([0, 0.02, 0.04, 0.06])
+
+    # Show and save the plot
+    # fig.savefig(out_path, dpi=300)
+    plt.show()
 
 
 if __name__ == '__main__':
