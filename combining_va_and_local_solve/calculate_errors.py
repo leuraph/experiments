@@ -1,9 +1,8 @@
-from experiment_setup import get_exact_galerkin_solution, grad_u
+from experiment_setup import grad_u
 from load_save_dumps import load_dump, dump_object
 from pathlib import Path
 from tqdm import tqdm
 import argparse
-from p1afempy.solvers import get_stiffness_matrix
 from iterative_methods.energy_norm import calculate_energy_norm_error
 from triangle_cubature.cubature_rule import CubatureRuleEnum
 
