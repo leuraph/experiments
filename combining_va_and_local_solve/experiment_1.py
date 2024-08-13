@@ -144,7 +144,8 @@ def main() -> None:
         solve = np.logical_not(refine)
 
         bigger_energy_differences = np.zeros(n_elements)
-        bigger_energy_differences[solve] = local_energy_differences_context[solve]
+        bigger_energy_differences[solve] = (
+            FUDGE_PARAMETER * local_energy_differences_context[solve])
         bigger_energy_differences[refine] = local_energy_differences_va[refine]
 
         marked = doerfler_marking(input=bigger_energy_differences, theta=THETA)
