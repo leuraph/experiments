@@ -68,9 +68,22 @@ def main() -> None:
     ax.set_ylabel(r'$\| u_n - u_h \|_a^2$')
     ax.grid(True)
 
+    sort = np.flip(np.argsort(energy_norm_errors_squared))
+    n_dofs = n_dofs[sort]
+    energy_norm_errors_squared = energy_norm_errors_squared[sort]
+
+    e_star = energy_norm_errors_squared[1]
+    n_star = n_dofs[1]
+    ideal_convergence = lambda n: e_star * n_star / n
+
+    ax.loglog(
+        np.unique(n_dofs), ideal_convergence(np.unique(n_dofs)),
+        linestyle='--',
+        linewidth=1, alpha=0.6, color='black')
+
     line, = ax.loglog(
         n_dofs, energy_norm_errors_squared,
-        '--', linewidth=1.2, alpha=0, color=COLOR)
+        '--', linewidth=1.2, alpha=0., color=COLOR)
     mark, = ax.loglog(
         n_dofs, energy_norm_errors_squared,
         linestyle=None, marker='s', markersize=8,
