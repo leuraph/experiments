@@ -30,6 +30,7 @@ def main() -> None:
     # ------------------------------------------------
     # Setup
     # ------------------------------------------------
+    np.random.seed(42)
     base_path = Path('data')
     path_to_elements = base_path / Path('elements.dat')
     path_to_coordinates = base_path / Path('coordinates.dat')
