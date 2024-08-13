@@ -13,6 +13,7 @@ import argparse
 from p1afempy.mesh import show_mesh
 import matplotlib.pyplot as plt
 from matplotlib import cm
+import tqdm
 
 
 def main() -> None:
@@ -105,7 +106,8 @@ def main() -> None:
         local_energy_differences_context = []
         local_increments = []
 
-        for k in range(n_elements):
+        print('compute all energy gains / local increments via local solver...')
+        for k in tqdm.tqdm(range(n_elements)):
             local_increment, local_energy_difference = \
                 local_context_solver.get_local_increment_and_energy_difference(
                     current_iterate=current_iterate,
@@ -120,6 +122,7 @@ def main() -> None:
         # -------------------------------------
         # compute all local energy gains via VA
         # -------------------------------------
+        print('compute all local energy gains via VA...')
         element_to_neighbours = get_element_to_neighbours(elements=elements)
         local_energy_differences_va = algo_4_1.get_all_local_enery_gains(
             coordinates=coordinates,
