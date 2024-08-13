@@ -97,8 +97,7 @@ def main() -> None:
             elements=elements,
             free_nodes=free_nodes,
             lhs_matrix=stiffness_matrix,
-            rhs_vector=right_hand_side,
-            simultaneous_solve=True)
+            rhs_vector=right_hand_side)
 
         # ------------------------------------------------------------
         # compute all energy gains / local increments via local solver
@@ -118,6 +117,7 @@ def main() -> None:
         local_energy_differences_context = np.array(
             local_energy_differences_context)
         local_increments = np.array(local_increments)
+        local_context_solver.flush_cache()
 
         # -------------------------------------
         # compute all local energy gains via VA
