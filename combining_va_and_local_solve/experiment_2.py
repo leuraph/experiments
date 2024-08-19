@@ -38,7 +38,7 @@ def main() -> None:
     path_to_dirichlet = base_path / Path('dirichlet.dat')
 
     base_results_path = (
-        Path('results/experiment_1') /
+        Path('results/experiment_2') /
         Path(f'theta-{THETA}_fudge-{FUDGE_PARAMETER}'))
 
     coordinates, elements = io_helpers.read_mesh(
@@ -170,16 +170,6 @@ def main() -> None:
         # performing the update
         current_iterate += global_increment
 
-        bigger_energy_differences = np.zeros(n_elements)
-        bigger_energy_differences[solve] = (
-            FUDGE_PARAMETER * local_energy_differences_context[solve])
-        bigger_energy_differences[refine] = local_energy_differences_va[refine]
-
-        reduced_local_energy_differences_
-        reduced_marked = doerfler_marking(input=local_energy_differences_va[refine], theta=THETA)
-        solve = solve & marked
-        refine = refine & marked
-
         # show_solution(coordinates=coordinates, solution=current_iterate)
 
         # dump snapshot of current current state
@@ -195,6 +185,12 @@ def main() -> None:
         # -------------------------------------
         # refine elements marked for refinement
         # -------------------------------------
+        reduced_local_energy_differences_va = local_energy_differences_va[refine]
+        reduced_marked = doerfler_marking(
+            input=reduced_local_energy_differences_va, theta=THETA)
+        marked = np.zeros(n_elements, dtype=bool)
+        marked[refine] = reduced_marked
+
         coordinates, elements, boundaries, current_iterate = \
             refinement.refineNVB(
                 coordinates=coordinates,
