@@ -29,3 +29,18 @@ In this experiment, we do the following.
   such that updates corresponding to biggest local energy drop come last.
 - Perform a dörfler marking for all elements marked for refinement
 - perform all marked refinements using collective `NV` refinement
+
+## Eperiment 3
+In this experiment, we do the following.
+
+1. initialize a random solution which is equal to zero on the boundary of the domain.
+2. For all alements $T \in \mathcal{T}$, compute the local increment $\Delta x$
+    and its corresponding energy gain $\Delta E^{\text{local}}$.
+3. perform all local increments in ascending order (correspodning to local energy gain).
+4. start over at point 2 (`sweeps` times)
+5. compute the exact solution as reference and dump it as well
+6. using the exact solution on current mesh, perform variational adaptivty, i.e. 
+  - calculate energy gains for refining,
+  - perform dörfler marking,
+  - refine the marked elements using NVB and linearly interpolate the current iterate (not the exact solution).
+7. start over point 2.
