@@ -70,8 +70,8 @@ def main() -> None:
     current_iterate[np.unique(boundaries[0].flatten())] = 0.
 
     # number of refinement steps using variational adaptivity
-    n_va_refinement_steps = 3
-    for n_refinements in range(n_va_refinement_steps):
+    n_va_refinement_steps = 5
+    for _ in range(n_va_refinement_steps):
         # -------------------------------------
         # Adapting local Solver to current mesh
         # -------------------------------------
@@ -103,7 +103,8 @@ def main() -> None:
         # ------------------------------------------------------------
         # compute all energy gains / local increments via local solver
         # ------------------------------------------------------------
-        for n_sweep in range(N_FULL_SWEEPS):
+        print('performing full sweeps of local solves')
+        for n_sweep in tqdm.tqdm(range(N_FULL_SWEEPS)):
             local_energy_differences_context = []
             local_increments = []
 
@@ -150,7 +151,7 @@ def main() -> None:
             n_dofs = np.sum(free_nodes)
 
             dump_object(obj=current_iterate, path_to_file=base_results_path /
-                        Path(f'{n_dofs}/{n_sweep}/solution.pkl'))
+                        Path(f'{n_dofs}/{n_sweep+1}/solution.pkl'))
             dump_object(obj=elements, path_to_file=base_results_path /
                         Path(f'{n_dofs}/elements.pkl'))
             dump_object(obj=coordinates, path_to_file=base_results_path /
@@ -168,15 +169,15 @@ def main() -> None:
             g=None,
             uD=uD)
 
-        show_solution(coordinates=coordinates, solution=solution)
-
-        dump_object(obj=solution, path_to_file=base_results_path /
-                        Path(f'{n_dofs}/exact_solution.pkl'))
+        dump_object(
+            obj=solution, path_to_file=base_results_path /
+            Path(f'{n_dofs}/exact_solution.pkl'))
 
         # --------------------------------------------------------------
         # compute all local energy gains via VA, based on exact solution
         # --------------------------------------------------------------
         element_to_neighbours = get_element_to_neighbours(elements=elements)
+        print('computing all local energy gains with variational adaptivity')
         local_energy_differences_va = algo_4_1.get_all_local_enery_gains(
             coordinates=coordinates,
             elements=elements,
