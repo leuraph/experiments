@@ -117,6 +117,7 @@ def main() -> None:
                 local_energy_differences_solve.append(local_energy_difference)
                 local_increments.append(local_increment)
 
+            # transforming lists to np.ndarray's
             local_energy_differences_solve = np.array(
                 local_energy_differences_solve)
             local_increments = np.array(local_increments)
