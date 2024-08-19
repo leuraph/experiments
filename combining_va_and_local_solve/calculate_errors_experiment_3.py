@@ -25,19 +25,20 @@ def main() -> None:
             coordinates = load_dump(path_to_dump=path_to_coordinates)
 
             for n_sweep_dir in list(path_to_ndof_dir.iterdir()):
-                path_to_solution = n_sweep_dir / Path('solution.pkl')
-                solution = load_dump(path_to_dump=path_to_solution)
+                if n_sweep_dir.is_dir():
+                    path_to_solution = n_sweep_dir / Path('solution.pkl')
+                    solution = load_dump(path_to_dump=path_to_solution)
 
-                energy_norm_error_squared = calculate_energy_norm_error(
-                    current_iterate=solution,
-                    gradient_u=grad_u,
-                    elements=elements,
-                    coordinates=coordinates,
-                    cubature_rule=CubatureRuleEnum.SMPLX1)
+                    energy_norm_error_squared = calculate_energy_norm_error(
+                        current_iterate=solution,
+                        gradient_u=grad_u,
+                        elements=elements,
+                        coordinates=coordinates,
+                        cubature_rule=CubatureRuleEnum.SMPLX1)
 
-                dump_object(
-                    obj=energy_norm_error_squared,
-                    path_to_file=n_sweep_dir / Path('energy_norm_error.pkl'))
+                    dump_object(
+                        obj=energy_norm_error_squared,
+                        path_to_file=n_sweep_dir / Path('energy_norm_error.pkl'))
 
 
 if __name__ == '__main__':
