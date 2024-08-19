@@ -122,13 +122,9 @@ def main() -> None:
                 local_energy_differences_solve)
             local_increments = np.array(local_increments)
 
-            # flushing the cache asap as, in the next full sweep,
-            # the global contribution has changed
-            local_context_solver.flush_cache()
-
-            # -----------------------------------------------------------------
-            # performing a global increment for the elements marked for solving
-            # -----------------------------------------------------------------
+            # ----------------------------------------------
+            # performing a global increment for all elements
+            # ----------------------------------------------
             global_increment = np.zeros_like(current_iterate)
 
             # sorting such that local increments corresponding
@@ -147,6 +143,11 @@ def main() -> None:
 
             # performing the update
             current_iterate += global_increment
+
+            # flushing the cache asap as, in the next full sweep,
+            # after performing the global update,
+            # the global contribution has changed
+            local_context_solver.flush_cache()
 
             # dump snapshot of current current state
             n_dofs = np.sum(free_nodes)
