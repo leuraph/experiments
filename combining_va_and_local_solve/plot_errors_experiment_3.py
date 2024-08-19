@@ -10,43 +10,54 @@ def main() -> None:
     parser.add_argument("-o", type=str, required=True,
                         help="path to plot to be generated")
     parser.add_argument("--theta", type=float, required=True)
-    parser.add_argument("--fudge", type=float, required=True)
-    parser.add_argument("--experiment", type=int, required=True)
     args = parser.parse_args()
 
     theta = args.theta
-    fudge = args.fudge
-    experiment = args.experiment
     path_to_plot = Path(args.o)
 
     base_result_path = Path(
-        f'results/experiment_{experiment}/theta-{theta}_fudge-{fudge}')
+        f'results/experiment_3/theta-{theta}')
 
     # ------------
     # read results
     # ------------
     energy_norm_errors_squared = []
+    energy_norm_error_squared_exact_solutions = []
     n_dofs = []
 
-    # looping over iterates
-    for path_to_results in base_result_path.iterdir():
-        path_to_boundaries = path_to_results / Path('boundaries.pkl')
-        path_to_coordinates = path_to_results / Path('coordinates.pkl')
-        path_to_energy_norm_error = path_to_results / Path(
-            'energy_norm_error.pkl')
+    for n_dofs_dir in base_result_path.iterdir():
+
+        path_to_boundaries = n_dofs_dir / Path('boundaries.pkl')
+        path_to_coordinates = n_dofs_dir / Path('coordinates.pkl')
+        path_to_energy_norm_error_squared_exact = n_dofs_dir / Path(
+            'energy_norm_error_squared_exact.pkl')
 
         coordinates = load_dump(path_to_coordinates)
         boundaries = load_dump(path_to_boundaries)
+        energy_norm_error_squared_exact = load_dump(
+            path_to_energy_norm_error_squared_exact)
+
+        energy_norm_error_squared_exact_solutions.append(
+            energy_norm_error_squared_exact)
 
         n_vertices = coordinates.shape[0]
         indices_of_free_nodes = np.setdiff1d(
             ar1=np.arange(n_vertices),
             ar2=np.unique(boundaries[0].flatten()))
 
-        energy_norm_errors_squared.append(load_dump(path_to_energy_norm_error))
         n_dofs.append(len(indices_of_free_nodes))
 
+        errs = []
+        for n_sweeps_dir in n_dofs_dir.iterdir():
+            if n_sweeps_dir.is_dir():
+                energy_norm_error_squared = load_dump(
+                    path_to_dump=n_sweeps_dir/"energy_norm_error_squared.pkl")
+                errs.append(energy_norm_error_squared)
+        energy_norm_errors_squared.append(errs)
+
     energy_norm_errors_squared = np.array(energy_norm_errors_squared)
+    energy_norm_error_squared_exact_solutions = np.array(
+        energy_norm_error_squared_exact_solutions)
     n_dofs = np.array(n_dofs)
 
     # --------
@@ -63,20 +74,25 @@ def main() -> None:
     # labels = []
 
     # https://coolors.co/palette/540d6e-ee4266-ffd23f-3bceac-0ead69
-    COLOR = '#ee4266'
+    COLOR_RED = '#EE4266'
+    COLOR_GREEN = '#0EAD69'
 
     fig, ax = plt.subplots()
     ax.set_xlabel(r'$n_{\text{dof}}$')
-    ax.set_ylabel(r'$\| u_n - u_h \|_a^2$')
+    ax.set_ylabel(r'$\| \widetilde{u} - u \|_a^2$')
     ax.grid(True)
 
-    sort = np.flip(np.argsort(energy_norm_errors_squared))
+    sort = np.argsort(n_dofs)
     n_dofs = n_dofs[sort]
+    energy_norm_error_squared_exact_solutions = \
+        energy_norm_error_squared_exact_solutions[sort]
     energy_norm_errors_squared = energy_norm_errors_squared[sort]
 
-    e_star = energy_norm_errors_squared[1]
+    e_star = energy_norm_error_squared_exact_solutions[1]
     n_star = n_dofs[1]
-    ideal_convergence = lambda n: e_star * n_star / n
+
+    def ideal_convergence(n):
+        return e_star * n_star / n
 
     ax.loglog(
         np.unique(n_dofs), ideal_convergence(np.unique(n_dofs)),
@@ -84,13 +100,20 @@ def main() -> None:
         linewidth=1, alpha=0.6, color='black')
 
     line, = ax.loglog(
-        n_dofs, energy_norm_errors_squared,
-        '--', linewidth=1.2, alpha=0., color=COLOR)
+        n_dofs, energy_norm_error_squared_exact_solutions,
+        '--', linewidth=1.2, alpha=0., color=COLOR_RED)
     mark, = ax.loglog(
-        n_dofs, energy_norm_errors_squared,
+        n_dofs, energy_norm_error_squared_exact_solutions,
         linestyle=None, marker='s', markersize=8,
-        linewidth=0, alpha=0.6, color=COLOR)
+        linewidth=0, alpha=0.6, color=COLOR_RED)
     merged.append((line, mark))
+
+    for k, n_dof in enumerate(n_dofs):
+        mark, = ax.loglog(
+            n_dof*np.ones_like(energy_norm_errors_squared[k]),
+            energy_norm_errors_squared[k],
+            linestyle=None, marker='.', markersize=1,
+            linewidth=0, alpha=0.6, color=COLOR_GREEN)
 
     # ax.legend(merged, labels)
     fig.savefig(
