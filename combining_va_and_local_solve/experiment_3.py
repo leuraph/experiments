@@ -105,7 +105,7 @@ def main() -> None:
         # ------------------------------------------------------------
         print('performing full sweeps of local solves')
         for n_sweep in tqdm.tqdm(range(N_FULL_SWEEPS)):
-            local_energy_differences_context = []
+            local_energy_differences_solve = []
             local_increments = []
 
             # solving locally on each element, separately
@@ -114,11 +114,11 @@ def main() -> None:
                     local_context_solver.get_local_increment_and_energy_difference(
                         current_iterate=current_iterate,
                         element=k)
-                local_energy_differences_context.append(local_energy_difference)
+                local_energy_differences_solve.append(local_energy_difference)
                 local_increments.append(local_increment)
 
-            local_energy_differences_context = np.array(
-                local_energy_differences_context)
+            local_energy_differences_solve = np.array(
+                local_energy_differences_solve)
             local_increments = np.array(local_increments)
 
             # flushing the cache asap as, in the next full sweep,
@@ -132,7 +132,7 @@ def main() -> None:
 
             # sorting such that local increments corresponding
             # to biggest energy gain come last
-            energy_based_sorting = np.argsort(local_energy_differences_context)
+            energy_based_sorting = np.argsort(local_energy_differences_solve)
             sorted_elements = elements[energy_based_sorting]
             local_increments = local_increments[energy_based_sorting]
 
