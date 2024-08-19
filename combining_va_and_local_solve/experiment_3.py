@@ -2,7 +2,7 @@ import numpy as np
 from p1afempy import io_helpers, refinement, solvers
 from p1afempy.mesh import get_element_to_neighbours
 from pathlib import Path
-from variational_adaptivity import algo_4_1, markers
+from variational_adaptivity import algo_4_1
 from experiment_setup import f, uD
 from load_save_dumps import dump_object
 from iterative_methods.local_solvers \
@@ -158,7 +158,20 @@ def main() -> None:
             dump_object(obj=boundaries, path_to_file=base_results_path /
                         Path(f'{n_dofs}/boundaries.pkl'))
 
-        show_solution(coordinates=coordinates, solution=current_iterate)
+        # compute and drop the exact solution
+        solution, _ = solvers.solve_laplace(
+            coordinates=coordinates,
+            elements=elements,
+            dirichlet=boundaries[0],
+            neumann=np.array([]),
+            f=f,
+            g=None,
+            uD=uD)
+
+        show_solution(coordinates=coordinates, solution=solution)
+
+        dump_object(obj=solution, path_to_file=base_results_path /
+                        Path(f'{n_dofs}/exact_solution.pkl'))
 
         # -------------------------------------
         # compute all local energy gains via VA
