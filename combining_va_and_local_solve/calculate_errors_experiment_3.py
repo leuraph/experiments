@@ -10,12 +10,14 @@ from triangle_cubature.cubature_rule import CubatureRuleEnum
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--theta", type=float, required=True)
+    parser.add_argument("--sweeps", type=int, required=True)
     args = parser.parse_args()
 
     theta = args.theta
+    sweeps = args.sweeps
 
     base_result_path = Path(
-        f'results/experiment_3/theta-{theta}')
+        f'results/experiment_3/theta-{theta}_sweeps-{sweeps}')
 
     for path_to_ndof_dir in tqdm(list(base_result_path.iterdir())):
         if path_to_ndof_dir.is_dir():

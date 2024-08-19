@@ -10,13 +10,15 @@ def main() -> None:
     parser.add_argument("-o", type=str, required=True,
                         help="path to plot to be generated")
     parser.add_argument("--theta", type=float, required=True)
+    parser.add_argument("--sweeps", type=int, required=True)
     args = parser.parse_args()
 
     theta = args.theta
+    sweeps = args.sweeps
     path_to_plot = Path(args.o)
 
     base_result_path = Path(
-        f'results/experiment_3/theta-{theta}')
+        f'results/experiment_3/theta-{theta}_sweeps-{sweeps}')
 
     # ------------
     # read results
