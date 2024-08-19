@@ -11,14 +11,16 @@ def main() -> None:
                         help="path to plot to be generated")
     parser.add_argument("--theta", type=float, required=True)
     parser.add_argument("--fudge", type=float, required=True)
+    parser.add_argument("--experiment", type=int, required=True)
     args = parser.parse_args()
 
     theta = args.theta
     fudge = args.fudge
+    experiment = args.experiment
     path_to_plot = Path(args.o)
 
     base_result_path = Path(
-        f'results/experiment_1/theta-{theta}_fudge-{fudge}')
+        f'results/experiment_{experiment}/theta-{theta}_fudge-{fudge}')
 
     # ------------
     # read results

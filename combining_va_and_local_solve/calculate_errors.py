@@ -11,13 +11,15 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--theta", type=float, required=True)
     parser.add_argument("--fudge", type=float, required=True)
+    parser.add_argument("--experiment", type=int, required=True)
     args = parser.parse_args()
 
     theta = args.theta
     fudge = args.fudge
+    experiment = args.experiment
 
     base_result_path = Path(
-        f'results/experiment_1/theta-{theta}_fudge-{fudge}')
+        f'results/experiment_{experiment}/theta-{theta}_fudge-{fudge}')
 
     for path_to_result in tqdm(list(base_result_path.iterdir())):
         path_to_solution = path_to_result / Path('solution.pkl')
