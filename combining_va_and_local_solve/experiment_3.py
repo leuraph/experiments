@@ -39,7 +39,7 @@ def main() -> None:
 
     base_results_path = (
         Path('results/experiment_3') /
-        Path(f'theta-{THETA}_sweeps-{N_FULL_SWEEPS}'))
+        Path(f'theta-{THETA}'))
 
     coordinates, elements = io_helpers.read_mesh(
         path_to_coordinates=path_to_coordinates,
@@ -173,15 +173,15 @@ def main() -> None:
         dump_object(obj=solution, path_to_file=base_results_path /
                         Path(f'{n_dofs}/exact_solution.pkl'))
 
-        # -------------------------------------
-        # compute all local energy gains via VA
-        # -------------------------------------
+        # --------------------------------------------------------------
+        # compute all local energy gains via VA, based on exact solution
+        # --------------------------------------------------------------
         element_to_neighbours = get_element_to_neighbours(elements=elements)
         local_energy_differences_va = algo_4_1.get_all_local_enery_gains(
             coordinates=coordinates,
             elements=elements,
             boundaries=boundaries,
-            current_iterate=current_iterate,
+            current_iterate=solution,
             element_to_neighbours=element_to_neighbours,
             uD=uD,
             rhs_function=f, lamba_a=1)
