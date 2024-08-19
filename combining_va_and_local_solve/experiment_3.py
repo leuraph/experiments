@@ -23,10 +23,14 @@ def main() -> None:
     parser.add_argument("--fudge", type=float, required=True,
                         help="fudge parameter used when deciding"
                         " whether to refine an element or locally solve")
+    parser.add_argument("--sweeps", type=int, required=True,
+                        help="number of full sweeps before any refinement"
+                        " takes place")
     args = parser.parse_args()
 
     THETA = args.theta
     FUDGE_PARAMETER = args.fudge
+    N_FULL_SWEEPS = args.sweeps
 
     # ------------------------------------------------
     # Setup
