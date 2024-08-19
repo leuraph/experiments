@@ -70,7 +70,7 @@ def main() -> None:
     current_iterate[np.unique(boundaries[0].flatten())] = 0.
 
     # number of refinement steps using variational adaptivity
-    n_va_refinement_steps = 5
+    n_va_refinement_steps = 8
     for _ in range(n_va_refinement_steps):
         # -------------------------------------
         # Adapting local Solver to current mesh
