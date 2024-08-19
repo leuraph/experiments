@@ -101,21 +101,21 @@ def main() -> None:
         linestyle='--',
         linewidth=1, alpha=0.6, color='black')
 
+    for k, n_dof in enumerate(n_dofs):
+        mark, = ax.loglog(
+            n_dof*np.ones_like(energy_norm_errors_squared[k]),
+            energy_norm_errors_squared[k],
+            linestyle=None, marker='_', markersize=8,
+            linewidth=0, alpha=1.0, color=COLOR_GREEN)
+
     line, = ax.loglog(
         n_dofs, energy_norm_error_squared_exact_solutions,
         '--', linewidth=1.2, alpha=0., color=COLOR_RED)
     mark, = ax.loglog(
         n_dofs, energy_norm_error_squared_exact_solutions,
-        linestyle=None, marker='s', markersize=8,
+        linestyle=None, marker='_', markersize=8,
         linewidth=0, alpha=0.6, color=COLOR_RED)
     merged.append((line, mark))
-
-    for k, n_dof in enumerate(n_dofs):
-        mark, = ax.loglog(
-            n_dof*np.ones_like(energy_norm_errors_squared[k]),
-            energy_norm_errors_squared[k],
-            linestyle=None, marker='.', markersize=1,
-            linewidth=0, alpha=0.6, color=COLOR_GREEN)
 
     # ax.legend(merged, labels)
     fig.savefig(
