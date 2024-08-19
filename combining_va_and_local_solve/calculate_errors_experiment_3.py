@@ -21,8 +21,24 @@ def main() -> None:
         if path_to_ndof_dir.is_dir():
             path_to_elements = path_to_ndof_dir / Path('elements.pkl')
             path_to_coordinates = path_to_ndof_dir / Path('coordinates.pkl')
+            path_to_exact_solution = (
+                path_to_ndof_dir / Path('exact_solution.pkl'))
             elements = load_dump(path_to_dump=path_to_elements)
             coordinates = load_dump(path_to_dump=path_to_coordinates)
+            exact_solution = load_dump(path_to_dump=path_to_exact_solution)
+
+            energy_norm_error_squared_exact = calculate_energy_norm_error(
+                current_iterate=exact_solution,
+                gradient_u=grad_u,
+                elements=elements,
+                coordinates=coordinates,
+                cubature_rule=CubatureRuleEnum.SMPLX1)
+
+            dump_object(
+                obj=energy_norm_error_squared_exact,
+                path_to_file=(
+                    path_to_ndof_dir /
+                    Path('energy_norm_error_squared_exact.pkl')))
 
             for n_sweep_dir in list(path_to_ndof_dir.iterdir()):
                 if n_sweep_dir.is_dir():
@@ -38,7 +54,9 @@ def main() -> None:
 
                     dump_object(
                         obj=energy_norm_error_squared,
-                        path_to_file=n_sweep_dir / Path('energy_norm_error.pkl'))
+                        path_to_file=(
+                            n_sweep_dir /
+                            Path('energy_norm_error_squared.pkl')))
 
 
 if __name__ == '__main__':
