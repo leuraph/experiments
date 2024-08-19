@@ -180,7 +180,7 @@ def main() -> None:
         # --------------------------------------------------------------
         element_to_neighbours = get_element_to_neighbours(elements=elements)
         print('computing all local energy gains with variational adaptivity')
-        local_energy_differences_va = algo_4_1.get_all_local_enery_gains(
+        local_energy_differences_refine = algo_4_1.get_all_local_enery_gains(
             coordinates=coordinates,
             elements=elements,
             boundaries=boundaries,
@@ -193,7 +193,7 @@ def main() -> None:
         # refine elements marked for refinement
         # -------------------------------------
         marked = doerfler_marking(
-            input=local_energy_differences_va, theta=THETA)
+            input=local_energy_differences_refine, theta=THETA)
 
         coordinates, elements, boundaries, current_iterate = \
             refinement.refineNVB(
