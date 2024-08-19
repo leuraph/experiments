@@ -20,16 +20,12 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--theta", type=float, required=True,
                         help="value of theta used in the Dörfler marking")
-    parser.add_argument("--fudge", type=float, required=True,
-                        help="fudge parameter used when deciding"
-                        " whether to refine an element or locally solve")
     parser.add_argument("--sweeps", type=int, required=True,
                         help="number of full sweeps before any refinement"
                         " takes place")
     args = parser.parse_args()
 
     THETA = args.theta
-    FUDGE_PARAMETER = args.fudge
     N_FULL_SWEEPS = args.sweeps
 
     # ------------------------------------------------
@@ -42,8 +38,8 @@ def main() -> None:
     path_to_dirichlet = base_path / Path('dirichlet.dat')
 
     base_results_path = (
-        Path('results/experiment_2') /
-        Path(f'theta-{THETA}_fudge-{FUDGE_PARAMETER}'))
+        Path('results/experiment_3') /
+        Path(f'theta-{THETA}_sweeps-{N_FULL_SWEEPS}'))
 
     coordinates, elements = io_helpers.read_mesh(
         path_to_coordinates=path_to_coordinates,
@@ -73,8 +69,9 @@ def main() -> None:
     # forcing the boundary values to be zero, nevertheless
     current_iterate[np.unique(boundaries[0].flatten())] = 0.
 
-    n_full_sweeps = 20
-    for n_sweep in range(n_full_sweeps):
+    # number of refinement steps using variational adaptivity
+    n_va_refinement_steps = 3
+    for n_refinements in range(n_va_refinement_steps):
         # -------------------------------------
         # Adapting local Solver to current mesh
         # -------------------------------------
@@ -106,27 +103,66 @@ def main() -> None:
         # ------------------------------------------------------------
         # compute all energy gains / local increments via local solver
         # ------------------------------------------------------------
-        local_energy_differences_context = []
-        local_increments = []
+        for n_sweep in range(N_FULL_SWEEPS):
+            local_energy_differences_context = []
+            local_increments = []
 
-        print('compute all energy gains / local increments via local solver...')
-        for k in tqdm.tqdm(range(n_elements)):
-            local_increment, local_energy_difference = \
-                local_context_solver.get_local_increment_and_energy_difference(
-                    current_iterate=current_iterate,
-                    element=k)
-            local_energy_differences_context.append(local_energy_difference)
-            local_increments.append(local_increment)
+            # solving locally on each element, separately
+            for k in range(n_elements):
+                local_increment, local_energy_difference = \
+                    local_context_solver.get_local_increment_and_energy_difference(
+                        current_iterate=current_iterate,
+                        element=k)
+                local_energy_differences_context.append(local_energy_difference)
+                local_increments.append(local_increment)
 
-        local_energy_differences_context = np.array(
-            local_energy_differences_context)
-        local_increments = np.array(local_increments)
-        local_context_solver.flush_cache()
+            local_energy_differences_context = np.array(
+                local_energy_differences_context)
+            local_increments = np.array(local_increments)
+
+            # flushing the cache asap as, in the next full sweep,
+            # the global contribution has changed
+            local_context_solver.flush_cache()
+
+            # -----------------------------------------------------------------
+            # performing a global increment for the elements marked for solving
+            # -----------------------------------------------------------------
+            global_increment = np.zeros_like(current_iterate)
+
+            # sorting such that local increments corresponding
+            # to biggest energy gain come last
+            energy_based_sorting = np.argsort(local_energy_differences_context)
+            sorted_elements = elements[energy_based_sorting]
+            local_increments = local_increments[energy_based_sorting]
+
+            # collect all local increments in a single vector
+            # in a way that local increments corresponding to the
+            # same node are overwritten by the one corresponding
+            # to the bigger change in energy
+            for element, local_increment in zip(
+                    sorted_elements, local_increments):
+                global_increment[element] = local_increment
+
+            # performing the update
+            current_iterate += global_increment
+
+            # dump snapshot of current current state
+            n_dofs = np.sum(free_nodes)
+
+            dump_object(obj=current_iterate, path_to_file=base_results_path /
+                        Path(f'{n_dofs}/{n_sweep}/solution.pkl'))
+            dump_object(obj=elements, path_to_file=base_results_path /
+                        Path(f'{n_dofs}/elements.pkl'))
+            dump_object(obj=coordinates, path_to_file=base_results_path /
+                        Path(f'{n_dofs}/coordinates.pkl'))
+            dump_object(obj=boundaries, path_to_file=base_results_path /
+                        Path(f'{n_dofs}/boundaries.pkl'))
+
+        show_solution(coordinates=coordinates, solution=current_iterate)
 
         # -------------------------------------
         # compute all local energy gains via VA
         # -------------------------------------
-        print('compute all local energy gains via VA...')
         element_to_neighbours = get_element_to_neighbours(elements=elements)
         local_energy_differences_va = algo_4_1.get_all_local_enery_gains(
             coordinates=coordinates,
@@ -137,69 +173,17 @@ def main() -> None:
             uD=uD,
             rhs_function=f, lamba_a=1)
 
-        # ---------------------------------------------------
-        # deciding where to refine and where to locally solve
-        # ---------------------------------------------------
-        # if the energy difference is equal, we prefer locally solving
-        # instead of adding more "expensive" degrees of freedom
-        refine = (
-            local_energy_differences_va
-            > FUDGE_PARAMETER * local_energy_differences_context)
-        solve = np.logical_not(refine)
-
-        # -----------------------------------------------------------------
-        # performing a global increment for the elements marked for solving
-        # -----------------------------------------------------------------
-        global_increment = np.zeros_like(current_iterate)
-
-        reduced_local_increments = local_increments[solve]
-        reduced_elements = elements[solve]
-        reduced_energy_differences_solve = local_energy_differences_context[solve]
-
-        # sorting such that local increments corresponding
-        # to biggest energy gain come last
-        energy_based_sorting = np.argsort(reduced_energy_differences_solve)
-        reduced_elements = reduced_elements[energy_based_sorting]
-        reduced_local_increments = reduced_local_increments[
-            energy_based_sorting]
-
-        # collect all local increments in a single vector
-        # in a way that local increments corresponding to the
-        # same node are overwritten by the one corresponding
-        # to the bigger change in energy
-        for element, local_increment in zip(
-                reduced_elements, reduced_local_increments):
-            global_increment[element] = local_increment
-
-        # performing the update
-        current_iterate += global_increment
-
-        # show_solution(coordinates=coordinates, solution=current_iterate)
-
-        # dump snapshot of current current state
-        dump_object(obj=current_iterate, path_to_file=base_results_path /
-                    Path(f'{n_sweep+1}/solution.pkl'))
-        dump_object(obj=elements, path_to_file=base_results_path /
-                    Path(f'{n_sweep+1}/elements.pkl'))
-        dump_object(obj=coordinates, path_to_file=base_results_path /
-                    Path(f'{n_sweep+1}/coordinates.pkl'))
-        dump_object(obj=boundaries, path_to_file=base_results_path /
-                    Path(f'{n_sweep+1}/boundaries.pkl'))
-
         # -------------------------------------
         # refine elements marked for refinement
         # -------------------------------------
-        reduced_local_energy_differences_va = local_energy_differences_va[refine]
-        reduced_marked = doerfler_marking(
-            input=reduced_local_energy_differences_va, theta=THETA)
-        marked = np.zeros(n_elements, dtype=bool)
-        marked[refine] = reduced_marked
+        marked = doerfler_marking(
+            input=local_energy_differences_va, theta=THETA)
 
         coordinates, elements, boundaries, current_iterate = \
             refinement.refineNVB(
                 coordinates=coordinates,
                 elements=elements,
-                marked_elements=refine,
+                marked_elements=marked,
                 boundary_conditions=boundaries,
                 to_embed=current_iterate)
 
