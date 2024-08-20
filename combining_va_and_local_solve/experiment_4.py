@@ -10,7 +10,6 @@ from iterative_methods.local_solvers \
 from scipy.sparse import csr_matrix
 from variational_adaptivity.markers import doerfler_marking
 import argparse
-from p1afempy.mesh import show_mesh
 import matplotlib.pyplot as plt
 from matplotlib import cm
 import tqdm
@@ -20,13 +19,13 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--theta", type=float, required=True,
                         help="value of theta used in the Dörfler marking")
-    parser.add_argument("--sweeps", type=int, required=True,
-                        help="number of full sweeps before any refinement"
-                        " takes place")
+    parser.add_argument("--tol", type=int, required=True,
+                        help="tolerance of relative energy error"
+                        " to exact galerkin solution before VA kicks in")
     args = parser.parse_args()
 
     THETA = args.theta
-    N_FULL_SWEEPS = args.sweeps
+    TOL = args.tol
 
     # ------------------------------------------------
     # Setup
@@ -38,8 +37,8 @@ def main() -> None:
     path_to_dirichlet = base_path / Path('dirichlet.dat')
 
     base_results_path = (
-        Path('results/experiment_3') /
-        Path(f'theta-{THETA}_sweeps-{N_FULL_SWEEPS}'))
+        Path('results/experiment_4') /
+        Path(f'theta-{THETA}_tol-{TOL}'))
 
     coordinates, elements = io_helpers.read_mesh(
         path_to_coordinates=path_to_coordinates,
