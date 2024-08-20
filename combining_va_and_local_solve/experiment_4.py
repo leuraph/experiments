@@ -99,6 +99,22 @@ def main() -> None:
             lhs_matrix=stiffness_matrix,
             rhs_vector=right_hand_side)
 
+        # -----------------------------------
+        # compute and drop the exact solution
+        # -----------------------------------
+        solution, _ = solvers.solve_laplace(
+            coordinates=coordinates,
+            elements=elements,
+            dirichlet=boundaries[0],
+            neumann=np.array([]),
+            f=f,
+            g=None,
+            uD=uD)
+
+        dump_object(
+            obj=solution, path_to_file=base_results_path /
+            Path(f'{n_dofs}/exact_solution.pkl'))
+
         # ------------------------------------------------------------
         # compute all energy gains / local increments via local solver
         # ------------------------------------------------------------
@@ -159,20 +175,6 @@ def main() -> None:
                         Path(f'{n_dofs}/coordinates.pkl'))
             dump_object(obj=boundaries, path_to_file=base_results_path /
                         Path(f'{n_dofs}/boundaries.pkl'))
-
-        # compute and drop the exact solution
-        solution, _ = solvers.solve_laplace(
-            coordinates=coordinates,
-            elements=elements,
-            dirichlet=boundaries[0],
-            neumann=np.array([]),
-            f=f,
-            g=None,
-            uD=uD)
-
-        dump_object(
-            obj=solution, path_to_file=base_results_path /
-            Path(f'{n_dofs}/exact_solution.pkl'))
 
         # --------------------------------------------------------------
         # compute all local energy gains via VA, based on exact solution
