@@ -20,5 +20,6 @@ __pycache__/
 
 .vscode/
 
-# Slurm submit scipts
+# Slurm submit scipts / output
 *.sl
+*.out
