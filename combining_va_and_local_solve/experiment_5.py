@@ -13,6 +13,7 @@ import argparse
 import matplotlib.pyplot as plt
 from matplotlib import cm
 import tqdm
+import copy
 
 
 def main() -> None:
@@ -20,8 +21,8 @@ def main() -> None:
     parser.add_argument("--theta", type=float, required=True,
                         help="value of theta used in the Dörfler marking")
     parser.add_argument("--tol", type=float, required=True,
-                        help="tolerance of relative energy error"
-                        " to exact galerkin solution before VA kicks in")
+                        help="tolerance of relative difference in energy norm"
+                        " between consecutive iterates before VA kicks in")
     args = parser.parse_args()
 
     THETA = args.theta
@@ -37,7 +38,7 @@ def main() -> None:
     path_to_dirichlet = base_path / Path('dirichlet.dat')
 
     base_results_path = (
-        Path('results/experiment_4') /
+        Path('results/experiment_5') /
         Path(f'theta-{THETA}_tol-{TOL}'))
 
     coordinates, elements = io_helpers.read_mesh(
@@ -48,6 +49,7 @@ def main() -> None:
         path_to_boundary=path_to_dirichlet,
         shift_indices=False)]
 
+    # ------------------
     # initial refinement
     # ------------------
     n_initial_refinements = 3
@@ -122,6 +124,7 @@ def main() -> None:
         print('performing full sweeps of local solves')
         max_n_sweeps = 100
         min_n_sweeps = 5
+        old_iterate = copy.deepcopy(current_iterate)
         for n_sweep in tqdm.tqdm(range(max_n_sweeps)):
             local_energy_differences_solve = []
             local_increments = []
@@ -178,18 +181,23 @@ def main() -> None:
                         Path(f'{n_dofs}/boundaries.pkl'))
 
             if n_sweep + 1 < min_n_sweeps:
+                # keep track of old iterate and continue
+                old_iterate = copy.deepcopy(current_iterate)
                 continue
 
             def energy_norm(u):
                 return np.sqrt(0.5 * u.dot(stiffness_matrix.dot(u)))
 
-            relative_energy_error = abs(
-                energy_norm(solution - current_iterate)
-                / energy_norm(solution)
+            relative_energy_norm_difference = abs(
+                energy_norm(old_iterate - current_iterate)
+                / energy_norm(old_iterate)
             )
 
-            if relative_energy_error < TOL:
+            if relative_energy_norm_difference < TOL:
                 break
+
+            # keep track of old iterate
+            old_iterate = copy.deepcopy(current_iterate)
 
         # --------------------------------------------------------------
         # compute all local energy gains via VA, based on exact solution
