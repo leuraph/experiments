@@ -81,6 +81,7 @@ def main() -> None:
             ar2=np.unique(boundaries[0].flatten()))
         free_nodes = np.zeros(n_vertices, dtype=bool)
         free_nodes[indices_of_free_nodes] = 1
+        n_dofs = np.sum(free_nodes)
 
         # assembly of right hand side
         right_hand_side = solvers.get_right_hand_side(
@@ -119,7 +120,8 @@ def main() -> None:
         # compute all energy gains / local increments via local solver
         # ------------------------------------------------------------
         print('performing full sweeps of local solves')
-        for n_sweep in tqdm.tqdm(range(N_FULL_SWEEPS)):
+        max_n_sweeps = 100
+        for n_sweep in range(max_n_sweeps):
             local_energy_differences_solve = []
             local_increments = []
 
@@ -165,8 +167,6 @@ def main() -> None:
             local_context_solver.flush_cache()
 
             # dump snapshot of current current state
-            n_dofs = np.sum(free_nodes)
-
             dump_object(obj=current_iterate, path_to_file=base_results_path /
                         Path(f'{n_dofs}/{n_sweep+1}/solution.pkl'))
             dump_object(obj=elements, path_to_file=base_results_path /
@@ -175,6 +175,17 @@ def main() -> None:
                         Path(f'{n_dofs}/coordinates.pkl'))
             dump_object(obj=boundaries, path_to_file=base_results_path /
                         Path(f'{n_dofs}/boundaries.pkl'))
+
+            def energy_norm(u):
+                return np.sqrt(0.5 * u.dot(stiffness_matrix.dot(u)))
+
+            relative_energy_error = abs(
+                energy_norm(solution - current_iterate)
+                / energy_norm(solution)
+            )
+
+            if relative_energy_error < TOL:
+                break
 
         # --------------------------------------------------------------
         # compute all local energy gains via VA, based on exact solution
