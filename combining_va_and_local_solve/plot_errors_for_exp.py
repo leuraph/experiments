@@ -52,7 +52,6 @@ def main() -> None:
                 errs.append(energy_norm_error_squared)
         energy_norm_errors_squared.append(errs)
 
-    energy_norm_errors_squared = np.array(energy_norm_errors_squared)
     energy_norm_error_squared_exact_solutions = np.array(
         energy_norm_error_squared_exact_solutions)
     n_dofs = np.array(n_dofs)
@@ -83,7 +82,8 @@ def main() -> None:
     n_dofs = n_dofs[sort]
     energy_norm_error_squared_exact_solutions = \
         energy_norm_error_squared_exact_solutions[sort]
-    energy_norm_errors_squared = energy_norm_errors_squared[sort]
+    energy_norm_errors_squared = \
+        [energy_norm_errors_squared[k] for k in sort]
 
     e_star = energy_norm_error_squared_exact_solutions[1]
     n_star = n_dofs[1]
