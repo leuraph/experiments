@@ -21,8 +21,8 @@ def main() -> None:
     parser.add_argument("--theta", type=float, required=True,
                         help="value of theta used in the Dörfler marking")
     parser.add_argument("--tol", type=float, required=True,
-                        help="tolerance of relative difference in energy norm"
-                        " between consecutive iterates before VA kicks in")
+                        help="tolerance of relative difference in energy"
+                        " of consecutive iterates before VA kicks in")
     args = parser.parse_args()
 
     THETA = args.theta
@@ -38,7 +38,7 @@ def main() -> None:
     path_to_dirichlet = base_path / Path('dirichlet.dat')
 
     base_results_path = (
-        Path('results/experiment_5') /
+        Path('results/experiment_6') /
         Path(f'theta-{THETA}_tol-{TOL}'))
 
     coordinates, elements = io_helpers.read_mesh(
@@ -185,15 +185,16 @@ def main() -> None:
                 old_iterate = copy.deepcopy(current_iterate)
                 continue
 
-            def energy_norm(u):
-                return np.sqrt(0.5 * u.dot(stiffness_matrix.dot(u)))
+            def energy(u):
+                return 0.5 * u.dot(stiffness_matrix.dot(u)) \
+                    - right_hand_side.dot(u)
 
-            relative_energy_norm_difference = abs(
-                energy_norm(old_iterate - current_iterate)
-                / energy_norm(old_iterate)
+            relative_energy_difference = abs(
+                (energy(old_iterate) - energy(current_iterate))
+                / energy(old_iterate)
             )
 
-            if relative_energy_norm_difference < TOL:
+            if relative_energy_difference < TOL:
                 break
 
             # keep track of old iterate
