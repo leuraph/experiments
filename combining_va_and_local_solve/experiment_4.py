@@ -121,7 +121,8 @@ def main() -> None:
         # ------------------------------------------------------------
         print('performing full sweeps of local solves')
         max_n_sweeps = 100
-        for n_sweep in range(max_n_sweeps):
+        min_n_sweeps = 5
+        for n_sweep in tqdm.tqdm(range(max_n_sweeps)):
             local_energy_differences_solve = []
             local_increments = []
 
@@ -175,6 +176,9 @@ def main() -> None:
                         Path(f'{n_dofs}/coordinates.pkl'))
             dump_object(obj=boundaries, path_to_file=base_results_path /
                         Path(f'{n_dofs}/boundaries.pkl'))
+
+            if n_sweep + 1 < min_n_sweeps:
+                continue
 
             def energy_norm(u):
                 return np.sqrt(0.5 * u.dot(stiffness_matrix.dot(u)))
