@@ -186,7 +186,7 @@ def main() -> None:
                 continue
 
             def energy_norm(u):
-                return np.sqrt(0.5 * u.dot(stiffness_matrix.dot(u)))
+                return np.sqrt(u.dot(stiffness_matrix.dot(u)))
 
             relative_energy_norm_difference = abs(
                 energy_norm(old_iterate - current_iterate)
