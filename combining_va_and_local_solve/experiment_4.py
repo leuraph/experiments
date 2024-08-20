@@ -19,7 +19,7 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--theta", type=float, required=True,
                         help="value of theta used in the Dörfler marking")
-    parser.add_argument("--tol", type=int, required=True,
+    parser.add_argument("--tol", type=float, required=True,
                         help="tolerance of relative energy error"
                         " to exact galerkin solution before VA kicks in")
     args = parser.parse_args()
