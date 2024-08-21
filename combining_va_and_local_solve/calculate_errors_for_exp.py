@@ -14,6 +14,10 @@ def main() -> None:
 
     base_result_path = Path(args.path)
 
+    # Cubature rule used for approximating
+    # energy norm distance to exact solution
+    cubature_rule = CubatureRuleEnum.SMPLX1
+
     for path_to_ndof_dir in list(base_result_path.iterdir()):
         if path_to_ndof_dir.is_dir():
             print(f'considering subdirectory: {path_to_ndof_dir.name}')
@@ -30,7 +34,7 @@ def main() -> None:
                 gradient_u=grad_u,
                 elements=elements,
                 coordinates=coordinates,
-                cubature_rule=CubatureRuleEnum.SMPLX1)
+                cubature_rule=cubature_rule)
 
             dump_object(
                 obj=energy_norm_error_squared_exact,
@@ -48,7 +52,7 @@ def main() -> None:
                         gradient_u=grad_u,
                         elements=elements,
                         coordinates=coordinates,
-                        cubature_rule=CubatureRuleEnum.SMPLX1)
+                        cubature_rule=cubature_rule)
 
                     dump_object(
                         obj=energy_norm_error_squared,
