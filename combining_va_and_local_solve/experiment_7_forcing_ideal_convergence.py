@@ -30,7 +30,7 @@ def main() -> None:
     TOL = args.tol
 
     # maximum number of full sweeps performed on each subspace
-    max_n_sweeps = 1000
+    max_n_sweeps = 100
 
     # number of full sweeps performed on the first subspace
     # NOTE this is needed as, for one space, we cannot calculate a slope
@@ -130,9 +130,19 @@ def main() -> None:
             g=None,
             uD=uD)
 
+        energy_norm_error_squared_exact = calculate_energy_norm_error(
+                current_iterate=solution,
+                gradient_u=grad_u,
+                elements=elements,
+                coordinates=coordinates,
+                cubature_rule=CubatureRuleEnum.SMPLX1)
+
         dump_object(
             obj=solution, path_to_file=base_results_path /
             Path(f'{current_n_dof}/exact_solution.pkl'))
+        dump_object(
+            obj=energy_norm_error_squared_exact, path_to_file=base_results_path /
+            Path(f'{current_n_dof}/energy_norm_error_squared_exact.pkl'))
 
         # --------------------------------------
         # looping over full sweeps on fixed mesh
@@ -195,9 +205,10 @@ def main() -> None:
             # --------------------------------------
             # dump snapshot of current current state
             # --------------------------------------
-            # TODO dump the energy norm error, too
             dump_object(obj=current_iterate, path_to_file=base_results_path /
                         Path(f'{current_n_dof}/{n_sweep+1}/solution.pkl'))
+            dump_object(obj=current_energy_norm_error_squared, path_to_file=base_results_path /
+                        Path(f'{current_n_dof}/{n_sweep+1}/energy_norm_error_squared.pkl'))
             dump_object(obj=elements, path_to_file=base_results_path /
                         Path(f'{current_n_dof}/elements.pkl'))
             dump_object(obj=coordinates, path_to_file=base_results_path /
@@ -206,7 +217,7 @@ def main() -> None:
                         Path(f'{current_n_dof}/boundaries.pkl'))
 
             # if this is the very first sweep, we cannot calculate any slope
-            if n_sweep == 0:
+            if n_refinement == 0:
                 if n_sweep + 1 >= n_sweeps_first_galerkin_space:
                     break
                 continue
@@ -262,7 +273,7 @@ def get_slope(
         old_n_dof: int) -> float:
     return np.log(
         current_energy_norm_error_squared / old_energy_norm_error_squared)\
-            / np.log(current_n_dof - old_n_dof)
+            / np.log(current_n_dof / old_n_dof)
 
 
 def show_solution(coordinates, solution):
