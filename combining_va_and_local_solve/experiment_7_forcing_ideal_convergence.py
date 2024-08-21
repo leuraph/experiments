@@ -14,19 +14,30 @@ import matplotlib.pyplot as plt
 from matplotlib import cm
 import tqdm
 import copy
-
+from iterative_methods.energy_norm import calculate_energy_norm_error
+from experiment_setup import grad_u
+from triangle_cubature.cubature_rule import CubatureRuleEnum
 
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--theta", type=float, required=True,
                         help="value of theta used in the Dörfler marking")
     parser.add_argument("--tol", type=float, required=True,
-                        help="tolerance of relative difference in energy"
-                        " of consecutive iterates before VA kicks in")
+                        help="forcing ideal convergence rate up to tol")
     args = parser.parse_args()
 
     THETA = args.theta
     TOL = args.tol
+
+    # maximum number of full sweeps performed on each subspace
+    max_n_sweeps = 1000
+
+    # number of full sweeps performed on the first subspace
+    # NOTE this is needed as, for one space, we cannot calculate a slope
+    n_sweeps_first_galerkin_space = 50
+
+    # minimum number of full sweeps performed on each subspace
+    min_n_sweeps = 5
 
     # ------------------------------------------------
     # Setup
@@ -38,7 +49,7 @@ def main() -> None:
     path_to_dirichlet = base_path / Path('dirichlet.dat')
 
     base_results_path = (
-        Path('results/experiment_6') /
+        Path('results/experiment_7') /
         Path(f'theta-{THETA}_tol-{TOL}'))
 
     coordinates, elements = io_helpers.read_mesh(
@@ -62,17 +73,22 @@ def main() -> None:
                                  boundary_conditions=boundaries)
 
     # ------------------------------------------------
-    # variational adaptivity + Local Solvers
+    # initializing very first iterate to random values
     # ------------------------------------------------
-
-    # initializing the solution to random values
     current_iterate = np.random.rand(coordinates.shape[0])
     # forcing the boundary values to be zero, nevertheless
     current_iterate[np.unique(boundaries[0].flatten())] = 0.
 
+    # ------------------------------------------------
+    # variational adaptivity + Local Solvers
+    # ------------------------------------------------
+
+    old_n_dof = 0.
+    old_energy_norm_error_squared = 0.
+
     # number of refinement steps using variational adaptivity
     n_va_refinement_steps = 8
-    for _ in range(n_va_refinement_steps):
+    for n_refinement in range(n_va_refinement_steps):
         # -------------------------------------
         # Adapting local Solver to current mesh
         # -------------------------------------
@@ -83,7 +99,7 @@ def main() -> None:
             ar2=np.unique(boundaries[0].flatten()))
         free_nodes = np.zeros(n_vertices, dtype=bool)
         free_nodes[indices_of_free_nodes] = 1
-        n_dofs = np.sum(free_nodes)
+        current_n_dof = np.sum(free_nodes)
 
         # assembly of right hand side
         right_hand_side = solvers.get_right_hand_side(
@@ -116,20 +132,18 @@ def main() -> None:
 
         dump_object(
             obj=solution, path_to_file=base_results_path /
-            Path(f'{n_dofs}/exact_solution.pkl'))
+            Path(f'{current_n_dof}/exact_solution.pkl'))
 
-        # ------------------------------------------------------------
-        # compute all energy gains / local increments via local solver
-        # ------------------------------------------------------------
-        print('performing full sweeps of local solves')
-        max_n_sweeps = 100
-        min_n_sweeps = 5
-        old_iterate = copy.deepcopy(current_iterate)
+        # --------------------------------------
+        # looping over full sweeps on fixed mesh
+        # --------------------------------------
         for n_sweep in tqdm.tqdm(range(max_n_sweeps)):
             local_energy_differences_solve = []
             local_increments = []
 
-            # solving locally on each element, separately
+            # -------------------------------------------------------------
+            # compute local increments and corresponding energy differences
+            # -------------------------------------------------------------
             for k in range(n_elements):
                 local_increment, local_energy_difference = \
                     local_context_solver.get_local_increment_and_energy_difference(
@@ -170,35 +184,47 @@ def main() -> None:
             # the global contribution has changed
             local_context_solver.flush_cache()
 
-            # dump snapshot of current current state
-            dump_object(obj=current_iterate, path_to_file=base_results_path /
-                        Path(f'{n_dofs}/{n_sweep+1}/solution.pkl'))
-            dump_object(obj=elements, path_to_file=base_results_path /
-                        Path(f'{n_dofs}/elements.pkl'))
-            dump_object(obj=coordinates, path_to_file=base_results_path /
-                        Path(f'{n_dofs}/coordinates.pkl'))
-            dump_object(obj=boundaries, path_to_file=base_results_path /
-                        Path(f'{n_dofs}/boundaries.pkl'))
-
-            if n_sweep + 1 < min_n_sweeps:
-                # keep track of old iterate and continue
-                old_iterate = copy.deepcopy(current_iterate)
-                continue
-
-            def energy(u):
-                return 0.5 * u.dot(stiffness_matrix.dot(u)) \
-                    - right_hand_side.dot(u)
-
-            relative_energy_difference = abs(
-                (energy(old_iterate) - energy(current_iterate))
-                / energy(old_iterate)
+            current_energy_norm_error_squared = calculate_energy_norm_error(
+                current_iterate=current_iterate,
+                gradient_u=grad_u,
+                elements=elements,
+                coordinates=coordinates,
+                cubature_rule=CubatureRuleEnum.SMPLX1
             )
 
-            if relative_energy_difference < TOL:
+            # --------------------------------------
+            # dump snapshot of current current state
+            # --------------------------------------
+            # TODO dump the energy norm error, too
+            dump_object(obj=current_iterate, path_to_file=base_results_path /
+                        Path(f'{current_n_dof}/{n_sweep+1}/solution.pkl'))
+            dump_object(obj=elements, path_to_file=base_results_path /
+                        Path(f'{current_n_dof}/elements.pkl'))
+            dump_object(obj=coordinates, path_to_file=base_results_path /
+                        Path(f'{current_n_dof}/coordinates.pkl'))
+            dump_object(obj=boundaries, path_to_file=base_results_path /
+                        Path(f'{current_n_dof}/boundaries.pkl'))
+
+            # if this is the very first sweep, we cannot calculate any slope
+            if n_sweep == 0:
+                if n_sweep + 1 >= n_sweeps_first_galerkin_space:
+                    break
+                continue
+
+            # calculate the slope
+            current_slope = get_slope(
+                current_energy_norm_error_squared=current_energy_norm_error_squared,
+                old_energy_norm_error_squared=old_energy_norm_error_squared,
+                current_n_dof=current_n_dof,
+                old_n_dof=old_n_dof)
+            if current_slope < -1. + TOL:
                 break
 
-            # keep track of old iterate
-            old_iterate = copy.deepcopy(current_iterate)
+        # -----------------------------------
+        # update old values to current values
+        # -----------------------------------
+        old_n_dof = current_n_dof
+        old_energy_norm_error_squared = current_energy_norm_error_squared
 
         # --------------------------------------------------------------
         # compute all local energy gains via VA, based on exact solution
@@ -227,6 +253,16 @@ def main() -> None:
                 marked_elements=marked,
                 boundary_conditions=boundaries,
                 to_embed=current_iterate)
+
+
+def get_slope(
+        current_energy_norm_error_squared: np.ndarray,
+        old_energy_norm_error_squared: np.ndarray,
+        current_n_dof: int,
+        old_n_dof: int) -> float:
+    return np.log(
+        current_energy_norm_error_squared / old_energy_norm_error_squared)\
+            / np.log(current_n_dof - old_n_dof)
 
 
 def show_solution(coordinates, solution):
