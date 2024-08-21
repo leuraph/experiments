@@ -18,24 +18,16 @@ def main() -> None:
     # ------------
     # read results
     # ------------
-    energy_norm_errors_squared = []
-    energy_norm_error_squared_exact_solutions = []
     n_dofs = []
+    n_sweeps = []
 
     for n_dofs_dir in base_result_path.iterdir():
 
         path_to_boundaries = n_dofs_dir / Path('boundaries.pkl')
         path_to_coordinates = n_dofs_dir / Path('coordinates.pkl')
-        path_to_energy_norm_error_squared_exact = n_dofs_dir / Path(
-            'energy_norm_error_squared_exact.pkl')
 
         coordinates = load_dump(path_to_coordinates)
         boundaries = load_dump(path_to_boundaries)
-        energy_norm_error_squared_exact = load_dump(
-            path_to_energy_norm_error_squared_exact)
-
-        energy_norm_error_squared_exact_solutions.append(
-            energy_norm_error_squared_exact)
 
         n_vertices = coordinates.shape[0]
         indices_of_free_nodes = np.setdiff1d(
@@ -44,17 +36,21 @@ def main() -> None:
 
         n_dofs.append(len(indices_of_free_nodes))
 
-        errs = []
+        n_sweeps_on_this_mesh = 0
         for n_sweeps_dir in n_dofs_dir.iterdir():
             if n_sweeps_dir.is_dir():
-                energy_norm_error_squared = load_dump(
-                    path_to_dump=n_sweeps_dir/"energy_norm_error_squared.pkl")
-                errs.append(energy_norm_error_squared)
-        energy_norm_errors_squared.append(errs)
+                n_sweep_of_this_dir = int(n_sweeps_dir.name)
+                if n_sweeps_on_this_mesh < n_sweep_of_this_dir:
+                    n_sweeps_on_this_mesh = n_sweep_of_this_dir
+        n_sweeps.append(n_sweeps_on_this_mesh)
 
-    energy_norm_error_squared_exact_solutions = np.array(
-        energy_norm_error_squared_exact_solutions)
     n_dofs = np.array(n_dofs)
+    n_sweeps = np.array(n_sweeps)
+
+    sort = np.argsort(n_dofs)
+
+    n_dofs = n_dofs[sort]
+    n_sweeps = n_sweeps[sort]
 
     # --------
     # plotting
@@ -75,44 +71,32 @@ def main() -> None:
 
     fig, ax = plt.subplots()
     ax.set_xlabel(r'$n_{\text{dof}}$')
-    ax.set_ylabel(r'$\| \widetilde{u} - u \|_a^2$')
+    ax.set_ylabel(r'$n_{\text{sweeps}}$')
     ax.grid(True)
 
-    sort = np.argsort(n_dofs)
-    n_dofs = n_dofs[sort]
-    energy_norm_error_squared_exact_solutions = \
-        energy_norm_error_squared_exact_solutions[sort]
-    energy_norm_errors_squared = \
-        [energy_norm_errors_squared[k] for k in sort]
-
-    e_star = energy_norm_error_squared_exact_solutions[1]
-    n_star = n_dofs[1]
-
-    def ideal_convergence(n):
-        return e_star * n_star / n
-
-    ax.loglog(
-        np.unique(n_dofs), ideal_convergence(np.unique(n_dofs)),
-        linestyle='--',
-        linewidth=1, alpha=0.6, color='black')
-
-    for k, n_dof in enumerate(n_dofs):
-        mark, = ax.loglog(
-            n_dof*np.ones_like(energy_norm_errors_squared[k]),
-            energy_norm_errors_squared[k],
-            linestyle=None, marker='_', markersize=8,
-            linewidth=0, alpha=1.0, color=COLOR_GREEN)
-
-    line, = ax.loglog(
-        n_dofs, energy_norm_error_squared_exact_solutions,
+    line, = ax.semilogx(
+        n_dofs, n_sweeps,
         '--', linewidth=1.2, alpha=0., color=COLOR_RED)
-    mark, = ax.loglog(
-        n_dofs, energy_norm_error_squared_exact_solutions,
-        linestyle=None, marker='_', markersize=8,
+    mark, = ax.semilogx(
+        n_dofs, n_sweeps,
+        linestyle=None, marker='s', markersize=8,
         linewidth=0, alpha=0.6, color=COLOR_RED)
     merged.append((line, mark))
 
-    # ax.legend(merged, labels)
+    max_n_sweeps = 100
+    min_n_sweeps = 5
+    ax.hlines(
+        y=max_n_sweeps, xmin=n_dofs[0], xmax=n_dofs[-1], colors='red',
+        label=r'$n_{\text{sweeps, max}}$')
+    ax.hlines(
+        y=min_n_sweeps, xmin=n_dofs[0], xmax=n_dofs[-1], colors='green',
+        label=r'$n_{\text{sweeps, min}}$')
+
+    ax.set_xlim(
+        left=1e1,
+        right=1e6)
+
+    ax.legend()
     fig.savefig(
         path_to_plot,
         dpi=300, bbox_inches="tight")
