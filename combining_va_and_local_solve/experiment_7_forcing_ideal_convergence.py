@@ -24,13 +24,14 @@ def main() -> None:
                         help="value of theta used in the Dörfler marking")
     parser.add_argument("--tol", type=float, required=True,
                         help="forcing ideal convergence rate up to tol")
+    parser.add_argument("--max_n_sweeps", type=int, required=True,
+                        help="maximum number of full sweeps performed"
+                        " on each subspace")
     args = parser.parse_args()
 
     THETA = args.theta
     TOL = args.tol
-
-    # maximum number of full sweeps performed on each subspace
-    max_n_sweeps = 100
+    MAX_N_SWEEPS = args.max_n_sweeps
 
     # number of full sweeps performed on the first subspace
     # NOTE this is needed as, for one space, we cannot calculate a slope
@@ -50,7 +51,7 @@ def main() -> None:
 
     base_results_path = (
         Path('results/experiment_7') /
-        Path(f'theta-{THETA}_tol-{TOL}'))
+        Path(f'theta-{THETA}_tol-{TOL}_max-n-sweeps-{MAX_N_SWEEPS}'))
 
     coordinates, elements = io_helpers.read_mesh(
         path_to_coordinates=path_to_coordinates,
@@ -147,7 +148,7 @@ def main() -> None:
         # --------------------------------------
         # looping over full sweeps on fixed mesh
         # --------------------------------------
-        for n_sweep in tqdm.tqdm(range(max_n_sweeps)):
+        for n_sweep in tqdm.tqdm(range(MAX_N_SWEEPS)):
             local_energy_differences_solve = []
             local_increments = []
 
@@ -215,6 +216,9 @@ def main() -> None:
                         Path(f'{current_n_dof}/coordinates.pkl'))
             dump_object(obj=boundaries, path_to_file=base_results_path /
                         Path(f'{current_n_dof}/boundaries.pkl'))
+
+            if n_sweep + 1 < min_n_sweeps:
+                continue
 
             # if this is the very first sweep, we cannot calculate any slope
             if n_refinement == 0:
