@@ -15,6 +15,9 @@ def main() -> None:
     path_to_plot = Path(args.o)
     base_result_path = Path(args.path)
 
+    max_n_sweeps = 100
+    min_n_sweeps = 5
+
     # ------------
     # read results
     # ------------
@@ -83,8 +86,6 @@ def main() -> None:
         linewidth=0, alpha=0.6, color=COLOR_RED)
     merged.append((line, mark))
 
-    max_n_sweeps = 100
-    min_n_sweeps = 5
     ax.hlines(
         y=max_n_sweeps, xmin=n_dofs[0], xmax=n_dofs[-1], colors='red',
         label=r'$n_{\text{sweeps, max}}$')
