@@ -88,7 +88,7 @@ def main() -> None:
     old_energy_norm_error_squared = 0.
 
     # number of refinement steps using variational adaptivity
-    n_va_refinement_steps = 8
+    n_va_refinement_steps = 10
     for n_refinement in range(n_va_refinement_steps):
         # -------------------------------------
         # Adapting local Solver to current mesh
