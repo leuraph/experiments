@@ -19,13 +19,13 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--theta", type=float, required=True,
                         help="value of theta used in the Dörfler marking")
-    parser.add_argument("--tol", type=float, required=True,
-                        help="tolerance of relative energy error"
-                        " to exact galerkin solution before VA kicks in")
+    parser.add_argument("--c", type=float, required=True,
+                        help="if || u_h - u_h^n ||_a <= c dof^-1/2, then"
+                        " VA kicks in")
     args = parser.parse_args()
 
     THETA = args.theta
-    TOL = args.tol
+    C = args.c
 
     # ------------------------------------------------
     # Setup
@@ -37,8 +37,8 @@ def main() -> None:
     path_to_dirichlet = base_path / Path('dirichlet.dat')
 
     base_results_path = (
-        Path('results/experiment_4') /
-        Path(f'theta-{THETA}_tol-{TOL}'))
+        Path('results/experiment_8') /
+        Path(f'theta-{THETA}_c-{C}'))
 
     coordinates, elements = io_helpers.read_mesh(
         path_to_coordinates=path_to_coordinates,
@@ -183,12 +183,11 @@ def main() -> None:
             def energy_norm(u):
                 return np.sqrt(u.dot(stiffness_matrix.dot(u)))
 
-            relative_energy_error = abs(
-                energy_norm(solution - current_iterate)
-                / energy_norm(solution)
+            energy_error_to_galerkin_solution = (
+                energy_norm(current_iterate - solution)
             )
 
-            if relative_energy_error < TOL:
+            if energy_error_to_galerkin_solution <= C / np.sqrt(n_dofs):
                 break
 
         # --------------------------------------------------------------
