@@ -27,6 +27,9 @@ def main() -> None:
     THETA = args.theta
     C = args.c
 
+    max_n_sweeps = 100
+    min_n_sweeps = 5
+
     # ------------------------------------------------
     # Setup
     # ------------------------------------------------
@@ -120,8 +123,6 @@ def main() -> None:
         # compute all energy gains / local increments via local solver
         # ------------------------------------------------------------
         print('performing full sweeps of local solves')
-        max_n_sweeps = 100
-        min_n_sweeps = 5
         for n_sweep in tqdm.tqdm(range(max_n_sweeps)):
             local_energy_differences_solve = []
             local_increments = []
