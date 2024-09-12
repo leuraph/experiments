@@ -5,13 +5,9 @@ from pathlib import Path
 from variational_adaptivity import algo_4_1
 from experiment_setup import f, uD
 from load_save_dumps import dump_object
-from iterative_methods.local_solvers \
-    import LocalContextSolver
 from scipy.sparse import csr_matrix
 from variational_adaptivity.markers import doerfler_marking
 import argparse
-import matplotlib.pyplot as plt
-from matplotlib import cm
 import tqdm
 
 
@@ -74,9 +70,6 @@ def main() -> None:
     # number of refinement steps using variational adaptivity
     n_va_refinement_steps = 8
     for _ in range(n_va_refinement_steps):
-        # -------------------------------------
-        # Adapting local Solver to current mesh
-        # -------------------------------------
         n_vertices = coordinates.shape[0]
         n_elements = elements.shape[0]
         indices_of_free_nodes = np.setdiff1d(
@@ -97,12 +90,6 @@ def main() -> None:
             coordinates=coordinates,
             elements=elements))
 
-        local_context_solver = LocalContextSolver(
-            elements=elements,
-            free_nodes=free_nodes,
-            lhs_matrix=stiffness_matrix,
-            rhs_vector=right_hand_side)
-
         # -----------------------------------
         # compute and drop the exact solution
         # -----------------------------------
@@ -122,51 +109,10 @@ def main() -> None:
         # ------------------------------------------------------------
         # compute all energy gains / local increments via local solver
         # ------------------------------------------------------------
-        print('performing full sweeps of local solves')
+        print('performing global update steps')
         for n_sweep in tqdm.tqdm(range(max_n_sweeps)):
-            local_energy_differences_solve = []
-            local_increments = []
 
-            # solving locally on each element, separately
-            for k in range(n_elements):
-                local_increment, local_energy_difference = \
-                    local_context_solver.get_local_increment_and_energy_difference(
-                        current_iterate=current_iterate,
-                        element=k)
-                local_energy_differences_solve.append(local_energy_difference)
-                local_increments.append(local_increment)
-
-            # transforming lists to np.ndarray's
-            local_energy_differences_solve = np.array(
-                local_energy_differences_solve)
-            local_increments = np.array(local_increments)
-
-            # ----------------------------------------------
-            # performing a global increment for all elements
-            # ----------------------------------------------
-            global_increment = np.zeros_like(current_iterate)
-
-            # sorting such that local increments corresponding
-            # to biggest energy gain come last
-            energy_based_sorting = np.argsort(local_energy_differences_solve)
-            sorted_elements = elements[energy_based_sorting]
-            local_increments = local_increments[energy_based_sorting]
-
-            # collect all local increments in a single vector
-            # in a way that local increments corresponding to the
-            # same node are overwritten by the one corresponding
-            # to the bigger change in energy
-            for element, local_increment in zip(
-                    sorted_elements, local_increments):
-                global_increment[element] = local_increment
-
-            # performing the update
-            current_iterate += global_increment
-
-            # flushing the cache asap as, in the next full sweep,
-            # after performing the global update,
-            # the global contribution has changed
-            local_context_solver.flush_cache()
+            # Perform a global update
 
             # dump snapshot of current current state
             dump_object(obj=current_iterate, path_to_file=base_results_path /
@@ -218,37 +164,6 @@ def main() -> None:
                 marked_elements=marked,
                 boundary_conditions=boundaries,
                 to_embed=current_iterate)
-
-
-def show_solution(coordinates, solution):
-    plt.rcParams["mathtext.fontset"] = "cm"
-    plt.rcParams['xtick.labelsize'] = 12
-    plt.rcParams['ytick.labelsize'] = 12
-    plt.rcParams['axes.labelsize'] = 20
-    plt.rcParams['axes.titlesize'] = 12
-    plt.rcParams['legend.fontsize'] = 12
-
-    x_coords, y_coords = zip(*coordinates)
-
-    # Create a 3D scatter plot
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-
-    # Plot the points with scalar values as colors (adjust colormap as needed)
-    _ = ax.plot_trisurf(x_coords, y_coords, solution, linewidth=0.2,
-                        antialiased=True, cmap=cm.viridis)
-    # Add labels to the axes
-    ax.set_xlabel(r'$x$')
-    ax.set_ylabel(r'$y$')
-    ax.set_zlabel(r'$z$')
-
-    ax.set_xticks([0, 1])
-    ax.set_yticks([0, 1])
-    #ax.set_zticks([0, 0.02, 0.04, 0.06])
-
-    # Show and save the plot
-    # fig.savefig(out_path, dpi=300)
-    plt.show()
 
 
 if __name__ == '__main__':
