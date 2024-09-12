@@ -23,8 +23,8 @@ def main() -> None:
     THETA = args.theta
     C = args.c
 
-    max_n_sweeps = 100
-    min_n_sweeps = 5
+    max_n_updates = 100
+    min_n_updates = 5
 
     # ------------------------------------------------
     # Setup
@@ -71,7 +71,6 @@ def main() -> None:
     n_va_refinement_steps = 8
     for _ in range(n_va_refinement_steps):
         n_vertices = coordinates.shape[0]
-        n_elements = elements.shape[0]
         indices_of_free_nodes = np.setdiff1d(
             ar1=np.arange(n_vertices),
             ar2=np.unique(boundaries[0].flatten()))
@@ -110,13 +109,24 @@ def main() -> None:
         # compute all energy gains / local increments via local solver
         # ------------------------------------------------------------
         print('performing global update steps')
-        for n_sweep in tqdm.tqdm(range(max_n_sweeps)):
+        for n_update in tqdm.tqdm(range(max_n_updates)):
 
-            # Perform a global update
+            # ----------------------------------------------------
+            # Perform a global line search in gradient's direction
+            # ----------------------------------------------------
+            residual = right_hand_side - stiffness_matrix.dot(current_iterate)
+
+            # step size calculation
+            numerator = residual.dot(residual)
+            denominator = residual.dot(stiffness_matrix.dot(residual))
+            step_size = numerator / denominator
+
+            # perform update
+            current_iterate += step_size * residual
 
             # dump snapshot of current current state
             dump_object(obj=current_iterate, path_to_file=base_results_path /
-                        Path(f'{n_dofs}/{n_sweep+1}/solution.pkl'))
+                        Path(f'{n_dofs}/{n_update+1}/solution.pkl'))
             dump_object(obj=elements, path_to_file=base_results_path /
                         Path(f'{n_dofs}/elements.pkl'))
             dump_object(obj=coordinates, path_to_file=base_results_path /
@@ -124,7 +134,7 @@ def main() -> None:
             dump_object(obj=boundaries, path_to_file=base_results_path /
                         Path(f'{n_dofs}/boundaries.pkl'))
 
-            if n_sweep + 1 < min_n_sweeps:
+            if n_update + 1 < min_n_updates:
                 continue
 
             def energy_norm(u):
