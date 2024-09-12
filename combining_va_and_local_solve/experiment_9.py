@@ -24,7 +24,7 @@ def main() -> None:
     C = args.c
 
     max_n_updates = 100
-    min_n_updates = 5
+    min_n_updates = 10
 
     # ------------------------------------------------
     # Setup
@@ -114,15 +114,20 @@ def main() -> None:
             # ----------------------------------------------------
             # Perform a global line search in gradient's direction
             # ----------------------------------------------------
-            residual = right_hand_side - stiffness_matrix.dot(current_iterate)
+            residual_free_nodes = (
+                right_hand_side[free_nodes]
+                - stiffness_matrix[free_nodes, :][:, free_nodes].dot(
+                    current_iterate[free_nodes]))
 
             # step size calculation
-            numerator = residual.dot(residual)
-            denominator = residual.dot(stiffness_matrix.dot(residual))
+            numerator = residual_free_nodes.dot(residual_free_nodes)
+            denominator = residual_free_nodes.dot(
+                stiffness_matrix[free_nodes, :][:, free_nodes].dot(
+                    residual_free_nodes))
             step_size = numerator / denominator
 
             # perform update
-            current_iterate += step_size * residual
+            current_iterate[free_nodes] += step_size * residual_free_nodes
 
             # dump snapshot of current current state
             dump_object(obj=current_iterate, path_to_file=base_results_path /
