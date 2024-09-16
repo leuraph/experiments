@@ -91,6 +91,19 @@ To do so, we do the following
 - __Experiment 8__ (force ideal convergence scaling): 
   $$\| u_h - u_h^n \|_a \leq c \, \text{dof}^{-1/2}$$
 
+## Experiment 9
+Line-Search in the direction of the negative gradient, i.e.
+$$
+\mathbf{x}_{n+1} := \mathbf{x}_n + \frac{\mathbf{r}_n^\top \mathbf{r}_n}{\mathbf{r}_n^\top \mathbf{A} \mathbf{r}_n} \mathbf{r}_n,
+$$
+alongside ideal convergence criterion, i.e.
+$$
+\| u_h - u_h^n \| \leq C \text{dof}^{-1/2}.
+$$
+
+1. initialize a random solution which is equal to zero on the boundary of the domain.
+2. on a given mesh, perform the global update a minimum and maximum number of times where, after each update, we also check for convergence in the above sense. 
+
 ---
 
 # Scripts
