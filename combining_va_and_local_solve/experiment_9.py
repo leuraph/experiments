@@ -23,8 +23,8 @@ def main() -> None:
     THETA = args.theta
     C = args.c
 
-    max_n_updates = 100
-    min_n_updates = 10
+    max_n_updates = 1000
+    min_n_updates = 100
 
     # ------------------------------------------------
     # Setup
@@ -36,7 +36,7 @@ def main() -> None:
     path_to_dirichlet = base_path / Path('dirichlet.dat')
 
     base_results_path = (
-        Path('results/experiment_8') /
+        Path('results/experiment_9') /
         Path(f'theta-{THETA}_c-{C}'))
 
     coordinates, elements = io_helpers.read_mesh(
