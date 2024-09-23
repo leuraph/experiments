@@ -46,19 +46,36 @@ def perform_calculation_for_experiment_without_sweeps(
             path_to_coordinates = path_to_n_sweep_dir / Path('coordinates.pkl')
             path_to_approximate_solution = path_to_n_sweep_dir \
                 / Path('solution.pkl')
+            path_to_exact_solution = path_to_n_sweep_dir \
+                / Path('exact_solution.pkl')
 
             elements = load_dump(path_to_dump=path_to_elements)
             coordinates = load_dump(path_to_dump=path_to_coordinates)
             approximate_solution = load_dump(
                 path_to_dump=path_to_approximate_solution)
+            exact_solution = load_dump(
+                path_to_dump=path_to_exact_solution)
+
+            energy_norm_error_squared_approximate = \
+                calculate_energy_norm_error(
+                    current_iterate=approximate_solution,
+                    gradient_u=grad_u,
+                    elements=elements,
+                    coordinates=coordinates,
+                    cubature_rule=cubature_rule)
 
             energy_norm_error_squared_exact = calculate_energy_norm_error(
-                current_iterate=approximate_solution,
+                current_iterate=exact_solution,
                 gradient_u=grad_u,
                 elements=elements,
                 coordinates=coordinates,
                 cubature_rule=cubature_rule)
 
+            dump_object(
+                obj=energy_norm_error_squared_approximate,
+                path_to_file=(
+                    path_to_n_sweep_dir /
+                    Path('energy_norm_error_squared.pkl')))
             dump_object(
                 obj=energy_norm_error_squared_exact,
                 path_to_file=(
