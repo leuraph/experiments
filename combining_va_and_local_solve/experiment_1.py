@@ -2,15 +2,15 @@ import numpy as np
 from p1afempy import io_helpers, refinement, solvers
 from p1afempy.mesh import get_element_to_neighbours
 from pathlib import Path
-from variational_adaptivity import algo_4_1, markers
+from variational_adaptivity import algo_4_1
 from experiment_setup import f, uD
 from load_save_dumps import dump_object
 from iterative_methods.local_solvers \
     import LocalContextSolver
 from scipy.sparse import csr_matrix
+from scipy.sparse.linalg import spsolve
 from variational_adaptivity.markers import doerfler_marking
 import argparse
-from p1afempy.mesh import show_mesh
 import matplotlib.pyplot as plt
 from matplotlib import cm
 import tqdm
@@ -92,6 +92,13 @@ def main() -> None:
         stiffness_matrix = csr_matrix(solvers.get_stiffness_matrix(
             coordinates=coordinates,
             elements=elements))
+
+        # on the current mesh, compute the exact solution
+        reduced_exact_solution = spsolve(
+            stiffness_matrix[free_nodes, :][:, free_nodes],
+            b=right_hand_side[free_nodes])
+        exact_solution = np.zeros_like(current_iterate)
+        exact_solution[free_nodes] = reduced_exact_solution
 
         local_context_solver = LocalContextSolver(
             elements=elements,
@@ -182,6 +189,8 @@ def main() -> None:
         # show_solution(coordinates=coordinates, solution=current_iterate)
 
         # dump snapshot of current current state
+        dump_object(obj=exact_solution, path_to_file=base_results_path /
+                    Path(f'{n_sweep+1}/exact_solution.pkl'))
         dump_object(obj=current_iterate, path_to_file=base_results_path /
                     Path(f'{n_sweep+1}/solution.pkl'))
         dump_object(obj=elements, path_to_file=base_results_path /
