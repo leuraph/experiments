@@ -12,7 +12,7 @@ In this experiment, we do the following.
   - compute the local increment $\Delta x$ and its corresponding energy gain $\Delta E^{\text{local}}$
   - compute the possible energy gain with variational adaptivity, i.e locally red-refine and solving
 - put the energy differences in a vector $\Delta E$, where we save
-  $\Delta E_j = \max \{ \Delta E^{\alpha \text{local}}_j, \Delta E^{\text{VA}}_j \}$,
+  $\Delta E_j = \max \{ \alpha \Delta E^{ \text{local}}_j, \Delta E^{\text{VA}}_j \}$,
   where $\alpha$ is a fudge parameter.
 - With $\Delta E$, perform a dörfler marking
 - perform all marked local updates such that updates corresponding to biggest local energy drop come last
@@ -24,13 +24,12 @@ In this experiment, we do the following.
 - initialize a random solution which is equal to zero on the boundary of the domain.
 - loop over all alements $T \in \mathcal{T}$.
   - compute the local increment $\Delta x$ and its corresponding energy gain $\Delta E^{\text{local}}$
-  - compute the possible energy gain wit¨¨h variational adaptivity, i.e locally red-refine and solving
-- put the energy differences in a vector $\Delta E$, where we save
-  $\Delta E_j = \max \{ \Delta E^{\alpha \text{local}}_j, \Delta E^{\text{VA}}_j \}$,
+  - compute the possible energy gain with variational adaptivity, i.e locally red-refine and solving
+- perform a collective global update of all local increments
+  (local updates are overwritten by local updates corresponding to bigger energy drops)
+- mark all elements for refinement for which
+  $\alpha \Delta E^{ \text{local}}_T < \Delta E^{\text{VA}}_T,$
   where $\alpha$ is a fudge parameter.
-- perform all local updates corresponding to entries in $\Delta E$,
-  i.e. for all $T \in \mathcal{T}$,where $\alpha \Delta E^{\text{local}}_j > \Delta E^{\text{VA}}_j$
-  such that updates corresponding to biggest local energy drop come last.
 - Perform a dörfler marking for all elements marked for refinement
 - perform all marked refinements using collective `NV` refinement
 

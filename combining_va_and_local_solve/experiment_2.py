@@ -149,36 +149,27 @@ def main() -> None:
         refine = (
             local_energy_differences_va
             > FUDGE_PARAMETER * local_energy_differences_context)
-        solve = np.logical_not(refine)
 
-        # -----------------------------------------------------------------
-        # performing a global increment for the elements marked for solving
-        # -----------------------------------------------------------------
+        # ----------------------------------------------
+        # performing a global increment for all elements
+        # ----------------------------------------------
         global_increment = np.zeros_like(current_iterate)
-
-        reduced_local_increments = local_increments[solve]
-        reduced_elements = elements[solve]
-        reduced_energy_differences_solve = local_energy_differences_context[solve]
 
         # sorting such that local increments corresponding
         # to biggest energy gain come last
-        energy_based_sorting = np.argsort(reduced_energy_differences_solve)
-        reduced_elements = reduced_elements[energy_based_sorting]
-        reduced_local_increments = reduced_local_increments[
-            energy_based_sorting]
+        energy_based_sorting = np.argsort(local_energy_differences_context)
 
         # collect all local increments in a single vector
         # in a way that local increments corresponding to the
         # same node are overwritten by the one corresponding
         # to the bigger change in energy
         for element, local_increment in zip(
-                reduced_elements, reduced_local_increments):
+                elements[energy_based_sorting],
+                local_increments[energy_based_sorting]):
             global_increment[element] = local_increment
 
         # performing the update
         current_iterate += global_increment
-
-        # show_solution(coordinates=coordinates, solution=current_iterate)
 
         # dump snapshot of current current state
         dump_object(obj=exact_solution, path_to_file=base_results_path /
@@ -195,7 +186,8 @@ def main() -> None:
         # -------------------------------------
         # refine elements marked for refinement
         # -------------------------------------
-        reduced_local_energy_differences_va = local_energy_differences_va[refine]
+        reduced_local_energy_differences_va = \
+            local_energy_differences_va[refine]
         reduced_marked = doerfler_marking(
             input=reduced_local_energy_differences_va, theta=THETA)
         marked = np.zeros(n_elements, dtype=bool)
@@ -234,7 +226,7 @@ def show_solution(coordinates, solution):
 
     ax.set_xticks([0, 1])
     ax.set_yticks([0, 1])
-    #ax.set_zticks([0, 0.02, 0.04, 0.06])
+    # ax.set_zticks([0, 0.02, 0.04, 0.06])
 
     # Show and save the plot
     # fig.savefig(out_path, dpi=300)
