@@ -5,6 +5,7 @@ from tqdm import tqdm
 import argparse
 from iterative_methods.energy_norm import calculate_energy_norm_error
 from triangle_cubature.cubature_rule import CubatureRuleEnum
+import re
 
 
 def main() -> None:
@@ -14,6 +15,22 @@ def main() -> None:
 
     base_result_path = Path(args.path)
 
+    # extracting the experiment number as integer
+    pattern = r"experiment_(\d+)"
+    match = re.search(pattern, str(base_result_path))
+    experiment_number = int(match.group(1))
+
+    print(f'processing some results for experiment number {experiment_number}')
+    print('------------------------------------------------')
+
+    if experiment_number in [4, 5, 6, 7, 8, 9]:
+
+        perform_calculations_for_experiment_with_sweeps(
+            base_result_path)
+
+
+def perform_calculations_for_experiment_with_sweeps(
+        base_result_path):
     # Cubature rule used for approximating
     # energy norm distance to exact solution
     cubature_rule = CubatureRuleEnum.SMPLX1
@@ -59,7 +76,6 @@ def main() -> None:
                         path_to_file=(
                             n_sweep_dir /
                             Path('energy_norm_error_squared.pkl')))
-
 
 if __name__ == '__main__':
     main()
