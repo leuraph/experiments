@@ -28,6 +28,8 @@ def main() -> None:
     THETA = args.theta
     FUDGE_PARAMETER = args.fudge
 
+    n_full_sweeps = 20
+
     # ------------------------------------------------
     # Setup
     # ------------------------------------------------
@@ -69,7 +71,6 @@ def main() -> None:
     # forcing the boundary values to be zero, nevertheless
     current_iterate[np.unique(boundaries[0].flatten())] = 0.
 
-    n_full_sweeps = 20
     for n_sweep in range(n_full_sweeps):
         # -------------------------------------
         # Adapting local Solver to current mesh
