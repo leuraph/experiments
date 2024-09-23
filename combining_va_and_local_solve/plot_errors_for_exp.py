@@ -3,6 +3,7 @@ from pathlib import Path
 from load_save_dumps import load_dump
 import numpy as np
 import argparse
+import re
 
 
 def main() -> None:
@@ -15,6 +16,16 @@ def main() -> None:
     path_to_plot = Path(args.o)
     base_result_path = Path(args.path)
 
+    # extracting the experiment number as integer
+    pattern = r"experiment_(\d+)"
+    match = re.search(pattern, str(base_result_path))
+    experiment_number = int(match.group(1))
+
+    if experiment_number in [3, 4, 5, 6, 7, 8, 9]:
+        plot_errors_for_exp_with_sweeps(base_result_path, path_to_plot)
+
+
+def plot_errors_for_exp_with_sweeps(base_result_path, path_to_plot):
     # ------------
     # read results
     # ------------
