@@ -10,7 +10,6 @@ from iterative_methods.local_solvers \
 from scipy.sparse import csr_matrix
 from variational_adaptivity.markers import doerfler_marking
 import argparse
-from p1afempy.mesh import show_mesh
 import matplotlib.pyplot as plt
 from matplotlib import cm
 import tqdm

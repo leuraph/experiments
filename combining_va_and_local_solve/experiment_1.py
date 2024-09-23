@@ -186,8 +186,6 @@ def main() -> None:
         # performing the update
         current_iterate += global_increment
 
-        # show_solution(coordinates=coordinates, solution=current_iterate)
-
         # dump snapshot of current current state
         dump_object(obj=exact_solution, path_to_file=base_results_path /
                     Path(f'{n_sweep+1}/exact_solution.pkl'))
