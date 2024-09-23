@@ -2,7 +2,7 @@ import numpy as np
 from p1afempy import io_helpers, refinement, solvers
 from p1afempy.mesh import get_element_to_neighbours
 from pathlib import Path
-from variational_adaptivity import algo_4_1, markers
+from variational_adaptivity import algo_4_1
 from experiment_setup import f, uD
 from load_save_dumps import dump_object
 from iterative_methods.local_solvers \
@@ -10,7 +10,6 @@ from iterative_methods.local_solvers \
 from scipy.sparse import csr_matrix
 from variational_adaptivity.markers import doerfler_marking
 import argparse
-from p1afempy.mesh import show_mesh
 import matplotlib.pyplot as plt
 from matplotlib import cm
 import tqdm
