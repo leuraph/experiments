@@ -28,7 +28,7 @@ def main() -> None:
         perform_calculation_for_experiment_without_sweeps(
             base_result_path)
 
-    if experiment_number in [3, 4, 5, 6, 7, 8, 9]:
+    if experiment_number in [3, 4, 5, 6, 7, 8, 9, 10]:
 
         perform_calculations_for_experiment_with_sweeps(
             base_result_path)

@@ -21,7 +21,7 @@ def main() -> None:
     match = re.search(pattern, str(base_result_path))
     experiment_number = int(match.group(1))
 
-    if experiment_number in [3, 4, 5, 6, 7, 8, 9]:
+    if experiment_number in [3, 4, 5, 6, 7, 8, 9, 10]:
         plot_errors_for_exp_with_sweeps(base_result_path, path_to_plot)
 
     if experiment_number in [1, 2]:
