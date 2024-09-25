@@ -23,8 +23,8 @@ def main() -> None:
     THETA = args.theta
     C = args.c
 
-    max_n_updates = 1000
-    min_n_updates = 100
+    max_n_updates = 500
+    min_n_updates = 10
 
     # ------------------------------------------------
     # Setup
