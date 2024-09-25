@@ -15,16 +15,16 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--theta", type=float, required=True,
                         help="value of theta used in the Dörfler marking")
-    parser.add_argument("--c", type=float, required=True,
-                        help="if || u_h - u_h^n ||_a <= c dof^-1/2, then"
+    parser.add_argument("--fudge", type=float, required=True,
+                        help="if sum_{k=1}^n dE_k/n > fudge * dE_n, then"
                         " VA kicks in")
     args = parser.parse_args()
 
     THETA = args.theta
-    C = args.c
+    FUDGE = args.fudge
 
-    max_n_updates = 500
-    min_n_updates = 5
+    max_n_updates = 1000
+    min_n_updates = 10
 
     # ------------------------------------------------
     # Setup
@@ -36,8 +36,8 @@ def main() -> None:
     path_to_dirichlet = base_path / Path('dirichlet.dat')
 
     base_results_path = (
-        Path('results/experiment_9') /
-        Path(f'theta-{THETA}_c-{C}'))
+        Path('results/experiment_10') /
+        Path(f'theta-{THETA}_fudge-{FUDGE}'))
 
     coordinates, elements = io_helpers.read_mesh(
         path_to_coordinates=path_to_coordinates,
@@ -109,6 +109,8 @@ def main() -> None:
         # compute all energy gains / local increments via local solver
         # ------------------------------------------------------------
         print('performing global update steps')
+
+        accumulated_energy_drop = 0
         for n_update in tqdm.tqdm(range(max_n_updates)):
 
             # ----------------------------------------------------
@@ -126,8 +128,25 @@ def main() -> None:
                     residual_free_nodes))
             step_size = numerator / denominator
 
+            def energy(iterate) -> float:
+                return (
+                    0.5 * (iterate[free_nodes].dot(
+                        stiffness_matrix[free_nodes, :][:, free_nodes].dot(
+                            iterate[free_nodes]
+                        )))
+                    - right_hand_side[free_nodes].dot(
+                        iterate[free_nodes]))
+
+            current_energy = energy(current_iterate)
+
             # perform update
-            current_iterate[free_nodes] += step_size * residual_free_nodes
+            global_free_increment = step_size * residual_free_nodes
+            current_iterate[free_nodes] += global_free_increment
+
+            new_energy = energy(current_iterate)
+
+            energy_drop = current_energy - new_energy
+            accumulated_energy_drop += energy_drop
 
             # dump snapshot of current current state
             dump_object(obj=current_iterate, path_to_file=base_results_path /
@@ -142,14 +161,7 @@ def main() -> None:
             if n_update + 1 < min_n_updates:
                 continue
 
-            def energy_norm(u):
-                return np.sqrt(u.dot(stiffness_matrix.dot(u)))
-
-            energy_error_to_galerkin_solution = (
-                energy_norm(current_iterate - solution)
-            )
-
-            if energy_error_to_galerkin_solution <= C / np.sqrt(n_dofs):
+            if energy_drop <= FUDGE * accumulated_energy_drop/(n_update+1):
                 break
 
         # --------------------------------------------------------------
