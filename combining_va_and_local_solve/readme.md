@@ -28,7 +28,7 @@ In this experiment, we do the following.
 - perform a collective global update of all local increments
   (local updates are overwritten by local updates corresponding to bigger energy drops)
 - mark all elements for refinement for which
-  $\alpha \Delta E^{ \text{local}}_T < \Delta E^{\text{VA}}_T,$
+  $\alpha \sqrt{\text{dof}} \Delta E^{ \text{local}}_T < \Delta E^{\text{VA}}_T,$
   where $\alpha$ is a fudge parameter, i.e.
   where refining is $\alpha-$times better than solving (energy-wise)
 - Perform a dörfler marking for all elements marked for refinement
