@@ -111,9 +111,10 @@ $$
 $$
 alongside energy level-off stopping criterion, i.e.
 $$
-E(u_h^n) - E(u_h^{n+1}) \leq \frac{E(u_h^0) - E(u_h^n)}{n}.
+E(u_h^n) - E(u_h^{n+1}) \leq \alpha \frac{E(u_h^0) - E(u_h^n)}{n},
 $$
 
+where $\alpha \in (0,1 )$ is a fudge parameter.
 1. initialize a random solution which is equal to zero on the boundary of the domain.
 2. on a given mesh, perform the global update a minimum and maximum number of times where, after each update, we also check for convergence in the above sense. 
 
