@@ -28,7 +28,7 @@ def main() -> None:
     THETA = args.theta
     FUDGE_PARAMETER = args.fudge
 
-    n_full_sweeps = 20
+    n_full_sweeps = 40
 
     # ------------------------------------------------
     # Setup
@@ -82,6 +82,7 @@ def main() -> None:
             ar2=np.unique(boundaries[0].flatten()))
         free_nodes = np.zeros(n_vertices, dtype=bool)
         free_nodes[indices_of_free_nodes] = 1
+        n_dof = np.sum(free_nodes)
 
         # assembly of right hand side
         right_hand_side = solvers.get_right_hand_side(
@@ -148,7 +149,8 @@ def main() -> None:
         # instead of adding more "expensive" degrees of freedom
         refine = (
             local_energy_differences_va
-            > FUDGE_PARAMETER * local_energy_differences_context)
+            > (FUDGE_PARAMETER * np.sqrt(n_dof)
+                * local_energy_differences_context))
 
         # ----------------------------------------------
         # performing a global increment for all elements
