@@ -40,7 +40,7 @@ def main() -> None:
     path_to_dirichlet = base_path / Path('dirichlet.dat')
 
     base_results_path = (
-        Path('results/experiment_2') /
+        Path('results/experiment_2.1') /
         Path(f'theta-{THETA}_fudge-{FUDGE_PARAMETER}'))
 
     coordinates, elements = io_helpers.read_mesh(
@@ -149,8 +149,8 @@ def main() -> None:
         # instead of adding more "expensive" degrees of freedom
         refine = (
             local_energy_differences_va
-            > (FUDGE_PARAMETER * np.sqrt(n_dof)
-                * local_energy_differences_context))
+            > (FUDGE_PARAMETER * local_energy_differences_context))
+        solve = np.logical_not(refine)
 
         # ----------------------------------------------
         # performing a global increment for all elements
@@ -188,12 +188,15 @@ def main() -> None:
         # -------------------------------------
         # refine elements marked for refinement
         # -------------------------------------
-        reduced_local_energy_differences_va = \
-            local_energy_differences_va[refine]
-        reduced_marked = doerfler_marking(
-            input=reduced_local_energy_differences_va, theta=THETA)
-        marked = np.zeros(n_elements, dtype=bool)
-        marked[refine] = reduced_marked
+        bigger_energy_drops = np.zeros_like(
+            local_energy_differences_context)
+        bigger_energy_drops[solve] = (
+            FUDGE_PARAMETER * local_energy_differences_context[solve])
+        bigger_energy_drops[refine] = local_energy_differences_va[refine]
+        marked = doerfler_marking(
+            input=bigger_energy_drops,
+            theta=THETA)
+        refine = marked & refine
 
         coordinates, elements, boundaries, current_iterate = \
             refinement.refineNVB(
