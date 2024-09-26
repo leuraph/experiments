@@ -40,7 +40,7 @@ def perform_calculation_for_experiment_without_sweeps(
     # energy norm distance to exact solution
     cubature_rule = CubatureRuleEnum.SMPLX1
 
-    for path_to_n_sweep_dir in list(base_result_path.iterdir()):
+    for path_to_n_sweep_dir in tqdm(list(base_result_path.iterdir())):
         if path_to_n_sweep_dir.is_dir():
             path_to_elements = path_to_n_sweep_dir / Path('elements.pkl')
             path_to_coordinates = path_to_n_sweep_dir / Path('coordinates.pkl')
