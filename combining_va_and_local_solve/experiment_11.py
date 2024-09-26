@@ -40,7 +40,7 @@ def main() -> None:
     path_to_dirichlet = base_path / Path('dirichlet.dat')
 
     base_results_path = (
-        Path('results/experiment_2.1') /
+        Path('results/experiment_11') /
         Path(f'theta-{THETA}_fudge-{FUDGE_PARAMETER}'))
 
     coordinates, elements = io_helpers.read_mesh(
