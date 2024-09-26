@@ -118,6 +118,27 @@ where $\alpha \in (0,1 )$ is a fudge parameter.
 1. initialize a random solution which is equal to zero on the boundary of the domain.
 2. on a given mesh, perform the global update a minimum and maximum number of times where, after each update, we also check for convergence in the above sense. 
 
+## Eperiment 11
+_Local Solving and local decision on refinement._
+
+In this experiment, we do the following.
+
+- initialize a random solution which is equal to zero on the boundary of the domain.
+
+Then, repeat the following a fixed number of times.
+- loop over all alements $T \in \mathcal{T}$.
+  - compute the local increment $\Delta x$ and its corresponding energy gain $\Delta E^{\text{local}}$
+  - compute the possible energy gain with variational adaptivity, i.e locally red-refine and solving
+- perform a collective global update of all local increments
+  (local updates are overwritten by local updates corresponding to bigger energy drops)
+- define a boolean vector
+  $\text{refine}_T := \alpha \Delta E_T^{\text{solve}} > \Delta E_T^{\text{refine}}$
+- define a vector
+  $\Delta E_T := \max\{ \alpha \Delta E_T^{\text{solve}}, \Delta E_T^{\text{refine}} \}$
+- perform a dörfler marking with $\Delta E$, yielding a vector $\text{marked}$.
+- redefine $\text{refine} := \text{refine} \, \& \, \text{marked}$
+- perform a collective `NV` refinement for all elements marked by $\text{refine}$.
+
 ---
 
 # Scripts
