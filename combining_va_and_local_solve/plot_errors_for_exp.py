@@ -24,7 +24,7 @@ def main() -> None:
     if experiment_number in [3, 4, 5, 6, 7, 8, 9, 10]:
         plot_errors_for_exp_with_sweeps(base_result_path, path_to_plot)
 
-    if experiment_number in [1, 2]:
+    if experiment_number in [1, 2, 11]:
         plot_errors_for_exp_without_sweeps(base_result_path, path_to_plot)
 
 

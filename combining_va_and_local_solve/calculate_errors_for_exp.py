@@ -23,7 +23,7 @@ def main() -> None:
     print(f'processing some results for experiment number {experiment_number}')
     print('------------------------------------------------')
 
-    if experiment_number in [1, 2]:
+    if experiment_number in [1, 2, 11]:
 
         perform_calculation_for_experiment_without_sweeps(
             base_result_path)
