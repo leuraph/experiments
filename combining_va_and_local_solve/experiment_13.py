@@ -8,7 +8,8 @@ from load_save_dumps import dump_object
 from scipy.sparse import csr_matrix
 from variational_adaptivity.markers import doerfler_marking
 import argparse
-import tqdm
+from scipy.sparse.linalg import cg
+from copy import copy
 
 
 def main() -> None:
@@ -24,7 +25,6 @@ def main() -> None:
     FUDGE = args.fudge
 
     max_n_updates = 1000
-    min_n_updates = 10
 
     # ------------------------------------------------
     # Setup
@@ -36,7 +36,7 @@ def main() -> None:
     path_to_dirichlet = base_path / Path('dirichlet.dat')
 
     base_results_path = (
-        Path('results/experiment_10') /
+        Path('results/experiment_13') /
         Path(f'theta-{THETA}_fudge-{FUDGE}'))
 
     coordinates, elements = io_helpers.read_mesh(
@@ -113,11 +113,30 @@ def main() -> None:
         dump_object(obj=boundaries, path_to_file=base_results_path /
                     Path(f'{n_dofs}/boundaries.pkl'))
 
-        # ------------------------------------------------------------
-        # compute all energy gains / local increments via local solver
-        # ------------------------------------------------------------
-        print('performing global CG update steps')
-        # TODO
+        # ------------------------------
+        # Perform CG on the current mesh
+        # ------------------------------
+        custom_callback = CustomCallBack(
+            n_dofs=n_dofs,
+            c=FUDGE,
+            base_results_path=base_results_path,
+            free_nodes=free_nodes,
+            stiffness_matrix=stiffness_matrix[free_nodes, :][:, free_nodes],
+            right_hand_side=right_hand_side[free_nodes],
+            initial_guess=current_iterate[free_nodes])
+
+        print('performing global CG on current mesh')
+        try:
+            current_iterate[free_nodes], _ = cg(
+                A=stiffness_matrix[free_nodes, :][:, free_nodes],
+                b=right_hand_side[free_nodes],
+                x0=current_iterate[free_nodes],
+                maxiter=max_n_updates,
+                callback=custom_callback,
+                rtol=1e-100)
+        except ConvergenceException as conv:
+            current_iterate = conv.converged_iterate
+            print("CG stopped early due to custom convergence criterion.")
 
         # --------------------------------------------------------------
         # compute all local energy gains via VA, based on exact solution
@@ -219,7 +238,7 @@ class CustomCallBack():
 
         self.accumulated_energy_drop += energy_drop
 
-        self.old_iterate = current_iterate
+        self.old_iterate = copy(current_iterate)
 
         # are we done?
         mean_energy_drop = self.accumulated_energy_drop \
