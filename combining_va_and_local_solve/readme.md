@@ -142,6 +142,9 @@ Then, repeat the following a fixed number of times.
 ## Experiment 12
 Very same as experiment 9 but steepest descent switched with CG
 
+## Experiment 13
+Very same as experiment 10 but steepest descent switched with CG
+
 ---
 
 # Scripts
