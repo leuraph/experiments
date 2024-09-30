@@ -105,64 +105,19 @@ def main() -> None:
             obj=solution, path_to_file=base_results_path /
             Path(f'{n_dofs}/exact_solution.pkl'))
 
+        # dump snapshot of current current mesh state
+        dump_object(obj=elements, path_to_file=base_results_path /
+                    Path(f'{n_dofs}/elements.pkl'))
+        dump_object(obj=coordinates, path_to_file=base_results_path /
+                    Path(f'{n_dofs}/coordinates.pkl'))
+        dump_object(obj=boundaries, path_to_file=base_results_path /
+                    Path(f'{n_dofs}/boundaries.pkl'))
+
         # ------------------------------------------------------------
         # compute all energy gains / local increments via local solver
         # ------------------------------------------------------------
-        print('performing global update steps')
-
-        accumulated_energy_drop = 0
-        for n_update in tqdm.tqdm(range(max_n_updates)):
-
-            # ----------------------------------------------------
-            # Perform a global line search in gradient's direction
-            # ----------------------------------------------------
-            residual_free_nodes = (
-                right_hand_side[free_nodes]
-                - stiffness_matrix[free_nodes, :][:, free_nodes].dot(
-                    current_iterate[free_nodes]))
-
-            # step size calculation
-            numerator = residual_free_nodes.dot(residual_free_nodes)
-            denominator = residual_free_nodes.dot(
-                stiffness_matrix[free_nodes, :][:, free_nodes].dot(
-                    residual_free_nodes))
-            step_size = numerator / denominator
-
-            def energy(iterate) -> float:
-                return (
-                    0.5 * (iterate[free_nodes].dot(
-                        stiffness_matrix[free_nodes, :][:, free_nodes].dot(
-                            iterate[free_nodes]
-                        )))
-                    - right_hand_side[free_nodes].dot(
-                        iterate[free_nodes]))
-
-            current_energy = energy(current_iterate)
-
-            # perform update
-            global_free_increment = step_size * residual_free_nodes
-            current_iterate[free_nodes] += global_free_increment
-
-            new_energy = energy(current_iterate)
-
-            energy_drop = current_energy - new_energy
-            accumulated_energy_drop += energy_drop
-
-            # dump snapshot of current current state
-            dump_object(obj=current_iterate, path_to_file=base_results_path /
-                        Path(f'{n_dofs}/{n_update+1}/solution.pkl'))
-            dump_object(obj=elements, path_to_file=base_results_path /
-                        Path(f'{n_dofs}/elements.pkl'))
-            dump_object(obj=coordinates, path_to_file=base_results_path /
-                        Path(f'{n_dofs}/coordinates.pkl'))
-            dump_object(obj=boundaries, path_to_file=base_results_path /
-                        Path(f'{n_dofs}/boundaries.pkl'))
-
-            if n_update + 1 < min_n_updates:
-                continue
-
-            if energy_drop <= FUDGE * accumulated_energy_drop/(n_update+1):
-                break
+        print('performing global CG update steps')
+        # TODO
 
         # --------------------------------------------------------------
         # compute all local energy gains via VA, based on exact solution
