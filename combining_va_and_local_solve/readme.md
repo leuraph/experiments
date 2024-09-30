@@ -139,6 +139,9 @@ Then, repeat the following a fixed number of times.
 - redefine $\text{refine} := \text{refine} \, \& \, \text{marked}$
 - perform a collective `NV` refinement for all elements marked by $\text{refine}$.
 
+## Experiment 12
+Very same as experiment 9 but steepest descent switched with CG
+
 ---
 
 # Scripts
