@@ -16,8 +16,8 @@ def main() -> None:
     parser.add_argument("--theta", type=float, required=True,
                         help="value of theta used in the Dörfler marking")
     parser.add_argument("--fudge", type=float, required=True,
-                        help="if sum_{k=1}^n dE_k/n > fudge * dE_n, then"
-                        " VA kicks in")
+                        help="if dE_n < fudge * sum_{k=1}^n dE_k/n, then"
+                        " CG on current mesh is stopped and VA kicks in")
     args = parser.parse_args()
 
     THETA = args.theta
@@ -211,6 +211,7 @@ class CustomCallBack():
     free_nodes: np.ndarray
     exact_solution_full: np.ndarray
     stiffness_matrix_full: csr_matrix
+    old_iterate: np.ndarray
 
     def __init__(
             self,
@@ -218,33 +219,29 @@ class CustomCallBack():
             c: float,
             base_results_path: Path,
             free_nodes: np.ndarray,
-            exact_solution_full: np.ndarray,
-            stiffness_matrix_full: csr_matrix,
-            right_hand_side_full: np.ndarray) -> None:
+            stiffness_matrix: csr_matrix,
+            right_hand_side: np.ndarray,
+            initial_guess: np.ndarray) -> None:
         self.n_iterations_done = 0
         self.accumulated_energy_drop = 0
         self.n_dofs = n_dofs
         self.c = c
         self.base_results_path = base_results_path
         self.free_nodes = free_nodes
-        self.exact_solution_full = exact_solution_full
-        self.stiffness_matrix_full = stiffness_matrix_full
-        self.right_hand_side_full = right_hand_side_full
+        self.stiffness_matrix = stiffness_matrix
+        self.right_hand_side = right_hand_side
+        self.old_iterate = initial_guess
 
-    def _has_converged(self, current_iterate_full) -> bool:
-        return (
-            self.energy_norm_error(current_iterate_full)
-            <= self.c/self.n_dofs**0.5)
-
-    def energy_norm_error(self, current_iterate_full) -> float:
-        du = (self.exact_solution_full - current_iterate_full)
-        return np.sqrt(du.dot(self.stiffness_matrix_full.dot(du)))
-
-    def energy(self, current_iterate_full) -> float:
+    def energy(self, current_iterate) -> float:
         return 0.5 * (
-            current_iterate_full.dot(self.stiffness_matrix_full.dot(
-                current_iterate_full))
-        ) - self.right_hand_side_full.dot(current_iterate_full)
+            current_iterate.dot(self.stiffness_matrix.dot(
+                current_iterate))
+        ) - self.right_hand_side.dot(current_iterate)
+
+    def get_energy_drop(self, old_iterate, current_iterate) -> float:
+        old_energy = self.energy(old_iterate)
+        new_energy = self.energy(current_iterate)
+        return old_energy - new_energy
 
     def __call__(self, current_iterate):
         # we know that scipy.sparse.linalg.cg calls this after each iteration
@@ -261,9 +258,21 @@ class CustomCallBack():
                 self.base_results_path /
                 Path(f'{self.n_dofs}/{self.n_iterations_done}/solution.pkl')))
 
-        if self._has_converged(current_iterate_full):
-            raise ConvergenceException(converged_iterate=current_iterate_full)
+        energy_drop = self.get_energy_drop(
+            old_iterate=self.old_iterate,
+            current_iterate=current_iterate)
 
+        self.accumulated_energy_drop += energy_drop
+
+        self.old_iterate = current_iterate
+
+        # are we done?
+        mean_energy_drop = self.accumulated_energy_drop \
+            / self.n_iterations_done
+        has_converged = energy_drop < self.c * mean_energy_drop
+
+        if has_converged:
+            raise ConvergenceException(converged_iterate=current_iterate_full)
 
 
 if __name__ == '__main__':
