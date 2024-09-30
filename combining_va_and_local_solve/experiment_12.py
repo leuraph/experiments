@@ -135,7 +135,9 @@ def main() -> None:
                 maxiter=max_n_updates,
                 callback=custom_callback,
                 rtol=1e-100)
-        except ConvergenceException:    
+        except ConvergenceException as conv:
+            # TODO get the current iterate out of the exception
+            current_iterate = conv.converged_iterate
             print("CG stopped early due to custom convergence criterion.")
 
         # --------------------------------------------------------------
@@ -169,7 +171,11 @@ def main() -> None:
 
 class ConvergenceException(Exception):
     """Exception to raise when custom convergence criterion is met."""
-    pass
+    converged_iterate: np.ndarray
+
+    def __init__(self, converged_iterate, *args: object) -> None:
+        super().__init__(*args)
+        self.converged_iterate = converged_iterate
 
 
 class CustomCallBack():
@@ -222,7 +228,7 @@ class CustomCallBack():
                 Path(f'{self.n_dofs}/{self.n_iterations_done}/solution.pkl')))
 
         if self._has_converged(current_iterate_full):
-            raise ConvergenceException()
+            raise ConvergenceException(converged_iterate=current_iterate_full)
 
 
 if __name__ == '__main__':
