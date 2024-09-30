@@ -16,9 +16,13 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--theta", type=float, required=True,
                         help="value of theta used in the Dörfler marking")
+    parser.add_argument("--c", type=float, required=True,
+                        help="if || u_h - u_h^n ||_a <= c / sqrt(dof), then"
+                        "CG is stopped and VA kicks in")
     args = parser.parse_args()
 
     THETA = args.theta
+    C = args.c
 
     max_n_updates = 500
     min_n_updates = 10
