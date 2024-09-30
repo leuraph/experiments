@@ -218,7 +218,8 @@ class CustomCallBack():
             base_results_path: Path,
             free_nodes: np.ndarray,
             exact_solution_full: np.ndarray,
-            stiffness_matrix_full: csr_matrix) -> None:
+            stiffness_matrix_full: csr_matrix,
+            right_hand_side_full: np.ndarray) -> None:
         self.n_iterations_done = 0
         self.n_dofs = n_dofs
         self.c = c
@@ -226,6 +227,7 @@ class CustomCallBack():
         self.free_nodes = free_nodes
         self.exact_solution_full = exact_solution_full
         self.stiffness_matrix_full = stiffness_matrix_full
+        self.right_hand_side_full = right_hand_side_full
 
     def _has_converged(self, current_iterate_full) -> bool:
         return (
