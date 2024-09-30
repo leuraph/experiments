@@ -16,13 +16,9 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--theta", type=float, required=True,
                         help="value of theta used in the Dörfler marking")
-    parser.add_argument("--c", type=float, required=True,
-                        help="if || u_h - u_h^n ||_a <= c dof^-1/2, then"
-                        " VA kicks in")
     args = parser.parse_args()
 
     THETA = args.theta
-    C = args.c
 
     max_n_updates = 500
     min_n_updates = 10
@@ -37,8 +33,8 @@ def main() -> None:
     path_to_dirichlet = base_path / Path('dirichlet.dat')
 
     base_results_path = (
-        Path('results/experiment_9') /
-        Path(f'theta-{THETA}_c-{C}'))
+        Path('results/experiment_12') /
+        Path(f'theta-{THETA}'))
 
     coordinates, elements = io_helpers.read_mesh(
         path_to_coordinates=path_to_coordinates,
@@ -109,49 +105,13 @@ def main() -> None:
         # ------------------------------------------------------------
         # compute all energy gains / local increments via local solver
         # ------------------------------------------------------------
-        print('performing global update steps')
-        for n_update in tqdm.tqdm(range(max_n_updates)):
+        print('performing global CG on curent mesh')
 
-            # ----------------------------------------------------
-            # Perform a global line search in gradient's direction
-            # ----------------------------------------------------
-            residual_free_nodes = (
-                right_hand_side[free_nodes]
-                - stiffness_matrix[free_nodes, :][:, free_nodes].dot(
-                    current_iterate[free_nodes]))
-
-            # step size calculation
-            numerator = residual_free_nodes.dot(residual_free_nodes)
-            denominator = residual_free_nodes.dot(
-                stiffness_matrix[free_nodes, :][:, free_nodes].dot(
-                    residual_free_nodes))
-            step_size = numerator / denominator
-
-            # perform update
-            current_iterate[free_nodes] += step_size * residual_free_nodes
-
-            # dump snapshot of current current state
-            dump_object(obj=current_iterate, path_to_file=base_results_path /
-                        Path(f'{n_dofs}/{n_update+1}/solution.pkl'))
-            dump_object(obj=elements, path_to_file=base_results_path /
-                        Path(f'{n_dofs}/elements.pkl'))
-            dump_object(obj=coordinates, path_to_file=base_results_path /
-                        Path(f'{n_dofs}/coordinates.pkl'))
-            dump_object(obj=boundaries, path_to_file=base_results_path /
-                        Path(f'{n_dofs}/boundaries.pkl'))
-
-            if n_update + 1 < min_n_updates:
-                continue
-
-            def energy_norm(u):
-                return np.sqrt(u.dot(stiffness_matrix.dot(u)))
-
-            energy_error_to_galerkin_solution = (
-                energy_norm(current_iterate - solution)
-            )
-
-            if energy_error_to_galerkin_solution <= C / np.sqrt(n_dofs):
-                break
+        current_iterate[free_nodes], _ = cg(
+            A=stiffness_matrix[free_nodes, :][:, free_nodes],
+            b=right_hand_side[free_nodes],
+            x0=current_iterate[free_nodes],
+            maxiter=max_n_updates)
 
         # --------------------------------------------------------------
         # compute all local energy gains via VA, based on exact solution
@@ -180,6 +140,21 @@ def main() -> None:
                 marked_elements=marked,
                 boundary_conditions=boundaries,
                 to_embed=current_iterate)
+
+
+class CustomCallBack():
+    n_ierations_done: int
+
+    def __init__(self) -> None:
+        self.n_ierations_done = 0
+
+    def __call__(self, current_iterate):
+        # we know that scipy.sparse.linalg.cg calls this after each iteration
+        self.n_ierations_done += 1
+
+        # # save the current iterate
+        # dump_object(obj=current_iterate, path_to_file=base_results_path /
+        #                 Path(f'{n_dofs}/{n_update+1}/solution.pkl'))
 
 
 if __name__ == '__main__':
