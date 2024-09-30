@@ -238,6 +238,12 @@ class CustomCallBack():
         du = (self.exact_solution_full - current_iterate_full)
         return np.sqrt(du.dot(self.stiffness_matrix_full.dot(du)))
 
+    def energy(self, current_iterate_full) -> float:
+        return 0.5 * (
+            current_iterate_full.dot(self.stiffness_matrix_full.dot(
+                current_iterate_full))
+        ) - self.right_hand_side_full.dot(current_iterate_full)
+
     def __call__(self, current_iterate):
         # we know that scipy.sparse.linalg.cg calls this after each iteration
         self.n_iterations_done += 1
