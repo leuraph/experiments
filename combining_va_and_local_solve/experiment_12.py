@@ -38,7 +38,7 @@ def main() -> None:
 
     base_results_path = (
         Path('results/experiment_12') /
-        Path(f'theta-{THETA}'))
+        Path(f'theta-{THETA}_c-{C}'))
 
     coordinates, elements = io_helpers.read_mesh(
         path_to_coordinates=path_to_coordinates,
