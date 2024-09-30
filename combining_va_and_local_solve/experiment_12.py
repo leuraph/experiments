@@ -106,9 +106,25 @@ def main() -> None:
             obj=solution, path_to_file=base_results_path /
             Path(f'{n_dofs}/exact_solution.pkl'))
 
-        # ------------------------------------------------------------
-        # compute all energy gains / local increments via local solver
-        # ------------------------------------------------------------
+        # dump snapshot of current current state
+        dump_object(obj=elements, path_to_file=base_results_path /
+                    Path(f'{n_dofs}/elements.pkl'))
+        dump_object(obj=coordinates, path_to_file=base_results_path /
+                    Path(f'{n_dofs}/coordinates.pkl'))
+        dump_object(obj=boundaries, path_to_file=base_results_path /
+                    Path(f'{n_dofs}/boundaries.pkl'))
+
+        # ------------------------------
+        # Perform CG on the current mesh
+        # ------------------------------
+        custom_callback = CustomCallBack(
+            n_dofs=n_dofs,
+            c=C,
+            base_results_path=base_results_path,
+            free_nodes=free_nodes,
+            exact_solution_full=solution,
+            stiffness_matrix_full=stiffness_matrix)
+
         print('performing global CG on curent mesh')
 
         try:
@@ -116,8 +132,10 @@ def main() -> None:
                 A=stiffness_matrix[free_nodes, :][:, free_nodes],
                 b=right_hand_side[free_nodes],
                 x0=current_iterate[free_nodes],
-                maxiter=max_n_updates)
-        except ConvergenceException:
+                maxiter=max_n_updates,
+                callback=custom_callback,
+                rtol=1e-100)
+        except ConvergenceException:    
             print("CG stopped early due to custom convergence criterion.")
 
         # --------------------------------------------------------------
@@ -155,18 +173,56 @@ class ConvergenceException(Exception):
 
 
 class CustomCallBack():
-    n_ierations_done: int
+    n_iterations_done: int
+    n_dofs: int
+    c: float
+    base_results_path: Path
+    free_nodes: np.ndarray
+    exact_solution_full: np.ndarray
+    stiffness_matrix_full: csr_matrix
 
-    def __init__(self) -> None:
-        self.n_ierations_done = 0
+    def __init__(
+            self,
+            n_dofs: int,
+            c: float,
+            base_results_path: Path,
+            free_nodes: np.ndarray,
+            exact_solution_full: np.ndarray,
+            stiffness_matrix_full: csr_matrix) -> None:
+        self.n_iterations_done = 0
+        self.n_dofs = n_dofs
+        self.c = c
+        self.base_results_path = base_results_path
+        self.free_nodes = free_nodes
+        self.exact_solution_full = exact_solution_full
+        self.stiffness_matrix_full = stiffness_matrix_full
+
+    def _has_converged(self, current_iterate_full) -> bool:
+        return (
+            self.energy_norm_error(current_iterate_full)
+            <= self.c/self.n_dofs**0.5)
+
+    def energy_norm_error(self, current_iterate_full) -> float:
+        du = (self.exact_solution_full - current_iterate_full)
+        return np.sqrt(du.dot(self.stiffness_matrix_full.dot(du)))
 
     def __call__(self, current_iterate):
         # we know that scipy.sparse.linalg.cg calls this after each iteration
-        self.n_ierations_done += 1
+        self.n_iterations_done += 1
 
-        # # save the current iterate
-        # dump_object(obj=current_iterate, path_to_file=base_results_path /
-        #                 Path(f'{n_dofs}/{n_update+1}/solution.pkl'))
+        # prepare the full iterate for dumping
+        current_iterate_full = np.zeros_like(self.free_nodes, dtype=float)
+        current_iterate_full[self.free_nodes] = current_iterate
+
+        # save the current iterate
+        dump_object(
+            obj=current_iterate_full,
+            path_to_file=(
+                self.base_results_path /
+                Path(f'{self.n_dofs}/{self.n_iterations_done}/solution.pkl')))
+
+        if self._has_converged(current_iterate_full):
+            raise ConvergenceException()
 
 
 if __name__ == '__main__':
