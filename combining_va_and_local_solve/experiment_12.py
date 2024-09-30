@@ -107,11 +107,14 @@ def main() -> None:
         # ------------------------------------------------------------
         print('performing global CG on curent mesh')
 
-        current_iterate[free_nodes], _ = cg(
-            A=stiffness_matrix[free_nodes, :][:, free_nodes],
-            b=right_hand_side[free_nodes],
-            x0=current_iterate[free_nodes],
-            maxiter=max_n_updates)
+        try:
+            current_iterate[free_nodes], _ = cg(
+                A=stiffness_matrix[free_nodes, :][:, free_nodes],
+                b=right_hand_side[free_nodes],
+                x0=current_iterate[free_nodes],
+                maxiter=max_n_updates)
+        except ConvergenceException:
+            print("CG stopped early due to custom convergence criterion.")
 
         # --------------------------------------------------------------
         # compute all local energy gains via VA, based on exact solution
@@ -140,6 +143,11 @@ def main() -> None:
                 marked_elements=marked,
                 boundary_conditions=boundaries,
                 to_embed=current_iterate)
+
+
+class ConvergenceException(Exception):
+    """Exception to raise when custom convergence criterion is met."""
+    pass
 
 
 class CustomCallBack():
