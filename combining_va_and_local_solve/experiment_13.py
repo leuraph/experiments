@@ -204,6 +204,7 @@ class ConvergenceException(Exception):
 
 class CustomCallBack():
     n_iterations_done: int
+    accumulated_energy_drop: float
     n_dofs: int
     c: float
     base_results_path: Path
@@ -221,6 +222,7 @@ class CustomCallBack():
             stiffness_matrix_full: csr_matrix,
             right_hand_side_full: np.ndarray) -> None:
         self.n_iterations_done = 0
+        self.accumulated_energy_drop = 0
         self.n_dofs = n_dofs
         self.c = c
         self.base_results_path = base_results_path
