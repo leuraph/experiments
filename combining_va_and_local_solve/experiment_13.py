@@ -193,5 +193,68 @@ def main() -> None:
                 to_embed=current_iterate)
 
 
+class ConvergenceException(Exception):
+    """Exception to raise when custom convergence criterion is met."""
+    converged_iterate: np.ndarray
+
+    def __init__(self, converged_iterate, *args: object) -> None:
+        super().__init__(*args)
+        self.converged_iterate = converged_iterate
+
+
+class CustomCallBack():
+    n_iterations_done: int
+    n_dofs: int
+    c: float
+    base_results_path: Path
+    free_nodes: np.ndarray
+    exact_solution_full: np.ndarray
+    stiffness_matrix_full: csr_matrix
+
+    def __init__(
+            self,
+            n_dofs: int,
+            c: float,
+            base_results_path: Path,
+            free_nodes: np.ndarray,
+            exact_solution_full: np.ndarray,
+            stiffness_matrix_full: csr_matrix) -> None:
+        self.n_iterations_done = 0
+        self.n_dofs = n_dofs
+        self.c = c
+        self.base_results_path = base_results_path
+        self.free_nodes = free_nodes
+        self.exact_solution_full = exact_solution_full
+        self.stiffness_matrix_full = stiffness_matrix_full
+
+    def _has_converged(self, current_iterate_full) -> bool:
+        return (
+            self.energy_norm_error(current_iterate_full)
+            <= self.c/self.n_dofs**0.5)
+
+    def energy_norm_error(self, current_iterate_full) -> float:
+        du = (self.exact_solution_full - current_iterate_full)
+        return np.sqrt(du.dot(self.stiffness_matrix_full.dot(du)))
+
+    def __call__(self, current_iterate):
+        # we know that scipy.sparse.linalg.cg calls this after each iteration
+        self.n_iterations_done += 1
+
+        # prepare the full iterate for dumping
+        current_iterate_full = np.zeros_like(self.free_nodes, dtype=float)
+        current_iterate_full[self.free_nodes] = current_iterate
+
+        # save the current iterate
+        dump_object(
+            obj=current_iterate_full,
+            path_to_file=(
+                self.base_results_path /
+                Path(f'{self.n_dofs}/{self.n_iterations_done}/solution.pkl')))
+
+        if self._has_converged(current_iterate_full):
+            raise ConvergenceException(converged_iterate=current_iterate_full)
+
+
+
 if __name__ == '__main__':
     main()
