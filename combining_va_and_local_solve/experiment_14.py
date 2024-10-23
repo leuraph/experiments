@@ -129,7 +129,7 @@ def main() -> None:
             right_hand_side=right_hand_side[free_nodes],
             initial_guess=current_iterate[free_nodes])
 
-        print('performing global CG on current mesh')
+        print('performing n global CG steps on current mesh')
         try:
             current_iterate[free_nodes], _ = cg(
                 A=stiffness_matrix[free_nodes, :][:, free_nodes],
