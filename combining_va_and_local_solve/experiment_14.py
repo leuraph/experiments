@@ -58,18 +58,22 @@ def main() -> None:
                                  marked_elements=marked,
                                  boundary_conditions=boundaries)
 
-    # ------------------------------------------------
-    # variational adaptivity + Local Solvers
-    # ------------------------------------------------
-
     # initializing the solution to random values
     current_iterate = np.random.rand(coordinates.shape[0])
     # forcing the boundary values to be zero, nevertheless
     current_iterate[np.unique(boundaries[0].flatten())] = 0.
 
+    # ------------------------------------------------
+    # variational adaptivity + Local Solvers
+    # ------------------------------------------------
+
     # number of refinement steps using variational adaptivity
-    n_va_refinement_steps = 8
-    for _ in range(n_va_refinement_steps):
+
+    for _ in range(max_n_loops):
+        # it may be that the mesh has changed
+        # this fact needs to be take into account
+        # hence, we re-setup everything
+        # ---------------------------------------
         n_vertices = coordinates.shape[0]
         indices_of_free_nodes = np.setdiff1d(
             ar1=np.arange(n_vertices),
