@@ -25,6 +25,7 @@ def main() -> None:
     FUDGE = args.fudge
 
     max_n_updates = 1000
+    max_n_loops = 10
 
     # ------------------------------------------------
     # Setup
