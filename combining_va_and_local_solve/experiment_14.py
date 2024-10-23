@@ -121,27 +121,15 @@ def main() -> None:
         # ------------------------------
         # Perform CG on the current mesh
         # ------------------------------
-        custom_callback = CustomCallBack(
-            n_dofs=n_dofs,
-            c=FUDGE,
-            base_results_path=base_results_path,
-            free_nodes=free_nodes,
-            stiffness_matrix=stiffness_matrix[free_nodes, :][:, free_nodes],
-            right_hand_side=right_hand_side[free_nodes],
-            initial_guess=current_iterate[free_nodes])
+        current_iterate_cg = np.zeros(n_vertices)
 
         print('performing n global CG steps on current mesh')
-        try:
-            current_iterate[free_nodes], _ = cg(
-                A=stiffness_matrix[free_nodes, :][:, free_nodes],
-                b=right_hand_side[free_nodes],
-                x0=current_iterate[free_nodes],
-                maxiter=max_n_updates,
-                callback=custom_callback,
-                rtol=1e-100)
-        except ConvergenceException as conv:
-            current_iterate = conv.converged_iterate
-            print("CG stopped early due to custom convergence criterion.")
+        current_iterate_cg[free_nodes], _ = cg(
+            A=stiffness_matrix[free_nodes, :][:, free_nodes],
+            b=right_hand_side[free_nodes],
+            x0=current_iterate[free_nodes],
+            maxiter=n_cg_steps,
+            rtol=1e-100)
 
         # --------------------------------------------------------------
         # compute all local energy gains via VA, based on exact solution
