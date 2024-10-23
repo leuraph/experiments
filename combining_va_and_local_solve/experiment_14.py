@@ -176,6 +176,32 @@ class ConvergenceException(Exception):
         self.converged_iterate = converged_iterate
 
 
+class StoppingException(Exception):
+    """Exception to raise when custom stopping criterion is met."""
+    current_iterate: np.ndarray
+
+    def __init__(self, current_iterate, *args: object) -> None:
+        super().__init__(*args)
+        self.current_iterate = current_iterate
+
+
+class FixedNumberOfStepsCallback():
+    n_steps_max: int
+    n_steps_performed: int
+
+    def __init__(self, n_steps_max) -> None:
+        self.n_steps_max = n_steps_max
+        self.n_steps_performed = 0
+
+    def __call__(self, current_iterate) -> None:
+        # we know that scipy.sparse.linalg.cg calls this after each iteration
+        self.n_steps_performed += 1
+
+        # are we done?
+        if self.n_steps_performed == self.n_steps_max:
+            raise StoppingException(current_iterate=current_iterate)
+
+
 class CustomCallBack():
     n_iterations_done: int
     accumulated_energy_drop: float
