@@ -105,7 +105,7 @@ def main() -> None:
             obj=solution, path_to_file=base_results_path /
             Path(f'{n_dofs}/exact_solution.pkl'))
 
-        # dump snapshot of current current mesh state
+        # dump snapshot of current mesh state
         dump_object(obj=elements, path_to_file=base_results_path /
                     Path(f'{n_dofs}/elements.pkl'))
         dump_object(obj=coordinates, path_to_file=base_results_path /
