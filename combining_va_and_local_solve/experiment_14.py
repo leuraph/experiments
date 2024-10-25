@@ -121,10 +121,9 @@ def main() -> None:
         # ------------------------------
         # Perform CG on the current mesh
         # ------------------------------
-        current_iterate_cg = np.zeros(n_vertices)
 
         print('performing n global CG steps on current mesh')
-        current_iterate_cg[free_nodes], _ = cg(
+        current_iterate[free_nodes], _ = cg(
             A=stiffness_matrix[free_nodes, :][:, free_nodes],
             b=right_hand_side[free_nodes],
             x0=current_iterate[free_nodes],
