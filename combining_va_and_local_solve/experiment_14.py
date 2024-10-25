@@ -68,6 +68,8 @@ def main() -> None:
     # variational adaptivity + Local Solvers
     # ------------------------------------------------
 
+    # TODO dump the initial setup
+
     # number of refinement steps using variational adaptivity
 
     for _ in range(max_n_loops):
@@ -118,6 +120,17 @@ def main() -> None:
         dump_object(obj=boundaries, path_to_file=base_results_path /
                     Path(f'{n_dofs}/boundaries.pkl'))
 
+        # --------------------
+        # Split into two paths
+        # --------------------
+
+        # create a separate copy of the current iterate, i.e.
+        # current_iterate_va and a separate copy of the mesh
+
+        # perform va with current_iterate_va
+
+        # calculate the eergy drop dE_va (using the copy of the mesh)
+
         # ------------------------------
         # Perform CG on the current mesh
         # ------------------------------
@@ -129,6 +142,15 @@ def main() -> None:
             x0=current_iterate[free_nodes],
             maxiter=n_cg_steps,
             rtol=1e-100)
+
+        # compute energy drop dE_cg
+
+        # compare dE_cg with dE_va and decide what to do, i.e.
+        # either
+        # - stick to the new mesh and the current_iterate_va
+        # - stick to current_iterate (created using cg)
+
+        # dump what we have decided for
 
 
 class ConvergenceException(Exception):
