@@ -130,34 +130,6 @@ def main() -> None:
             maxiter=n_cg_steps,
             rtol=1e-100)
 
-        # --------------------------------------------------------------
-        # compute all local energy gains via VA, based on exact solution
-        # --------------------------------------------------------------
-        element_to_neighbours = get_element_to_neighbours(elements=elements)
-        print('computing all local energy gains with variational adaptivity')
-        local_energy_differences_refine = algo_4_1.get_all_local_enery_gains(
-            coordinates=coordinates,
-            elements=elements,
-            boundaries=boundaries,
-            current_iterate=solution,
-            element_to_neighbours=element_to_neighbours,
-            uD=uD,
-            rhs_function=f, lamba_a=1)
-
-        # -------------------------------------
-        # refine elements marked for refinement
-        # -------------------------------------
-        marked = doerfler_marking(
-            input=local_energy_differences_refine, theta=THETA)
-
-        coordinates, elements, boundaries, current_iterate = \
-            refinement.refineNVB(
-                coordinates=coordinates,
-                elements=elements,
-                marked_elements=marked,
-                boundary_conditions=boundaries,
-                to_embed=current_iterate)
-
 
 class ConvergenceException(Exception):
     """Exception to raise when custom convergence criterion is met."""
