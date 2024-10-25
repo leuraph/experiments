@@ -72,7 +72,7 @@ def main() -> None:
 
     for _ in range(max_n_loops):
         # it may be that the mesh has changed
-        # this fact needs to be take into account
+        # this fact needs to be taken into account
         # hence, we re-setup everything
         # ---------------------------------------
         n_vertices = coordinates.shape[0]
