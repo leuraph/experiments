@@ -132,7 +132,7 @@ Then, repeat the following a fixed number of times.
 - perform a collective global update of all local increments
   (local updates are overwritten by local updates corresponding to bigger energy drops)
 - define a boolean vector
-  $\text{refine}_T := \alpha \Delta E_T^{\text{solve}} > \Delta E_T^{\text{refine}}$
+  $\text{refine}_T := \alpha \Delta E_T^{\text{solve}} < \Delta E_T^{\text{refine}}$
 - define a vector
   $\Delta E_T := \max\{ \alpha \Delta E_T^{\text{solve}}, \Delta E_T^{\text{refine}} \}$
 - perform a dörfler marking with $\Delta E$, yielding a vector $\text{marked}$.
