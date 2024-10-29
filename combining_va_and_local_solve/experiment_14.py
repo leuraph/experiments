@@ -1,6 +1,7 @@
 import numpy as np
 from p1afempy import io_helpers, refinement, solvers
 from p1afempy.mesh import get_element_to_neighbours
+from p1afempy.refinement import refineNVB
 from pathlib import Path
 from variational_adaptivity import algo_4_1
 from experiment_setup import f, uD
@@ -24,8 +25,7 @@ def main() -> None:
     THETA = args.theta
     FUDGE = args.fudge
 
-    max_n_updates = 1000
-    max_n_loops = 10
+    max_n_sweeps = 10
     n_cg_steps = 5
 
     # ------------------------------------------------
@@ -112,18 +112,42 @@ def main() -> None:
     # -----------------------------------------------------
 
     old_iterate = copy(current_iterate)
-    for k in range(max_n_loops):
-        # --------------------
-        # Split into two paths
-        # --------------------
+    for n_sweep in range(max_n_sweeps):
+        # re-setup as the mesh might have changed
+        # ------------------------------------------
+        n_vertices = coordinates.shape[0]
+        indices_of_free_nodes = np.setdiff1d(
+            ar1=np.arange(n_vertices),
+            ar2=np.unique(boundaries[0].flatten()))
+        free_nodes = np.zeros(n_vertices, dtype=bool)
+        free_nodes[indices_of_free_nodes] = 1
+        n_dofs = np.sum(free_nodes)
+
+        # assembly of right hand side
+        right_hand_side = solvers.get_right_hand_side(
+            coordinates=coordinates,
+            elements=elements,
+            f=f)
+
+        # assembly of the stiffness matrix
+        stiffness_matrix = csr_matrix(solvers.get_stiffness_matrix(
+            coordinates=coordinates,
+            elements=elements))
+
+        # compute exact galerkin solution on current mesh
+        solution, _ = solvers.solve_laplace(
+            coordinates=coordinates,
+            elements=elements,
+            dirichlet=boundaries[0],
+            neumann=np.array([]),
+            f=f,
+            g=None,
+            uD=uD)
 
         # ------------------------------
         # Perform CG on the current mesh
         # ------------------------------
-
-        # create a copy of the current_iterate
-
-        print('performing n global CG steps on current mesh')
+        print(f'performing {n_cg_steps} global CG steps on current mesh')
         current_iterate[free_nodes], _ = cg(
             A=stiffness_matrix[free_nodes, :][:, free_nodes],
             b=right_hand_side[free_nodes],
@@ -131,18 +155,78 @@ def main() -> None:
             maxiter=n_cg_steps,
             rtol=1e-100)
 
-        # dump current iterate
+        # dump the current state
+        # ----------------------
+        dump_object(obj=elements, path_to_file=base_results_path /
+                    Path(f'{n_dofs}/elements.pkl'))
+        dump_object(obj=coordinates, path_to_file=base_results_path /
+                    Path(f'{n_dofs}/coordinates.pkl'))
+        dump_object(obj=boundaries, path_to_file=base_results_path /
+                    Path(f'{n_dofs}/boundaries.pkl'))
+        dump_object(
+            obj=solution, path_to_file=base_results_path /
+            Path(f'{n_dofs}/exact_solution.pkl'))
+        dump_object(obj=current_iterate, path_to_file=base_results_path /
+                    Path(f'{n_dofs}/{n_sweep+1}/solution.pkl'))
 
-        if k == max_n_loops - 1:
+        if n_sweep == max_n_sweeps - 1:
             break
 
         # compute energy drop of cg per element -> dE_cg
+        n_elements = elements.shape[0]
+        dE_cg = np.zeros(n_elements)
+        for k in range(n_elements):
+            local_nodes = elements[k]
+            locally_updated_u = copy(old_iterate)
+            locally_updated_u[local_nodes] = current_iterate[local_nodes]
+            E_old = calculate_energy(
+                u=old_iterate,
+                lhs_matrix=stiffness_matrix, rhs_vector=right_hand_side)
+            E_current = calculate_energy(
+                u=locally_updated_u,
+                lhs_matrix=stiffness_matrix, rhs_vector=right_hand_side)
+            dE_local = E_old - E_current  # positive, if old energy was higher
+            dE_cg[k] = dE_local
 
         # perform va with current_iterate -> dE_va
+        dE_va = algo_4_1.get_all_local_enery_gains(
+            coordinates=coordinates,
+            elements=elements,
+            boundaries=boundaries,
+            current_iterate=current_iterate,
+            rhs_function=f,
+            element_to_neighbours=get_element_to_neighbours(elements),
+            uD=uD, lamba_a=1)
 
+        # deciding where to refine based on local energy gains
+        # ----------------------------------------------------
+        # if the energy difference is equal, we prefer locally solving
+        # instead of adding more "expensive" degrees of freedom
+        refine = (
+            dE_va
+            > (FUDGE * dE_cg))
+        solve = np.logical_not(refine)
+
+        bigger_energy_drops = np.zeros_like(dE_cg)
+        bigger_energy_drops[solve] = FUDGE * dE_cg[solve]
+        bigger_energy_drops[refine] = dE_va[refine]
+        marked = doerfler_marking(
+            input=bigger_energy_drops,
+            theta=THETA)
+        refine = marked & refine
+
+        coordinates, elements, boundaries, current_iterate = refineNVB(
+            coordinates=coordinates,
+            elements=elements,
+            marked_elements=marked,
+            boundary_conditions=boundaries,
+            to_embed=current_iterate)
+        
         old_iterate = copy(current_iterate)
 
-        # compare dE_cg with dE_va and decide whether to refine an element
+
+def calculate_energy(u: np.ndarray, lhs_matrix: np.ndarray, rhs_vector: np.ndarray) -> float:
+    return 0.5 * u.dot(lhs_matrix.dot(u)) - rhs_vector.dot(u)
 
 
 if __name__ == '__main__':
