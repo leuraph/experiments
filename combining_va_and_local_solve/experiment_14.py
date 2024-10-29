@@ -26,6 +26,7 @@ def main() -> None:
 
     max_n_updates = 1000
     max_n_loops = 10
+    n_cg_steps = 5
 
     # ------------------------------------------------
     # Setup
@@ -64,76 +65,63 @@ def main() -> None:
     # forcing the boundary values to be zero, nevertheless
     current_iterate[np.unique(boundaries[0].flatten())] = 0.
 
-    # ------------------------------------------------
-    # variational adaptivity + Local Solvers
-    # ------------------------------------------------
+    # calculating free nodes on the initial mesh
+    # ------------------------------------------
+    n_vertices = coordinates.shape[0]
+    indices_of_free_nodes = np.setdiff1d(
+        ar1=np.arange(n_vertices),
+        ar2=np.unique(boundaries[0].flatten()))
+    free_nodes = np.zeros(n_vertices, dtype=bool)
+    free_nodes[indices_of_free_nodes] = 1
+    n_dofs = np.sum(free_nodes)
 
-    # TODO dump the initial setup
+    # initial exact galerkin solution
+    # -------------------------------
+    # assembly of right hand side
+    right_hand_side = solvers.get_right_hand_side(
+        coordinates=coordinates,
+        elements=elements,
+        f=f)
 
-    # number of refinement steps using variational adaptivity
+    # assembly of the stiffness matrix
+    stiffness_matrix = csr_matrix(solvers.get_stiffness_matrix(
+        coordinates=coordinates,
+        elements=elements))
 
-    for _ in range(max_n_loops):
-        # it may be that the mesh has changed
-        # this fact needs to be taken into account
-        # hence, we re-setup everything
-        # ---------------------------------------
-        n_vertices = coordinates.shape[0]
-        indices_of_free_nodes = np.setdiff1d(
-            ar1=np.arange(n_vertices),
-            ar2=np.unique(boundaries[0].flatten()))
-        free_nodes = np.zeros(n_vertices, dtype=bool)
-        free_nodes[indices_of_free_nodes] = 1
-        n_dofs = np.sum(free_nodes)
+    # compute exact galerkin solution
+    solution, _ = solvers.solve_laplace(
+        coordinates=coordinates,
+        elements=elements,
+        dirichlet=boundaries[0],
+        neumann=np.array([]),
+        f=f,
+        g=None,
+        uD=uD)
 
-        # assembly of right hand side
-        right_hand_side = solvers.get_right_hand_side(
-            coordinates=coordinates,
-            elements=elements,
-            f=f)
+    # dump initial mesh and initial exact galerkin solution
+    # -----------------------------------------------------
+    dump_object(obj=elements, path_to_file=base_results_path /
+                Path(f'{n_dofs}/elements.pkl'))
+    dump_object(obj=coordinates, path_to_file=base_results_path /
+                Path(f'{n_dofs}/coordinates.pkl'))
+    dump_object(obj=boundaries, path_to_file=base_results_path /
+                Path(f'{n_dofs}/boundaries.pkl'))
+    dump_object(
+        obj=solution, path_to_file=base_results_path /
+        Path(f'{n_dofs}/exact_solution.pkl'))
+    # -----------------------------------------------------
 
-        # assembly of the stiffness matrix
-        stiffness_matrix = csr_matrix(solvers.get_stiffness_matrix(
-            coordinates=coordinates,
-            elements=elements))
-
-        # -----------------------------------
-        # compute and drop the exact solution
-        # -----------------------------------
-        solution, _ = solvers.solve_laplace(
-            coordinates=coordinates,
-            elements=elements,
-            dirichlet=boundaries[0],
-            neumann=np.array([]),
-            f=f,
-            g=None,
-            uD=uD)
-
-        dump_object(
-            obj=solution, path_to_file=base_results_path /
-            Path(f'{n_dofs}/exact_solution.pkl'))
-
-        # dump snapshot of current mesh state
-        dump_object(obj=elements, path_to_file=base_results_path /
-                    Path(f'{n_dofs}/elements.pkl'))
-        dump_object(obj=coordinates, path_to_file=base_results_path /
-                    Path(f'{n_dofs}/coordinates.pkl'))
-        dump_object(obj=boundaries, path_to_file=base_results_path /
-                    Path(f'{n_dofs}/boundaries.pkl'))
-
+    old_iterate = copy(current_iterate)
+    for k in range(max_n_loops):
         # --------------------
         # Split into two paths
         # --------------------
 
-        # create a separate copy of the current iterate, i.e.
-        # current_iterate_va and a separate copy of the mesh
-
-        # perform va with current_iterate_va
-
-        # calculate the eergy drop dE_va (using the copy of the mesh)
-
         # ------------------------------
         # Perform CG on the current mesh
         # ------------------------------
+
+        # create a copy of the current_iterate
 
         print('performing n global CG steps on current mesh')
         current_iterate[free_nodes], _ = cg(
@@ -143,14 +131,18 @@ def main() -> None:
             maxiter=n_cg_steps,
             rtol=1e-100)
 
-        # compute energy drop dE_cg
+        # dump current iterate
 
-        # compare dE_cg with dE_va and decide what to do, i.e.
-        # either
-        # - stick to the new mesh and the current_iterate_va
-        # - stick to current_iterate (created using cg)
+        if k == max_n_loops - 1:
+            break
 
-        # dump what we have decided for
+        # compute energy drop of cg per element -> dE_cg
+
+        # perform va with current_iterate -> dE_va
+
+        old_iterate = copy(current_iterate)
+
+        # compare dE_cg with dE_va and decide whether to refine an element
 
 
 class ConvergenceException(Exception):
