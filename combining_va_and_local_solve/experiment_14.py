@@ -25,7 +25,7 @@ def main() -> None:
     THETA = args.theta
     FUDGE = args.fudge
 
-    max_n_sweeps = 10
+    max_n_sweeps = 20
     n_cg_steps = 5
 
     # ------------------------------------------------
@@ -172,6 +172,15 @@ def main() -> None:
         if n_sweep == max_n_sweeps - 1:
             break
 
+        old_iterate = copy(current_iterate)
+
+        current_iterate[free_nodes], _ = cg(
+            A=stiffness_matrix[free_nodes, :][:, free_nodes],
+            b=right_hand_side[free_nodes],
+            x0=current_iterate[free_nodes],
+            maxiter=1,
+            rtol=1e-100)
+
         # compute energy drop of cg per element -> dE_cg
         n_elements = elements.shape[0]
         dE_cg = np.zeros(n_elements)
@@ -188,12 +197,12 @@ def main() -> None:
             dE_local = E_old - E_current  # positive, if old energy was higher
             dE_cg[k] = dE_local
 
-        # perform va with current_iterate -> dE_va
+        # perform va with old_iterate -> dE_va
         dE_va = algo_4_1.get_all_local_enery_gains(
             coordinates=coordinates,
             elements=elements,
             boundaries=boundaries,
-            current_iterate=current_iterate,
+            current_iterate=old_iterate,
             rhs_function=f,
             element_to_neighbours=get_element_to_neighbours(elements),
             uD=uD, lamba_a=1)
@@ -221,8 +230,6 @@ def main() -> None:
             marked_elements=marked,
             boundary_conditions=boundaries,
             to_embed=current_iterate)
-        
-        old_iterate = copy(current_iterate)
 
 
 def calculate_energy(u: np.ndarray, lhs_matrix: np.ndarray, rhs_vector: np.ndarray) -> float:
