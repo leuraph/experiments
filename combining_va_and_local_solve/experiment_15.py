@@ -22,13 +22,17 @@ def main() -> None:
     parser.add_argument("--c", type=float, required=True,
                         help="if || u_h - u_h^n ||_a <= c dof^-1/2, then"
                         " VA kicks in")
+    parser.add_argument("--minsweeps", type=float, required=True,
+                        help="minimum number of full sweeps on each subspace"
+                        " VA kicks in")
     args = parser.parse_args()
 
     THETA = args.theta
     C = args.c
+    MIN_N_SWEEPS = args.minsweeps
 
     max_n_sweeps = 1000
-    min_n_sweeps = 20
+    min_n_sweeps = MIN_N_SWEEPS
 
     # ------------------------------------------------
     # Setup
@@ -41,7 +45,7 @@ def main() -> None:
 
     base_results_path = (
         Path('results/experiment_15') /
-        Path(f'theta-{THETA}_c-{C}'))
+        Path(f'theta-{THETA}_c-{C}_min-n-sweeps-{MIN_N_SWEEPS}'))
 
     coordinates, elements = io_helpers.read_mesh(
         path_to_coordinates=path_to_coordinates,
