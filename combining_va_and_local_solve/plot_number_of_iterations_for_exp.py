@@ -15,8 +15,8 @@ def main() -> None:
     path_to_plot = Path(args.o)
     base_result_path = Path(args.path)
 
-    max_n_sweeps = 100
-    min_n_sweeps = 5
+    max_n_sweeps = 1000
+    min_n_sweeps = 50
 
     # ------------
     # read results
@@ -77,10 +77,10 @@ def main() -> None:
     ax.set_ylabel(r'$n_{\text{sweeps}}$')
     ax.grid(True)
 
-    line, = ax.semilogx(
+    line, = ax.loglog(
         n_dofs, n_sweeps,
         '--', linewidth=1.2, alpha=0., color=COLOR_RED)
-    mark, = ax.semilogx(
+    mark, = ax.loglog(
         n_dofs, n_sweeps,
         linestyle=None, marker='s', markersize=8,
         linewidth=0, alpha=0.6, color=COLOR_RED)
@@ -96,6 +96,9 @@ def main() -> None:
     ax.set_xlim(
         left=1e1,
         right=1e6)
+    ax.set_ylim(
+        bottom=min_n_sweeps * 0.9,
+        top=max_n_sweeps * 1.1)
 
     ax.legend()
     fig.savefig(
