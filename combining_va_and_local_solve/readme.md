@@ -145,6 +145,24 @@ Very same as experiment 9 but steepest descent switched with CG
 ## Experiment 13
 Very same as experiment 10 but steepest descent switched with CG
 
+## Experiment 14
+_Comparing local CG with VA._
+
+In this experiment, we perform a fixed number of CG steps.
+On the given iterate, we then perform VA to get vector whos entries correspond
+to the energy gains of a local refinement.
+Then, in order to adaptively refine, we perform one more global CG step
+and compute a vector `dE_cg` who's entries correspond to the energy gains
+if we only updated the local values.
+
+## Experiment 15
+Experiment 8 but with a fixed number of min_n_sweeps and higher max_n_sweeps.
+
+## Experiment 16
+Experiment 14 but to calculate the local CG energy gains, we scale the non-local
+values such that the energy is minimized (essentially, this is a line-search in the direction
+of the non-local old iterate)
+
 ---
 
 # Scripts
