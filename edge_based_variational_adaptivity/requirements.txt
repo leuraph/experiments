@@ -1,1 +1,3 @@
+ismember
+variational_adaptivity @ git+ssh://git@github.com/leuraph/variational_adaptivity@v0.0.7
 p1afempy @ git+ssh://git@github.com/leuraph/p1afempy@26e6f0e58738daf590f7e30113b8260e361cb920
