@@ -1,12 +1,17 @@
 import numpy as np
 from p1afempy import io_helpers, refinement, solvers
-from p1afempy.mesh import provide_geometric_data
-from p1afempy.refinement import refineNVB_edge_based
+from p1afempy.mesh import provide_geometric_data, show_mesh
+from p1afempy.solvers import get_right_hand_side, get_stiffness_matrix
+from p1afempy.refinement import refineNVB_edge_based, refine_single_edge
+from variational_adaptivity.markers import doerfler_marking
 from pathlib import Path
-from utils import distort_coordinates, shuffle_elements
+from utils import shuffle_elements, distort_coordinates
 from configuration import uD, f
+from ismember import is_row_in
 import pickle
 import argparse
+from scipy.sparse import csr_matrix
+from tqdm import tqdm
 
 
 def main() -> None:
@@ -53,10 +58,10 @@ def main() -> None:
     # coordinates_on_boundary = np.isin(all_coordinates_indices, boundaries[0])
     # marked_coordinates = np.logical_not(coordinates_on_boundary)
     # # jiggle the initial mesh's non-boundary coordinates
-    # delta = 1./2**(n_initial_refinements+3)
+    # delta = 1./2**(n_initial_refinements+1)
     # coordinates = distort_coordinates(coordinates=coordinates,
     #                                   delta=delta, marked=marked_coordinates)
-    # shuffle initial mesh's elements
+    # # shuffle initial mesh's elements
     # elements = shuffle_elements(elements=elements)
 
     # solve exactly on the initial mesh
@@ -95,17 +100,59 @@ def main() -> None:
     n_refinements = 4
     for _ in range(n_refinements):
 
+        element_to_edges, edge_to_nodes, boundaries_to_edges =\
+            provide_geometric_data(elements=elements, boundaries=boundaries)
+
         # compute all local energy gains
         # ------------------------------
-        # TODO
+        edge_to_nodes_flipped = np.column_stack(
+            [edge_to_nodes[:, 1], edge_to_nodes[:, 0]])
+        boundary = np.logical_or(
+            is_row_in(edge_to_nodes, boundaries[0]),
+            is_row_in(edge_to_nodes_flipped, boundaries[0])
+        )
+        non_boundary = np.logical_not(boundary)
+        marked_edges = np.zeros(edge_to_nodes.shape[0], dtype=int)
+        energy_gains = np.zeros(np.sum(non_boundary), dtype=float)
+        non_boundary_edges = edge_to_nodes[non_boundary]
+
+        print(f'Calculating all energy gains for {n_dofs} DOFs...')
+        for k, non_boundary_edge in enumerate(tqdm(non_boundary_edges)):
+            tmp_coordinates, tmp_elements, tmp_solution =\
+                refine_single_edge(
+                    coordinates=coordinates,
+                    elements=elements,
+                    edge=non_boundary_edge,
+                    to_embed=solution)
+            tmp_stiffness_matrix = csr_matrix(get_stiffness_matrix(
+                coordinates=tmp_coordinates, elements=tmp_elements))
+            tmp_rhs_vector = get_right_hand_side(
+                coordinates=tmp_coordinates, elements=tmp_elements, f=f)
+
+            # building the local 2x2 system
+            A_11 = tmp_solution.dot(tmp_stiffness_matrix.dot(tmp_solution))
+            A_12 = tmp_stiffness_matrix.dot(tmp_solution)[-1]
+            A_22 = tmp_stiffness_matrix[-1, -1]
+
+            L_1 = tmp_rhs_vector.dot(tmp_solution)
+            L_2 = tmp_rhs_vector[-1]
+
+            detA = (A_11 * A_22 - A_12 * A_12)
+
+            alpha = (A_22 * L_1 - A_12 * L_2)/detA
+            beta = (-A_12 * L_2 + A_11 * L_2)/detA
+
+            dE = 0.5*(alpha**2 * A_11 + 2.*alpha*beta*A_12 + beta**2 * A_22)
+
+            energy_gains[k] = dE
+
+        show_mesh(coordinates=coordinates, elements=elements)
 
         # mark elements to be refined, then refine
         # ---------------------------------------
-        # TODO provide the correct logic when marking
-        element_to_edges, edge_to_nodes, boundaries_to_edges = \
-            provide_geometric_data(elements=elements, boundaries=boundaries)
-        n_edges = edge_to_nodes.shape[0]
-        marked_edges = np.ones(n_edges, dtype=int)
+        marked_non_boundary_egdes = doerfler_marking(
+            input=energy_gains, theta=THETA)
+        marked_edges[non_boundary] = marked_non_boundary_egdes
 
         coordinates, elements, boundaries, _ = refineNVB_edge_based(
             coordinates=coordinates,
@@ -116,8 +163,10 @@ def main() -> None:
             boundaries_to_edges=boundaries_to_edges,
             edge2newNode=marked_edges)
 
+        show_mesh(coordinates=coordinates, elements=elements)
+
         # shuffle refined mesh's elements
-        elements = shuffle_elements(elements=elements)
+        # elements = shuffle_elements(elements=elements)
 
         # solve linear problem exactly on current mesh
         # --------------------------------------------
