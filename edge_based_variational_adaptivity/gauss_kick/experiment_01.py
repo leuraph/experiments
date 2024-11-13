@@ -99,7 +99,7 @@ def main() -> None:
     # variational adaptivity
     # ------------------------------------------------
 
-    n_refinements = 4
+    n_refinements = 10
     for _ in range(n_refinements):
 
         element_to_edges, edge_to_nodes, boundaries_to_edges =\
@@ -158,8 +158,6 @@ def main() -> None:
 
             energy_gains[k] = dE
 
-        show_mesh(coordinates=coordinates, elements=elements)
-
         # mark elements to be refined, then refine
         # ---------------------------------------
         marked_non_boundary_egdes = doerfler_marking(
@@ -174,8 +172,6 @@ def main() -> None:
             edge_to_nodes=edge_to_nodes,
             boundaries_to_edges=boundaries_to_edges,
             edge2newNode=marked_edges)
-
-        show_mesh(coordinates=coordinates, elements=elements)
 
         # shuffle refined mesh's elements
         # elements = shuffle_elements(elements=elements)
