@@ -112,8 +112,9 @@ def main() -> None:
             is_row_in(edge_to_nodes_flipped, boundaries[0])
         )
         non_boundary = np.logical_not(boundary)
+        n_non_boundary_edges = np.sum(non_boundary)
         marked_edges = np.zeros(edge_to_nodes.shape[0], dtype=int)
-        energy_gains = np.zeros(np.sum(non_boundary), dtype=float)
+        energy_gains = np.zeros(n_non_boundary_edges, dtype=float)
         non_boundary_edges = edge_to_nodes[non_boundary]
 
         print(f'Calculating all energy gains for {n_dofs} DOFs...')
