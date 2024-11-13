@@ -103,6 +103,14 @@ def main() -> None:
         element_to_edges, edge_to_nodes, boundaries_to_edges =\
             provide_geometric_data(elements=elements, boundaries=boundaries)
 
+        # computing global terms before loop
+        stiffness_matrix = get_stiffness_matrix(
+            coordinates=coordinates, elements=elements)
+        rhs_vector = get_right_hand_side(
+            coordinates=coordinates, elements=elements, f=f)
+        L_1 = rhs_vector.dot(solution)
+        A_11 = solution.dot(stiffness_matrix.dot(solution))
+
         # compute all local energy gains
         # ------------------------------
         edge_to_nodes_flipped = np.column_stack(
@@ -131,11 +139,9 @@ def main() -> None:
                 coordinates=tmp_coordinates, elements=tmp_elements, f=f)
 
             # building the local 2x2 system
-            A_11 = tmp_solution.dot(tmp_stiffness_matrix.dot(tmp_solution))
             A_12 = tmp_stiffness_matrix.dot(tmp_solution)[-1]
             A_22 = tmp_stiffness_matrix[-1, -1]
 
-            L_1 = tmp_rhs_vector.dot(tmp_solution)
             L_2 = tmp_rhs_vector[-1]
 
             detA = (A_11 * A_22 - A_12 * A_12)
