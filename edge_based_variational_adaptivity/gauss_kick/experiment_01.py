@@ -143,7 +143,10 @@ def main() -> None:
             alpha = (A_22 * L_1 - A_12 * L_2)/detA
             beta = (-A_12 * L_2 + A_11 * L_2)/detA
 
-            dE = 0.5*(alpha**2 * A_11 + 2.*alpha*beta*A_12 + beta**2 * A_22)
+            dE = 0.5*(
+                (alpha-1)**2 * A_11
+                + 2.*(alpha-1)*beta*A_12
+                + beta**2 * A_22)
 
             energy_gains[k] = dE
 
