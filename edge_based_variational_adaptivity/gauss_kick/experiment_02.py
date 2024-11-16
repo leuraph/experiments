@@ -99,7 +99,7 @@ def main() -> None:
     # variational adaptivity
     # ------------------------------------------------
 
-    n_refinements = 10
+    n_refinements = 20
     for _ in range(n_refinements):
 
         element_to_edges, edge_to_nodes, boundaries_to_edges =\
