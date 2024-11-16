@@ -1,6 +1,6 @@
 import numpy as np
 from p1afempy import io_helpers, refinement, solvers
-from p1afempy.mesh import provide_geometric_data, show_mesh
+from p1afempy.mesh import provide_geometric_data, show_mesh, get_local_patch_edge_based
 from p1afempy.solvers import get_right_hand_side, get_stiffness_matrix
 from p1afempy.refinement import refineNVB_edge_based, refine_single_edge
 from variational_adaptivity.markers import doerfler_marking
@@ -129,19 +129,27 @@ def main() -> None:
 
         print(f'Calculating all energy gains for {n_dofs} DOFs...')
         for k, non_boundary_edge in enumerate(tqdm(non_boundary_edges)):
-            tmp_coordinates, tmp_elements, tmp_solution =\
-                refine_single_edge(
-                    coordinates=coordinates,
+            local_elements, local_coordinates, \
+                local_iterate, local_edge_indices = get_local_patch_edge_based(
                     elements=elements,
-                    edge=non_boundary_edge,
-                    to_embed=solution)
+                    coordinates=coordinates,
+                    current_iterate=solution,
+                    edge=non_boundary_edge)
+            tmp_local_coordinates, tmp_local_elements, tmp_local_solution =\
+                refine_single_edge(
+                    coordinates=local_coordinates,
+                    elements=local_elements,
+                    edge=local_edge_indices,
+                    to_embed=local_iterate)
             tmp_stiffness_matrix = csr_matrix(get_stiffness_matrix(
-                coordinates=tmp_coordinates, elements=tmp_elements))
+                coordinates=tmp_local_coordinates,
+                elements=tmp_local_elements))
             tmp_rhs_vector = get_right_hand_side(
-                coordinates=tmp_coordinates, elements=tmp_elements, f=f)
+                coordinates=tmp_local_coordinates,
+                elements=tmp_local_elements, f=f)
 
             # building the local 2x2 system
-            A_12 = tmp_stiffness_matrix.dot(tmp_solution)[-1]
+            A_12 = tmp_stiffness_matrix.dot(tmp_local_solution)[-1]
             A_22 = tmp_stiffness_matrix[-1, -1]
 
             L_2 = tmp_rhs_vector[-1]
