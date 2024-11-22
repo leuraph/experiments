@@ -40,18 +40,24 @@ def evaluate_energy_on_mesh(
 class SanityChecks(unittest.TestCase):
     """
     These tests constitute some sort of sanity checks to check
-    - stiffness matrix assembly
-    - mesh refinement strategies
+    that the bookkeeping of the NVB refinement works as expected
 
     idea
     ----
     The idea is to compute the discrete version of the energy
     E(u) := a(u, u)
     of a function u(x, y) that is exactly represented already
-    on the initial mesh. In this way, we can check the interplay
-    of stiffness matrix assembly and mesh refinement by checking
-    the computed energy E:= x.T * A * x with the exact value for
-    the initial mesh and all subsequent refined meshes thereof.
+    on the initial mesh. In this way, we can check the
+    bookkeeping is working as expected.
+    First we calculate the exact solution on the initial mesh.
+    Then, we loop over all edges (provided by edge_to_nodes),
+    compute the solution on the midpoint of each edge.
+    Moreover, we mark all elements for refinement and
+    append the values on the midpoints in the same order
+    as the edges were provided.
+    Finally, we calculate the stiffness matrix for the refined
+    mesh, compute u.T * A * u, and compare it to the expected value
+    to check that this bookkeeping matches with the NVB refinement.
 
     implementation
     --------------
