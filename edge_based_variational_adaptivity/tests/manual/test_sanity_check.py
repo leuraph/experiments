@@ -1,14 +1,12 @@
 import numpy as np
 import unittest
-import random
 from pathlib import Path
-from p1afempy import io_helpers, solvers, mesh
+from p1afempy import io_helpers, solvers
 from p1afempy.data_structures import \
     CoordinatesType, ElementsType, BoundaryType
 from p1afempy import refinement
-from p1afempy.refinement import refine_single_edge
-from p1afempy.mesh import provide_geometric_data, get_local_patch_edge_based
-from p1afempy.solvers import get_right_hand_side, get_stiffness_matrix
+from p1afempy.mesh import provide_geometric_data
+from p1afempy.solvers import get_stiffness_matrix
 from ismember import is_row_in
 from scipy.sparse import csr_matrix
 from tqdm import tqdm
