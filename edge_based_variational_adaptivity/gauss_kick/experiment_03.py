@@ -33,7 +33,7 @@ def main() -> None:
     # ------------------------------------------------
     np.random.seed(42)
     base_path = Path('data')
-    path_to_elements = base_path / Path('elements.dat')
+    path_to_elements = base_path / Path('elements_order1.dat')
     path_to_coordinates = base_path / Path('coordinates.dat')
     path_to_dirichlet = base_path / Path('dirichlet.dat')
 
@@ -189,6 +189,8 @@ def main() -> None:
         # -------------------------------------------------------
         # if the energy difference is equal, we prefer locally solving
         # instead of adding more "expensive" degrees of freedom
+        # print(f'dE_eva = {dE_eva}')
+        # print(f'dE_cg = {dE_cg}')
         refine = FUDGE * dE_cg < dE_eva
 
         if not refine:
