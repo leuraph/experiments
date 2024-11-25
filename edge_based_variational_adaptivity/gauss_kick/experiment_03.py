@@ -1,40 +1,45 @@
 import numpy as np
 from p1afempy import io_helpers, refinement, solvers
-from p1afempy.mesh import provide_geometric_data, get_local_patch_edge_based
-from p1afempy.solvers import get_right_hand_side, get_stiffness_matrix
-from p1afempy.refinement import refineNVB_edge_based, refine_single_edge
-from variational_adaptivity.markers import doerfler_marking
+from p1afempy.mesh import get_element_to_neighbours
+from p1afempy.refinement import refineNVB
 from pathlib import Path
-from configuration import uD, f
-from ismember import is_row_in
-import pickle
-import argparse
+from variational_adaptivity import algo_4_1
+from experiment_setup import f, uD
+from load_save_dumps import dump_object
 from scipy.sparse import csr_matrix
-from tqdm import tqdm
-import matplotlib.pyplot as plt
-from matplotlib import cm
+from variational_adaptivity.markers import doerfler_marking
+import argparse
+from scipy.sparse.linalg import cg
+from copy import copy
 
 
 def main() -> None:
-    np.random.seed(42)
-
     parser = argparse.ArgumentParser()
     parser.add_argument("--theta", type=float, required=True,
                         help="value of theta used in the Dörfler marking")
+    parser.add_argument("--fudge", type=float, required=True,
+                        help="if dE_n < fudge * sum_{k=1}^n dE_k/n, then"
+                        " CG on current mesh is stopped and VA kicks in")
     args = parser.parse_args()
 
     THETA = args.theta
+    FUDGE = args.fudge
+
+    max_n_sweeps = 20
+    n_cg_steps = 5
 
     # ------------------------------------------------
     # Setup
     # ------------------------------------------------
+    np.random.seed(42)
     base_path = Path('data')
-    # TODO if this order is what we want, then remove the other one and rename
-    path_to_elements = base_path / Path('elements_order1.dat')
+    path_to_elements = base_path / Path('elements.dat')
     path_to_coordinates = base_path / Path('coordinates.dat')
     path_to_dirichlet = base_path / Path('dirichlet.dat')
 
-    base_results_path = Path('results/experiment_03') / Path(f'theta_{THETA}')
+    base_results_path = (
+        Path('results/experiment_14') /
+        Path(f'theta-{THETA}_fudge-{FUDGE}'))
 
     coordinates, elements = io_helpers.read_mesh(
         path_to_coordinates=path_to_coordinates,
@@ -46,7 +51,7 @@ def main() -> None:
 
     # initial refinement
     # ------------------
-    n_initial_refinements = 5
+    n_initial_refinements = 3
     for _ in range(n_initial_refinements):
         marked = np.arange(elements.shape[0])
         coordinates, elements, boundaries, _ = \
@@ -55,14 +60,13 @@ def main() -> None:
                                  marked_elements=marked,
                                  boundary_conditions=boundaries)
 
-    # solve exactly on the initial mesh
-    solution, _ = solvers.solve_laplace(
-        coordinates=coordinates,
-        elements=elements,
-        dirichlet=boundaries[0],
-        neumann=np.array([]),
-        f=f, g=None, uD=uD)
+    # initializing the solution to random values
+    current_iterate = np.random.rand(coordinates.shape[0])
+    # forcing the boundary values to be zero, nevertheless
+    current_iterate[np.unique(boundaries[0].flatten())] = 0.
 
+    # calculating free nodes on the initial mesh
+    # ------------------------------------------
     n_vertices = coordinates.shape[0]
     indices_of_free_nodes = np.setdiff1d(
         ar1=np.arange(n_vertices),
@@ -71,114 +75,46 @@ def main() -> None:
     free_nodes[indices_of_free_nodes] = 1
     n_dofs = np.sum(free_nodes)
 
-    dump_object(obj=solution,
-                path_to_file=base_results_path / Path(
-                    f'{n_dofs}/solution.pkl'))
-    dump_object(obj=elements,
-                path_to_file=base_results_path / Path(
-                    f'{n_dofs}/elements.pkl'))
-    dump_object(obj=coordinates,
-                path_to_file=base_results_path / Path(
-                    f'{n_dofs}/coordinates.pkl'))
-    dump_object(obj=boundaries,
-                path_to_file=base_results_path / Path(
-                    f'{n_dofs}/boundaries.pkl'))
+    # initial exact galerkin solution
+    # -------------------------------
+    # assembly of right hand side
+    right_hand_side = solvers.get_right_hand_side(
+        coordinates=coordinates,
+        elements=elements,
+        f=f)
 
-    # ------------------------------------------------
-    # variational adaptivity
-    # ------------------------------------------------
+    # assembly of the stiffness matrix
+    stiffness_matrix = csr_matrix(solvers.get_stiffness_matrix(
+        coordinates=coordinates,
+        elements=elements))
 
-    n_refinements = 20
-    for _ in range(n_refinements):
+    # compute exact galerkin solution
+    solution, _ = solvers.solve_laplace(
+        coordinates=coordinates,
+        elements=elements,
+        dirichlet=boundaries[0],
+        neumann=np.array([]),
+        f=f,
+        g=None,
+        uD=uD)
 
-        element_to_edges, edge_to_nodes, boundaries_to_edges =\
-            provide_geometric_data(elements=elements, boundaries=boundaries)
+    # dump initial mesh and initial exact galerkin solution
+    # -----------------------------------------------------
+    dump_object(obj=elements, path_to_file=base_results_path /
+                Path(f'{n_dofs}/elements.pkl'))
+    dump_object(obj=coordinates, path_to_file=base_results_path /
+                Path(f'{n_dofs}/coordinates.pkl'))
+    dump_object(obj=boundaries, path_to_file=base_results_path /
+                Path(f'{n_dofs}/boundaries.pkl'))
+    dump_object(
+        obj=solution, path_to_file=base_results_path /
+        Path(f'{n_dofs}/exact_solution.pkl'))
+    # -----------------------------------------------------
 
-        # computing global terms before loop
-        stiffness_matrix = get_stiffness_matrix(
-            coordinates=coordinates, elements=elements)
-        rhs_vector = get_right_hand_side(
-            coordinates=coordinates, elements=elements, f=f)
-        L_1 = rhs_vector.dot(solution)
-        A_11 = solution.dot(stiffness_matrix.dot(solution))
-
-        # compute all local energy gains
-        # ------------------------------
-        edge_to_nodes_flipped = np.column_stack(
-            [edge_to_nodes[:, 1], edge_to_nodes[:, 0]])
-        boundary = np.logical_or(
-            is_row_in(edge_to_nodes, boundaries[0]),
-            is_row_in(edge_to_nodes_flipped, boundaries[0])
-        )
-        non_boundary = np.logical_not(boundary)
-        n_non_boundary_edges = np.sum(non_boundary)
-        marked_edges = np.zeros(edge_to_nodes.shape[0], dtype=int)
-        energy_gains = np.zeros(n_non_boundary_edges, dtype=float)
-        non_boundary_edges = edge_to_nodes[non_boundary]
-
-        print(f'Calculating all energy gains for {n_dofs} DOFs...')
-        for k, non_boundary_edge in enumerate(tqdm(non_boundary_edges)):
-            local_elements, local_coordinates, \
-                local_iterate, local_edge_indices = get_local_patch_edge_based(
-                    elements=elements,
-                    coordinates=coordinates,
-                    current_iterate=solution,
-                    edge=non_boundary_edge)
-            tmp_local_coordinates, tmp_local_elements, tmp_local_solution =\
-                refine_single_edge(
-                    coordinates=local_coordinates,
-                    elements=local_elements,
-                    edge=local_edge_indices,
-                    to_embed=local_iterate)
-            tmp_stiffness_matrix = csr_matrix(get_stiffness_matrix(
-                coordinates=tmp_local_coordinates,
-                elements=tmp_local_elements))
-            tmp_rhs_vector = get_right_hand_side(
-                coordinates=tmp_local_coordinates,
-                elements=tmp_local_elements, f=f)
-
-            # building the local 2x2 system
-            A_12 = tmp_stiffness_matrix.dot(tmp_local_solution)[-1]
-            A_22 = tmp_stiffness_matrix[-1, -1]
-
-            L_2 = tmp_rhs_vector[-1]
-
-            detA = (A_11 * A_22 - A_12 * A_12)
-
-            alpha = (A_22 * L_1 - A_12 * L_2)/detA
-            beta = (-A_12 * L_2 + A_11 * L_2)/detA
-
-            dE = 0.5*(
-                (alpha-1)**2 * A_11
-                + 2.*(alpha-1)*beta*A_12
-                + beta**2 * A_22)
-
-            energy_gains[k] = dE
-
-        # mark elements to be refined, then refine
-        # ---------------------------------------
-        marked_non_boundary_egdes = doerfler_marking(
-            input=energy_gains, theta=THETA)
-        marked_edges[non_boundary] = marked_non_boundary_egdes
-
-        coordinates, elements, boundaries, _ = refineNVB_edge_based(
-            coordinates=coordinates,
-            elements=elements,
-            boundary_conditions=boundaries,
-            element2edges=element_to_edges,
-            edge_to_nodes=edge_to_nodes,
-            boundaries_to_edges=boundaries_to_edges,
-            edge2newNode=marked_edges)
-
-        # solve linear problem exactly on current mesh
-        # --------------------------------------------
-        solution, _ = solvers.solve_laplace(
-            coordinates=coordinates,
-            elements=elements,
-            dirichlet=boundaries[0],
-            neumann=np.array([]),
-            f=f, g=None, uD=uD)
-
+    old_iterate = copy(current_iterate)
+    for n_sweep in range(max_n_sweeps):
+        # re-setup as the mesh might have changed
+        # ------------------------------------------
         n_vertices = coordinates.shape[0]
         indices_of_free_nodes = np.setdiff1d(
             ar1=np.arange(n_vertices),
@@ -187,53 +123,117 @@ def main() -> None:
         free_nodes[indices_of_free_nodes] = 1
         n_dofs = np.sum(free_nodes)
 
-        dump_object(obj=solution, path_to_file=base_results_path /
-                    Path(f'{n_dofs}/solution.pkl'))
+        # assembly of right hand side
+        right_hand_side = solvers.get_right_hand_side(
+            coordinates=coordinates,
+            elements=elements,
+            f=f)
+
+        # assembly of the stiffness matrix
+        stiffness_matrix = csr_matrix(solvers.get_stiffness_matrix(
+            coordinates=coordinates,
+            elements=elements))
+
+        # compute exact galerkin solution on current mesh
+        solution, _ = solvers.solve_laplace(
+            coordinates=coordinates,
+            elements=elements,
+            dirichlet=boundaries[0],
+            neumann=np.array([]),
+            f=f,
+            g=None,
+            uD=uD)
+
+        # ------------------------------
+        # Perform CG on the current mesh
+        # ------------------------------
+        print(f'performing {n_cg_steps} global CG steps on current mesh')
+        current_iterate[free_nodes], _ = cg(
+            A=stiffness_matrix[free_nodes, :][:, free_nodes],
+            b=right_hand_side[free_nodes],
+            x0=current_iterate[free_nodes],
+            maxiter=n_cg_steps,
+            rtol=1e-100)
+
+        # dump the current state
+        # ----------------------
         dump_object(obj=elements, path_to_file=base_results_path /
                     Path(f'{n_dofs}/elements.pkl'))
         dump_object(obj=coordinates, path_to_file=base_results_path /
                     Path(f'{n_dofs}/coordinates.pkl'))
         dump_object(obj=boundaries, path_to_file=base_results_path /
                     Path(f'{n_dofs}/boundaries.pkl'))
+        dump_object(
+            obj=solution, path_to_file=base_results_path /
+            Path(f'{n_dofs}/exact_solution.pkl'))
+        dump_object(obj=current_iterate, path_to_file=base_results_path /
+                    Path(f'{n_dofs}/{n_sweep+1}/solution.pkl'))
+
+        if n_sweep == max_n_sweeps - 1:
+            break
+
+        old_iterate = copy(current_iterate)
+
+        current_iterate[free_nodes], _ = cg(
+            A=stiffness_matrix[free_nodes, :][:, free_nodes],
+            b=right_hand_side[free_nodes],
+            x0=current_iterate[free_nodes],
+            maxiter=1,
+            rtol=1e-100)
+
+        # compute energy drop of cg per element -> dE_cg
+        n_elements = elements.shape[0]
+        dE_cg = np.zeros(n_elements)
+        for k in range(n_elements):
+            local_nodes = elements[k]
+            locally_updated_u = copy(old_iterate)
+            locally_updated_u[local_nodes] = current_iterate[local_nodes]
+            E_old = calculate_energy(
+                u=old_iterate,
+                lhs_matrix=stiffness_matrix, rhs_vector=right_hand_side)
+            E_current = calculate_energy(
+                u=locally_updated_u,
+                lhs_matrix=stiffness_matrix, rhs_vector=right_hand_side)
+            dE_local = E_old - E_current  # positive, if old energy was higher
+            dE_cg[k] = dE_local
+
+        # perform va with old_iterate -> dE_va
+        dE_va = algo_4_1.get_all_local_enery_gains(
+            coordinates=coordinates,
+            elements=elements,
+            boundaries=boundaries,
+            current_iterate=old_iterate,
+            rhs_function=f,
+            element_to_neighbours=get_element_to_neighbours(elements),
+            uD=uD, lamba_a=1)
+
+        # deciding where to refine based on local energy gains
+        # ----------------------------------------------------
+        # if the energy difference is equal, we prefer locally solving
+        # instead of adding more "expensive" degrees of freedom
+        refine = (
+            dE_va
+            > (FUDGE * dE_cg))
+        solve = np.logical_not(refine)
+
+        bigger_energy_drops = np.zeros_like(dE_cg)
+        bigger_energy_drops[solve] = FUDGE * dE_cg[solve]
+        bigger_energy_drops[refine] = dE_va[refine]
+        marked = doerfler_marking(
+            input=bigger_energy_drops,
+            theta=THETA)
+        refine = marked & refine
+
+        coordinates, elements, boundaries, current_iterate = refineNVB(
+            coordinates=coordinates,
+            elements=elements,
+            marked_elements=marked,
+            boundary_conditions=boundaries,
+            to_embed=current_iterate)
 
 
-def dump_object(obj, path_to_file: Path) -> None:
-    path_to_file.parent.mkdir(parents=True, exist_ok=True)
-    # save result as a pickle dump of pd.dataframe
-    with open(path_to_file, "wb") as file:
-        # Dump the DataFrame into the file using pickle
-        pickle.dump(obj, file)
-
-
-def show_solution(coordinates, solution):
-    plt.rcParams["mathtext.fontset"] = "cm"
-    plt.rcParams['xtick.labelsize'] = 12
-    plt.rcParams['ytick.labelsize'] = 12
-    plt.rcParams['axes.labelsize'] = 20
-    plt.rcParams['axes.titlesize'] = 12
-    plt.rcParams['legend.fontsize'] = 12
-
-    x_coords, y_coords = zip(*coordinates)
-
-    # Create a 3D scatter plot
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-
-    # Plot the points with scalar values as colors (adjust colormap as needed)
-    _ = ax.plot_trisurf(x_coords, y_coords, solution, linewidth=0.2,
-                        antialiased=True, cmap=cm.viridis)
-    # Add labels to the axes
-    ax.set_xlabel(r'$x$')
-    ax.set_ylabel(r'$y$')
-    ax.set_zlabel(r'$z$')
-
-    ax.set_xticks([0, 1])
-    ax.set_yticks([0, 1])
-    # ax.set_zticks([0, 0.02, 0.04, 0.06])
-
-    # Show and save the plot
-    # fig.savefig(out_path, dpi=300)
-    plt.show()
+def calculate_energy(u: np.ndarray, lhs_matrix: np.ndarray, rhs_vector: np.ndarray) -> float:
+    return 0.5 * u.dot(lhs_matrix.dot(u)) - rhs_vector.dot(u)
 
 
 if __name__ == '__main__':
