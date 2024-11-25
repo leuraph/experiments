@@ -4,7 +4,7 @@ from p1afempy.mesh import get_element_to_neighbours
 from p1afempy.refinement import refineNVB
 from pathlib import Path
 from variational_adaptivity import algo_4_1
-from experiment_setup import f, uD
+from configuration import f, uD
 from load_save_dumps import dump_object
 from scipy.sparse import csr_matrix
 from variational_adaptivity.markers import doerfler_marking
@@ -38,7 +38,7 @@ def main() -> None:
     path_to_dirichlet = base_path / Path('dirichlet.dat')
 
     base_results_path = (
-        Path('results/experiment_14') /
+        Path('results/experiment_03') /
         Path(f'theta-{THETA}_fudge-{FUDGE}'))
 
     coordinates, elements = io_helpers.read_mesh(
