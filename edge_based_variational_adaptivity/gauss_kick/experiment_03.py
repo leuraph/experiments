@@ -1,11 +1,10 @@
 import numpy as np
 from p1afempy import io_helpers, refinement, solvers
-from p1afempy.mesh import provide_geometric_data, show_mesh, get_local_patch_edge_based
+from p1afempy.mesh import provide_geometric_data, get_local_patch_edge_based
 from p1afempy.solvers import get_right_hand_side, get_stiffness_matrix
 from p1afempy.refinement import refineNVB_edge_based, refine_single_edge
 from variational_adaptivity.markers import doerfler_marking
 from pathlib import Path
-from utils import shuffle_elements, distort_coordinates
 from configuration import uD, f
 from ismember import is_row_in
 import pickle
@@ -55,16 +54,6 @@ def main() -> None:
                                  elements=elements,
                                  marked_elements=marked,
                                  boundary_conditions=boundaries)
-    # marking only non-boundary coordinates for jiggling
-    # all_coordinates_indices = np.arange(coordinates.shape[0])
-    # coordinates_on_boundary = np.isin(all_coordinates_indices, boundaries[0])
-    # marked_coordinates = np.logical_not(coordinates_on_boundary)
-    # # jiggle the initial mesh's non-boundary coordinates
-    # delta = 1./2**(n_initial_refinements+1)
-    # coordinates = distort_coordinates(coordinates=coordinates,
-    #                                   delta=delta, marked=marked_coordinates)
-    # # shuffle initial mesh's elements
-    # elements = shuffle_elements(elements=elements)
 
     # solve exactly on the initial mesh
     solution, _ = solvers.solve_laplace(
@@ -180,9 +169,6 @@ def main() -> None:
             edge_to_nodes=edge_to_nodes,
             boundaries_to_edges=boundaries_to_edges,
             edge2newNode=marked_edges)
-
-        # shuffle refined mesh's elements
-        # elements = shuffle_elements(elements=elements)
 
         # solve linear problem exactly on current mesh
         # --------------------------------------------
