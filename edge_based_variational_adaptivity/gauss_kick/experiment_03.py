@@ -18,8 +18,8 @@ def main() -> None:
     parser.add_argument("--theta", type=float, required=True,
                         help="value of theta used in the Dörfler marking")
     parser.add_argument("--fudge", type=float, required=True,
-                        help="if dE_n < fudge * sum_{k=1}^n dE_k/n, then"
-                        " CG on current mesh is stopped and VA kicks in")
+                        help="if fudge * dE_CG < dE_EVA, then"
+                        " CG on current mesh is stopped and EVA kicks in")
     args = parser.parse_args()
 
     THETA = args.theta
@@ -77,18 +77,6 @@ def main() -> None:
 
     # initial exact galerkin solution
     # -------------------------------
-    # assembly of right hand side
-    right_hand_side = solvers.get_right_hand_side(
-        coordinates=coordinates,
-        elements=elements,
-        f=f)
-
-    # assembly of the stiffness matrix
-    stiffness_matrix = csr_matrix(solvers.get_stiffness_matrix(
-        coordinates=coordinates,
-        elements=elements))
-
-    # compute exact galerkin solution
     solution, _ = solvers.solve_laplace(
         coordinates=coordinates,
         elements=elements,
@@ -123,17 +111,6 @@ def main() -> None:
         free_nodes[indices_of_free_nodes] = 1
         n_dofs = np.sum(free_nodes)
 
-        # assembly of right hand side
-        right_hand_side = solvers.get_right_hand_side(
-            coordinates=coordinates,
-            elements=elements,
-            f=f)
-
-        # assembly of the stiffness matrix
-        stiffness_matrix = csr_matrix(solvers.get_stiffness_matrix(
-            coordinates=coordinates,
-            elements=elements))
-
         # compute exact galerkin solution on current mesh
         solution, _ = solvers.solve_laplace(
             coordinates=coordinates,
@@ -147,6 +124,17 @@ def main() -> None:
         # ------------------------------
         # Perform CG on the current mesh
         # ------------------------------
+        # assembly of right hand side
+        right_hand_side = solvers.get_right_hand_side(
+            coordinates=coordinates,
+            elements=elements,
+            f=f)
+
+        # assembly of the stiffness matrix
+        stiffness_matrix = csr_matrix(solvers.get_stiffness_matrix(
+            coordinates=coordinates,
+            elements=elements))
+
         print(f'performing {n_cg_steps} global CG steps on current mesh')
         current_iterate[free_nodes], _ = cg(
             A=stiffness_matrix[free_nodes, :][:, free_nodes],
@@ -169,6 +157,7 @@ def main() -> None:
         dump_object(obj=current_iterate, path_to_file=base_results_path /
                     Path(f'{n_dofs}/{n_sweep+1}/solution.pkl'))
 
+        # in the last iteration, do not consider the possibility of refinement
         if n_sweep == max_n_sweeps - 1:
             break
 
@@ -181,48 +170,31 @@ def main() -> None:
             maxiter=1,
             rtol=1e-100)
 
-        # compute energy drop of cg per element -> dE_cg
-        n_elements = elements.shape[0]
-        dE_cg = np.zeros(n_elements)
-        for k in range(n_elements):
-            local_nodes = elements[k]
-            locally_updated_u = copy(old_iterate)
-            locally_updated_u[local_nodes] = current_iterate[local_nodes]
-            E_old = calculate_energy(
-                u=old_iterate,
-                lhs_matrix=stiffness_matrix, rhs_vector=right_hand_side)
-            E_current = calculate_energy(
-                u=locally_updated_u,
-                lhs_matrix=stiffness_matrix, rhs_vector=right_hand_side)
-            dE_local = E_old - E_current  # positive, if old energy was higher
-            dE_cg[k] = dE_local
+        # compute energy drop of one global cg step  -> dE_cg
+        old_energy = calculate_energy(
+            u=old_iterate,
+            lhs_matrix=stiffness_matrix,
+            rhs_vector=right_hand_side)
+        current_energy = calculate_energy(
+            u=current_iterate,
+            lhs_matrix=stiffness_matrix,
+            rhs_vector=right_hand_side)
+        dE_cg = old_energy - current_energy
 
-        # perform va with old_iterate -> dE_va
-        dE_va = algo_4_1.get_all_local_enery_gains(
-            coordinates=coordinates,
-            elements=elements,
-            boundaries=boundaries,
-            current_iterate=old_iterate,
-            rhs_function=f,
-            element_to_neighbours=get_element_to_neighbours(elements),
-            uD=uD, lamba_a=1)
+        # perform EVA with old_iterate -> dE_EVA
+        # TODO calculate
+        dE_eva = 0.
 
-        # deciding where to refine based on local energy gains
-        # ----------------------------------------------------
+        # deciding whether to refine based on global energy gains
+        # -------------------------------------------------------
         # if the energy difference is equal, we prefer locally solving
         # instead of adding more "expensive" degrees of freedom
-        refine = (
-            dE_va
-            > (FUDGE * dE_cg))
-        solve = np.logical_not(refine)
+        refine = FUDGE * dE_cg < dE_eva
 
-        bigger_energy_drops = np.zeros_like(dE_cg)
-        bigger_energy_drops[solve] = FUDGE * dE_cg[solve]
-        bigger_energy_drops[refine] = dE_va[refine]
-        marked = doerfler_marking(
-            input=bigger_energy_drops,
-            theta=THETA)
-        refine = marked & refine
+        if not refine:
+            continue
+
+        # TODO dörfler based on EVA
 
         coordinates, elements, boundaries, current_iterate = refineNVB(
             coordinates=coordinates,
