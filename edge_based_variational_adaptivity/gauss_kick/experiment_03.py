@@ -1,9 +1,7 @@
 import numpy as np
 from p1afempy import io_helpers, refinement, solvers
-from p1afempy.mesh import get_element_to_neighbours
 from p1afempy.refinement import refineNVB
 from pathlib import Path
-from variational_adaptivity import algo_4_1
 from configuration import f, uD
 from load_save_dumps import dump_object
 from scipy.sparse import csr_matrix
