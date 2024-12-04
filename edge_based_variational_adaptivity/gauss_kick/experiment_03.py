@@ -245,7 +245,6 @@ def main() -> None:
             detA = (A_11 * A_22 - A_12 * A_12)
 
             alpha = (A_22 * L_1 - A_12 * L_2)/detA
-            print(detA)
             beta = (-A_12 * L_1 + A_11 * L_2)/detA
 
             dE = 0.5*(
@@ -260,7 +259,6 @@ def main() -> None:
 
         values_on_new_edges[non_boundary] = \
             values_on_new_edges_non_boundary
-        print(np.max(values_on_new_edges))
 
         old_iterate_after_eva = np.hstack(
             [old_iterate, values_on_new_edges])
@@ -297,8 +295,6 @@ def main() -> None:
         # -------------------------------------------------------
         # if the energy difference is equal, we prefer locally solving
         # instead of adding more "expensive" degrees of freedom
-        print(f'dE_eva = {dE_eva}')
-        print(f'dE_cg = {dE_cg}')
         refine = FUDGE * dE_cg < dE_eva
 
         if not refine:
