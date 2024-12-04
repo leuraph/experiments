@@ -157,7 +157,7 @@ def main() -> None:
             detA = (A_11 * A_22 - A_12 * A_12)
 
             alpha = (A_22 * L_1 - A_12 * L_2)/detA
-            beta = (-A_12 * L_2 + A_11 * L_2)/detA
+            beta = (-A_12 * L_1 + A_11 * L_2)/detA
 
             dE = 0.5*(
                 (alpha-1)**2 * A_11
