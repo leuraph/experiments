@@ -248,12 +248,6 @@ def main() -> None:
             print(detA)
             beta = (-A_12 * L_1 + A_11 * L_2)/detA
 
-            print(f'A_11 = {A_11}')
-            print(f'A_12 = {A_12}')
-            print(f'A_22 = {A_22}')
-            print(f'L_1 = {L_1}')
-            print(f'L_2 = {L_2}')
-
             dE = 0.5*(
                 (alpha-1)**2 * A_11
                 + 2.*(alpha-1)*beta*A_12
