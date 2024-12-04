@@ -254,7 +254,9 @@ def main() -> None:
                 + beta**2 * A_22)
 
             energy_gains[k] = dE
-            values_on_new_edges_non_boundary[k] = beta
+            i, j = local_edge_indices
+            values_on_new_edges_non_boundary[k] = beta + 0.5 * (
+                local_iterate[i] + local_iterate[j])
 
         values_on_new_edges[non_boundary] = \
             values_on_new_edges_non_boundary
