@@ -4,3 +4,4 @@ p1afempy @ git+ssh://git@github.com/leuraph/p1afempy@3ae887ca8801c666d25bf5ff9ef
 jupyter
 scipy
 sympy
+iterative_methods @ git+ssh://git@github.com/leuraph/iterative_methods@v0.1.1
