@@ -25,3 +25,30 @@ However, this experiment runs faster as we extract the local patch of
 two elements before refining the mesh.
 
 ## Experiment 03
+global CG iterations stopped by global energy drop.
+In this experiment, we
+- perform `n` global cg update steps
+- perform edge based variational adaptivity to get new values on non-boundary edges
+- in parallel, perform one more global CG step
+- compare the corresponding global energy gains and, depending on this comparison, decide whether to refine the mesh or not
+
+# Error Calculations
+
+## Experiment 1/2
+Here we calculate the exact Galerkin Solution on each mesh.
+Hence, to calculate the energy norm error $\|u - u^N_h\|_a$ we can make use
+of Galerkin Othogonality, i.e.
+$$
+\|u - u^N_h\|^2_a = \|u\|_a^2 - \|u^N_h\|_a^2.
+$$
+So, to compute the energy norm error, it is enough to calculate
+the energy norm of the solution $u$ once
+and the energy norm squared for each Galerkin solution.
+
+## Experiment 3
+Here we iteratively approximate the Galerkin solution on each mesh.
+Hence, we can not make use of Galerkin Orthogonality and therefore
+must compute (approximate) the integral
+$$
+\|u - u_n^N\|_a^2 = \int_{\Omega} |\nabla(u - u_n^N)|^2 ~ \mathrm{d}x.
+$$
