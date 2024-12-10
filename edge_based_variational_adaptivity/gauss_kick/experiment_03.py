@@ -103,7 +103,6 @@ def main() -> None:
         Path(f'{n_dofs}/exact_solution.pkl'))
     # -----------------------------------------------------
 
-    old_iterate = copy(current_iterate)
     for n_sweep in range(max_n_sweeps):
         # re-setup as the mesh might have changed
         # ------------------------------------------
@@ -171,7 +170,7 @@ def main() -> None:
             A=stiffness_matrix[free_nodes, :][:, free_nodes],
             b=right_hand_side[free_nodes],
             x0=current_iterate[free_nodes],
-            maxiter=1,
+            maxiter=n_cg_steps,
             rtol=1e-100)
 
         # compute energy drop of one global cg step  -> dE_cg
@@ -279,12 +278,6 @@ def main() -> None:
         new_right_hand_side = get_right_hand_side(
             coordinates=new_coordinates, elements=new_elements, f=f)
 
-        show_solution(
-            coordinates=new_coordinates,
-            solution=old_iterate_after_eva)
-        show_solution(
-            coordinates=coordinates, solution=current_iterate)
-
         eva_energy = calculate_energy(
             u=old_iterate_after_eva,
             lhs_matrix=new_stiffness_matrix,
@@ -314,7 +307,8 @@ def main() -> None:
                 element2edges=element_to_edges,
                 edge_to_nodes=edge_to_nodes,
                 boundaries_to_edges=boundaries_to_edges,
-                edge2newNode=marked_edges)
+                edge2newNode=marked_edges,
+                to_embed=current_iterate)
 
 
 def calculate_energy(u: np.ndarray, lhs_matrix: np.ndarray, rhs_vector: np.ndarray) -> float:
