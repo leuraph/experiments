@@ -3,6 +3,7 @@ from p1afempy import io_helpers, refinement, solvers
 from p1afempy.refinement import refineNVB, refine_single_edge, refineNVB_edge_based
 from p1afempy.mesh import provide_geometric_data, get_local_patch_edge_based, show_mesh
 from p1afempy.solvers import get_stiffness_matrix, get_right_hand_side
+from p1afempy.data_structures import ElementsType, CoordinatesType
 from pathlib import Path
 from configuration import f, uD
 from load_save_dumps import dump_object
@@ -55,7 +56,7 @@ def main() -> None:
 
     # initial refinement
     # ------------------
-    n_initial_refinements = 4
+    n_initial_refinements = 5
     for _ in range(n_initial_refinements):
         marked = np.arange(elements.shape[0])
         coordinates, elements, boundaries, _ = \
@@ -192,10 +193,6 @@ def main() -> None:
                 elements=elements,
                 boundaries=boundaries)
 
-        # computing global terms before loop
-        L_1 = right_hand_side.dot(old_iterate)
-        A_11 = old_iterate.dot(stiffness_matrix.dot(old_iterate))
-
         n_boundaries = edge_to_nodes.shape[0]
 
         edge_to_nodes_flipped = np.column_stack(
@@ -206,55 +203,18 @@ def main() -> None:
         )
         non_boundary = np.logical_not(boundary)
         non_boundary_edges = edge_to_nodes[non_boundary]
-        n_non_boundary_edges = non_boundary_edges.shape[0]
-        marked_edges = np.zeros(edge_to_nodes.shape[0], dtype=int)
-        energy_gains = np.zeros(n_non_boundary_edges, dtype=float)
 
         # we get a new value for each new edge
         values_on_new_edges = np.zeros(n_boundaries)
-        values_on_new_edges_non_boundary = np.zeros(n_non_boundary_edges)
 
-        for k, non_boundary_edge in enumerate(tqdm(non_boundary_edges)):
-
-            local_elements, local_coordinates, \
-                local_iterate, local_edge_indices = get_local_patch_edge_based(
-                    elements=elements,
-                    coordinates=coordinates,
-                    current_iterate=old_iterate,
-                    edge=non_boundary_edge)
-            tmp_local_coordinates, tmp_local_elements, tmp_local_solution =\
-                refine_single_edge(
-                    coordinates=local_coordinates,
-                    elements=local_elements,
-                    edge=local_edge_indices,
-                    to_embed=local_iterate)
-            tmp_stiffness_matrix = csr_matrix(get_stiffness_matrix(
-                coordinates=tmp_local_coordinates,
-                elements=tmp_local_elements))
-            tmp_rhs_vector = get_right_hand_side(
-                coordinates=tmp_local_coordinates,
-                elements=tmp_local_elements, f=f)
-
-            # building the local 2x2 system
-            A_12 = tmp_stiffness_matrix.dot(tmp_local_solution)[-1]
-            A_22 = tmp_stiffness_matrix[-1, -1]
-
-            L_2 = tmp_rhs_vector[-1]
-
-            detA = (A_11 * A_22 - A_12 * A_12)
-
-            alpha = (A_22 * L_1 - A_12 * L_2)/detA
-            beta = (-A_12 * L_1 + A_11 * L_2)/detA
-
-            dE = 0.5*(
-                (alpha-1)**2 * A_11
-                + 2.*(alpha-1)*beta*A_12
-                + beta**2 * A_22)
-
-            energy_gains[k] = dE
-            i, j = local_edge_indices
-            values_on_new_edges_non_boundary[k] = beta + 0.5 * (
-                local_iterate[i] + local_iterate[j])
+        energy_gains, values_on_new_edges_non_boundary = \
+            edge_based_variational_adaptivity(
+                elements=elements,
+                coordinates=coordinates,
+                non_boundary_edges=non_boundary_edges,
+                old_iterate=old_iterate,
+                stiffness_matrix=stiffness_matrix,
+                right_hand_side=right_hand_side)
 
         values_on_new_edges[non_boundary] = \
             values_on_new_edges_non_boundary
@@ -297,6 +257,7 @@ def main() -> None:
         # ---------------------------------------
         marked_non_boundary_egdes = doerfler_marking(
             input=energy_gains, theta=THETA)
+        marked_edges = np.zeros(edge_to_nodes.shape[0], dtype=int)
         marked_edges[non_boundary] = marked_non_boundary_egdes
 
         coordinates, elements, boundaries, current_iterate = \
@@ -309,6 +270,68 @@ def main() -> None:
                 boundaries_to_edges=boundaries_to_edges,
                 edge2newNode=marked_edges,
                 to_embed=current_iterate)
+
+
+def edge_based_variational_adaptivity(
+        elements: ElementsType,
+        coordinates: CoordinatesType,
+        non_boundary_edges: np.ndarray,
+        old_iterate: np.ndarray,
+        stiffness_matrix: csr_matrix,
+        right_hand_side: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+
+    # computing global terms before loop
+    L_1 = right_hand_side.dot(old_iterate)
+    A_11 = old_iterate.dot(stiffness_matrix.dot(old_iterate))
+
+    # we get a new value for each new edge
+    n_non_boundary_edges = non_boundary_edges.shape[0]
+    values_on_new_edges_non_boundary = np.zeros(n_non_boundary_edges)
+    energy_gains = np.zeros(n_non_boundary_edges)
+
+    for k, non_boundary_edge in enumerate(tqdm(non_boundary_edges)):
+
+        local_elements, local_coordinates, \
+            local_iterate, local_edge_indices = get_local_patch_edge_based(
+                elements=elements,
+                coordinates=coordinates,
+                current_iterate=old_iterate,
+                edge=non_boundary_edge)
+        tmp_local_coordinates, tmp_local_elements, tmp_local_solution =\
+            refine_single_edge(
+                coordinates=local_coordinates,
+                elements=local_elements,
+                edge=local_edge_indices,
+                to_embed=local_iterate)
+        tmp_stiffness_matrix = csr_matrix(get_stiffness_matrix(
+            coordinates=tmp_local_coordinates,
+            elements=tmp_local_elements))
+        tmp_rhs_vector = get_right_hand_side(
+            coordinates=tmp_local_coordinates,
+            elements=tmp_local_elements, f=f)
+
+        # building the local 2x2 system
+        A_12 = tmp_stiffness_matrix.dot(tmp_local_solution)[-1]
+        A_22 = tmp_stiffness_matrix[-1, -1]
+
+        L_2 = tmp_rhs_vector[-1]
+
+        detA = (A_11 * A_22 - A_12 * A_12)
+
+        alpha = (A_22 * L_1 - A_12 * L_2)/detA
+        beta = (-A_12 * L_1 + A_11 * L_2)/detA
+
+        dE = 0.5*(
+            (alpha-1)**2 * A_11
+            + 2.*(alpha-1)*beta*A_12
+            + beta**2 * A_22)
+
+        energy_gains[k] = dE
+        i, j = local_edge_indices
+        values_on_new_edges_non_boundary[k] = beta + 0.5 * (
+            local_iterate[i] + local_iterate[j])
+
+    return energy_gains, values_on_new_edges_non_boundary
 
 
 def calculate_energy(u: np.ndarray, lhs_matrix: np.ndarray, rhs_vector: np.ndarray) -> float:
