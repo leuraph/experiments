@@ -12,6 +12,7 @@ Notes
 - the symbolic computations are outsourced to a jupyter notebook using `sympy`
 """
 import numpy as np
+from p1afempy.data_structures import CoordinatesType
 
 
 sigma_x = 100.
@@ -30,6 +31,30 @@ def analytical(r: np.ndarray) -> np.ndarray:
     u = (x*y*(x - 1)*(y - 1)*np.exp(-sigma_x *
          (-mu_x + x)**2 - sigma_y*(-mu_y + y)**2))
     return u
+
+
+def grad_u(r: CoordinatesType) -> np.ndarray:
+    """
+    gradient of the exact solution to the problem at hand
+
+    returns
+    -------
+    grad_u: np.ndarray
+        the j-th row of the array represents
+        the gradient of u evaluated at r_j
+
+    notes
+    -----
+    the symbolic calculation of this term can be found in
+    `edge_based_variational_adaptivity/gauss_kick/experiment_notes.ipynb`
+    """
+    xs = r[:, 0]
+    ys = r[:, 1]
+    u_x = ys*(ys - 1)*(2*sigma_x*xs*(mu_x - xs)*(xs - 1) + 2*xs - 1)*np.exp(
+        -sigma_x*(-mu_x + xs)**2 - sigma_y*(-mu_y + ys)**2)
+    u_y = xs*(xs - 1)*(2*sigma_y*ys*(mu_y - ys)*(ys - 1) + 2*ys - 1)*np.exp(
+        -sigma_x*(-mu_x + xs)**2 - sigma_y*(-mu_y + ys)**2)
+    return np.column_stack([u_x, u_y])
 
 
 def f(r: np.ndarray) -> float:
