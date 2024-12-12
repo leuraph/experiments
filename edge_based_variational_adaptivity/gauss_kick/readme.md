@@ -25,12 +25,20 @@ However, this experiment runs faster as we extract the local patch of
 two elements before refining the mesh.
 
 ## Experiment 03
-global CG iterations stopped by global energy drop.
+global CG iterations stopped by comparison of global energy losses of EVA and n CG steps.
 In this experiment, we
 - perform `n` global cg update steps
 - perform edge based variational adaptivity to get new values on non-boundary edges
 - in parallel, perform one more global CG step
 - compare the corresponding global energy gains and, depending on this comparison, decide whether to refine the mesh or not
+
+## Experiment 5
+global CG iterations stopped by comparison of current energy losses and overall energy loss on current space. Namely, we stop the CG iterations and refine, as soon as we have
+$$
+E(u^{n-1}) - E(u^n) \leq \alpha(n) \Big(E(u^0) - E(u^n)\Big),
+$$
+where $\alpha(n) =\text{const}. \in (0, 1)$ or (even stronger) $\alpha(n) \propto n^{-1} \in (0, 1)$.
+This sanity check is motivated by [HAW23].
 
 # Error Calculations
 
