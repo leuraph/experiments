@@ -311,7 +311,10 @@ def main() -> None:
                 to_embed=current_iterate)
 
 
-def calculate_energy(u: np.ndarray, lhs_matrix: np.ndarray, rhs_vector: np.ndarray) -> float:
+def calculate_energy(
+        u: np.ndarray,
+        lhs_matrix: np.ndarray,
+        rhs_vector: np.ndarray) -> float:
     return 0.5 * u.dot(lhs_matrix.dot(u)) - rhs_vector.dot(u)
 
 
