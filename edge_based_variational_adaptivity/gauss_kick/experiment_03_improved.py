@@ -19,6 +19,10 @@ from edge_based_variational_adaptivity import get_energy_gains_and_values_on_new
 from p1afempy.data_structures import ElementsType, CoordinatesType
 
 
+def calculate_energy(u: np.ndarray, lhs_matrix: np.ndarray, rhs_vector: np.ndarray) -> float:
+    return 0.5 * u.dot(lhs_matrix.dot(u)) - rhs_vector.dot(u)
+
+
 class CustomCallBack():
     n_iterations_done: int
     batch_size: int
@@ -449,10 +453,6 @@ def main() -> None:
                 boundaries_to_edges=boundaries_to_edges,
                 edge2newNode=marked_edges,
                 to_embed=current_iterate)
-
-
-def calculate_energy(u: np.ndarray, lhs_matrix: np.ndarray, rhs_vector: np.ndarray) -> float:
-    return 0.5 * u.dot(lhs_matrix.dot(u)) - rhs_vector.dot(u)
 
 
 def show_solution(coordinates, solution):
