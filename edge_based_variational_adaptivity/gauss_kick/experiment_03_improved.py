@@ -316,7 +316,8 @@ def main() -> None:
                 lhs_matrix=stiffness_matrix,
                 rhs_vector=right_hand_side),
             eva_energy_gain_of_initial_guess=0.0,
-            energy_gains_of_initial_guess=np.zeros(np.sum(free_nodes)))
+            energy_gains_of_initial_guess=np.zeros(np.sum(free_nodes)),
+            fudge=FUDGE)
 
         try:
             current_iterate[free_nodes], _ = cg(
