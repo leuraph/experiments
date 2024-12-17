@@ -47,6 +47,7 @@ class CustomCallBack():
     rhs_vector: np.ndarray
     last_energy_gain_eva: float
     last_energy_gains: np.ndarray
+    fudge: float
 
     def __init__(
             self,
@@ -56,7 +57,8 @@ class CustomCallBack():
             boundaries: list[np.ndarray],
             energy_of_initial_guess: float,
             eva_energy_gain_of_initial_guess: float,
-            energy_gains_of_initial_guess: np.ndarray) -> None:
+            energy_gains_of_initial_guess: np.ndarray,
+            fudge: float) -> None:
         self.n_iterations_done = 0
         self.batch_size = batch_size
         self.elements = elements
@@ -65,6 +67,7 @@ class CustomCallBack():
         self.energy_of_last_iterate = energy_of_initial_guess
         self.last_energy_gain_eva = eva_energy_gain_of_initial_guess
         self.last_energy_gains = energy_gains_of_initial_guess
+        self.fudge = fudge
 
         # mesh specific setup
         # -------------------
@@ -109,7 +112,7 @@ class CustomCallBack():
             current_iterate=current_iterate)
         energy_gain_iteration = self.energy_of_last_iterate - current_energy
 
-        if self.last_energy_gain_eva > energy_gain_iteration:
+        if self.last_energy_gain_eva > self.fudge*energy_gain_iteration:
             print(self.last_energy_gain_eva)
             print(energy_gain_iteration)
             converged_exception = ConvergedException(
