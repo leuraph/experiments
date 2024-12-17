@@ -23,6 +23,15 @@ def calculate_energy(u: np.ndarray, lhs_matrix: np.ndarray, rhs_vector: np.ndarr
     return 0.5 * u.dot(lhs_matrix.dot(u)) - rhs_vector.dot(u)
 
 
+class ConvergedException(Exception):
+    energy_gains: np.ndarray
+    last_iterate: np.ndarray
+
+    def __init__(self, energy_gains: np.ndarray, last_iterate: np.ndarray):
+        self.energy_gains = energy_gains
+        self.last_iterate = last_iterate
+
+
 class CustomCallBack():
     n_iterations_done: int
     batch_size: int
@@ -37,6 +46,7 @@ class CustomCallBack():
     lhs_matrix: csr_matrix
     rhs_vector: np.ndarray
     last_energy_gain_eva: float
+    last_energy_gains: np.ndarray
 
     def __init__(
             self,
@@ -45,13 +55,16 @@ class CustomCallBack():
             coordinates: CoordinatesType,
             boundaries: list[np.ndarray],
             energy_of_initial_guess: float,
-            eva_energy_gain_of_initial_guess: float) -> None:
+            eva_energy_gain_of_initial_guess: float,
+            energy_gains_of_initial_guess: np.ndarray) -> None:
+        self.n_iterations_done = 0
         self.batch_size = batch_size
         self.elements = elements
         self.coordinates = coordinates
         self.boundaries = boundaries
         self.energy_of_last_iterate = energy_of_initial_guess
         self.last_energy_gain_eva = eva_energy_gain_of_initial_guess
+        self.last_energy_gains = energy_gains_of_initial_guess
 
         # mesh specific setup
         # -------------------
@@ -97,7 +110,12 @@ class CustomCallBack():
         energy_gain_iteration = self.energy_of_last_iterate - current_energy
 
         if self.last_energy_gain_eva > energy_gain_iteration:
-            raise ValueError('Change me to a custom error and catch me')
+            print(self.last_energy_gain_eva)
+            print(energy_gain_iteration)
+            converged_exception = ConvergedException(
+                energy_gains=self.last_energy_gains,
+                last_iterate=current_iterate)
+            raise converged_exception
 
         energy_gains, values_on_new_nodes_non_boundary = \
             get_energy_gains_and_values_on_new_nodes(
@@ -107,6 +125,8 @@ class CustomCallBack():
                 current_iterate=current_iterate,
                 f=f,
                 verbose=True)
+
+        self.last_energy_gains = energy_gains
 
         # we get a new value on each edge
         values_on_new_nodes = np.zeros(self.edges.shape[0])
@@ -136,10 +156,11 @@ class CustomCallBack():
             new_stiffness_matrix.dot(current_iterate_after_eva)) \
             - new_right_hand_side.dot(current_iterate_after_eva)
 
-        energy_gain_eva = self.energy_of_last_iterate - energy_after_eva
-
         # keep energy considerations in memory
         self.energy_of_last_iterate = current_energy
+
+        energy_gain_eva = self.energy_of_last_iterate - energy_after_eva
+
         self.last_energy_gain_eva = energy_gain_eva
 
     def calculate_energy(self, current_iterate) -> float:
@@ -173,8 +194,9 @@ def main() -> None:
     THETA = args.theta
     FUDGE = args.fudge
 
-    max_n_sweeps = 20
+    max_n_refinements = 2
     n_cg_steps = 5
+    n_initial_refinements = 6
 
     # ------------------------------------------------
     # Setup
@@ -199,7 +221,6 @@ def main() -> None:
 
     # initial refinement
     # ------------------
-    n_initial_refinements = 4
     for _ in range(n_initial_refinements):
         marked = np.arange(elements.shape[0])
         coordinates, elements, boundaries, _ = \
@@ -247,9 +268,9 @@ def main() -> None:
         Path(f'{n_dofs}/exact_solution.pkl'))
     # -----------------------------------------------------
 
-    for n_sweep in range(max_n_sweeps):
-        # re-setup as the mesh might have changed
-        # ------------------------------------------
+    for n_refinement in range(max_n_refinements):
+        # re-setup as the mesh has changed
+        # --------------------------------
         n_vertices = coordinates.shape[0]
         indices_of_free_nodes = np.setdiff1d(
             ar1=np.arange(n_vertices),
@@ -268,10 +289,6 @@ def main() -> None:
             g=None,
             uD=uD)
 
-        # ------------------------------
-        # Perform CG on the current mesh
-        # ------------------------------
-        # assembly of right hand side
         right_hand_side = solvers.get_right_hand_side(
             coordinates=coordinates,
             elements=elements,
@@ -282,13 +299,33 @@ def main() -> None:
             coordinates=coordinates,
             elements=elements))
 
-        print(f'performing {n_cg_steps} global CG steps on current mesh')
-        current_iterate[free_nodes], _ = cg(
-            A=stiffness_matrix[free_nodes, :][:, free_nodes],
-            b=right_hand_side[free_nodes],
-            x0=current_iterate[free_nodes],
-            maxiter=n_cg_steps,
-            rtol=1e-100)
+        # ------------------------------
+        # Perform CG on the current mesh
+        # ------------------------------
+        # assembly of right hand side
+        custom_callback = CustomCallBack(
+            batch_size=n_cg_steps,
+            elements=elements,
+            coordinates=coordinates,
+            boundaries=boundaries,
+            energy_of_initial_guess=calculate_energy(
+                u=current_iterate,
+                lhs_matrix=stiffness_matrix,
+                rhs_vector=right_hand_side),
+            eva_energy_gain_of_initial_guess=0.0,
+            energy_gains_of_initial_guess=np.zeros(np.sum(free_nodes)))
+
+        try:
+            current_iterate[free_nodes], _ = cg(
+                A=stiffness_matrix[free_nodes, :][:, free_nodes],
+                b=right_hand_side[free_nodes],
+                x0=current_iterate[free_nodes],
+                rtol=1e-100,
+                callback=custom_callback)
+        except ConvergedException as conv:
+            current_iterate = conv.last_iterate
+            energy_gains = conv.energy_gains
+            print("CG stopped!")
 
         # dump the current state
         # ----------------------
@@ -302,146 +339,21 @@ def main() -> None:
             obj=solution, path_to_file=base_results_path /
             Path(f'{n_dofs}/exact_solution.pkl'))
         dump_object(obj=current_iterate, path_to_file=base_results_path /
-                    Path(f'{n_dofs}/{n_sweep+1}/solution.pkl'))
+                    Path(f'{n_dofs}/solution.pkl'))
 
         # in the last iteration, do not consider the possibility of refinement
-        if n_sweep == max_n_sweeps - 1:
+        if n_refinement == max_n_refinements - 1:
             break
 
-        old_iterate = copy(current_iterate)
-
-        current_iterate[free_nodes], _ = cg(
-            A=stiffness_matrix[free_nodes, :][:, free_nodes],
-            b=right_hand_side[free_nodes],
-            x0=current_iterate[free_nodes],
-            maxiter=n_cg_steps,
-            rtol=1e-100)
-
-        # compute energy drop of one global cg step  -> dE_cg
-        old_energy = calculate_energy(
-            u=old_iterate,
-            lhs_matrix=stiffness_matrix,
-            rhs_vector=right_hand_side)
-        current_energy = calculate_energy(
-            u=current_iterate,
-            lhs_matrix=stiffness_matrix,
-            rhs_vector=right_hand_side)
-        dE_cg = old_energy - current_energy
-
-        # --------------------------------------
-        # perform EVA with old_iterate -> dE_EVA
-        # --------------------------------------
-        element_to_edges, edge_to_nodes, boundaries_to_edges = \
-            provide_geometric_data(
-                elements=elements,
-                boundaries=boundaries)
-
-        # computing global terms before loop
-        L_1 = right_hand_side.dot(old_iterate)
-        A_11 = old_iterate.dot(stiffness_matrix.dot(old_iterate))
-
-        n_boundaries = edge_to_nodes.shape[0]
-
-        edge_to_nodes_flipped = np.column_stack(
-            [edge_to_nodes[:, 1], edge_to_nodes[:, 0]])
-        boundary = np.logical_or(
-            is_row_in(edge_to_nodes, boundaries[0]),
-            is_row_in(edge_to_nodes_flipped, boundaries[0])
-        )
-        non_boundary = np.logical_not(boundary)
-        non_boundary_edges = edge_to_nodes[non_boundary]
-        n_non_boundary_edges = non_boundary_edges.shape[0]
-        marked_edges = np.zeros(edge_to_nodes.shape[0], dtype=int)
-        energy_gains = np.zeros(n_non_boundary_edges, dtype=float)
-
-        # we get a new value for each new edge
-        values_on_new_edges = np.zeros(n_boundaries)
-        values_on_new_edges_non_boundary = np.zeros(n_non_boundary_edges)
-
-        for k, non_boundary_edge in enumerate(tqdm(non_boundary_edges)):
-
-            local_elements, local_coordinates, \
-                local_iterate, local_edge_indices = get_local_patch_edge_based(
-                    elements=elements,
-                    coordinates=coordinates,
-                    current_iterate=old_iterate,
-                    edge=non_boundary_edge)
-            tmp_local_coordinates, tmp_local_elements, tmp_local_solution =\
-                refine_single_edge(
-                    coordinates=local_coordinates,
-                    elements=local_elements,
-                    edge=local_edge_indices,
-                    to_embed=local_iterate)
-            tmp_stiffness_matrix = csr_matrix(get_stiffness_matrix(
-                coordinates=tmp_local_coordinates,
-                elements=tmp_local_elements))
-            tmp_rhs_vector = get_right_hand_side(
-                coordinates=tmp_local_coordinates,
-                elements=tmp_local_elements, f=f)
-
-            # building the local 2x2 system
-            A_12 = tmp_stiffness_matrix.dot(tmp_local_solution)[-1]
-            A_22 = tmp_stiffness_matrix[-1, -1]
-
-            L_2 = tmp_rhs_vector[-1]
-
-            detA = (A_11 * A_22 - A_12 * A_12)
-
-            alpha = (A_22 * L_1 - A_12 * L_2)/detA
-            beta = (-A_12 * L_1 + A_11 * L_2)/detA
-
-            dE = 0.5*(
-                (alpha-1)**2 * A_11
-                + 2.*(alpha-1)*beta*A_12
-                + beta**2 * A_22)
-
-            energy_gains[k] = dE
-            i, j = local_edge_indices
-            values_on_new_edges_non_boundary[k] = beta + 0.5 * (
-                local_iterate[i] + local_iterate[j])
-
-        values_on_new_edges[non_boundary] = \
-            values_on_new_edges_non_boundary
-
-        old_iterate_after_eva = np.hstack(
-            [old_iterate, values_on_new_edges])
-
-        # mark all elements for refinement
-        marked_elements = np.arange(elements.shape[0])
-        new_coordinates, new_elements, _, _ =\
-            refineNVB(
-                coordinates=coordinates,
-                elements=elements,
-                marked_elements=marked_elements,
-                boundary_conditions=boundaries)
-
-        new_stiffness_matrix = csr_matrix(
-            get_stiffness_matrix(
-                coordinates=new_coordinates,
-                elements=new_elements))
-        new_right_hand_side = get_right_hand_side(
-            coordinates=new_coordinates, elements=new_elements, f=f)
-
-        eva_energy = calculate_energy(
-            u=old_iterate_after_eva,
-            lhs_matrix=new_stiffness_matrix,
-            rhs_vector=new_right_hand_side)
-        dE_eva = old_energy - eva_energy
-
-        # deciding whether to refine based on global energy gains
-        # -------------------------------------------------------
-        # if the energy difference is equal, we prefer locally solving
-        # instead of adding more "expensive" degrees of freedom
-        refine = FUDGE * dE_cg < dE_eva
-
-        if not refine:
-            continue
-
         # dörfler based on EVA
-        # ---------------------------------------
+        # --------------------
+        marked_edges = np.zeros(custom_callback.edges.shape[0], dtype=int)
         marked_non_boundary_egdes = doerfler_marking(
             input=energy_gains, theta=THETA)
-        marked_edges[non_boundary] = marked_non_boundary_egdes
+        marked_edges[custom_callback.free_edges] = marked_non_boundary_egdes
+
+        element_to_edges, edge_to_nodes, boundaries_to_edges =\
+            provide_geometric_data(elements=elements, boundaries=boundaries)
 
         coordinates, elements, boundaries, current_iterate = \
             refineNVB_edge_based(
