@@ -5,14 +5,22 @@ from tqdm import tqdm
 import argparse
 from iterative_methods.energy_norm import calculate_energy_norm_error
 from triangle_cubature.cubature_rule import CubatureRuleEnum
+from p1afempy.solvers import get_stiffness_matrix
+from scipy.sparse import csr_matrix
 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--path", type=str, required=True)
+    parser.add_argument("--energy-path", type=str, required=True,
+                        help="path to the file holding the numerical value of "
+                        "the solution's energy norm squared")
     args = parser.parse_args()
 
     base_result_path = Path(args.path)
+
+    with open(args.energy_path) as f:
+        energy_norm_squared_exact = float(f.readline())
 
     # Cubature rule used for approximating
     # energy norm distance to exact solution
@@ -56,6 +64,13 @@ def main() -> None:
             elements=elements,
             coordinates=coordinates,
             cubature_rule=cubature_rule)
+
+        stiffness_matrix = csr_matrix(get_stiffness_matrix(
+            coordinates=coordinates, elements=elements))
+        energy_norm_squared_galerkin = exact_solution.dot(
+            stiffness_matrix.dot(exact_solution))
+        energy_norm_error_squared_exact_with_orthogonality =\
+            energy_norm_squared_galerkin - energy_norm_squared_exact
 
         # saving the energy norm errors to disk
         # -------------------------------------
