@@ -9,7 +9,7 @@ from scipy.sparse import csr_matrix
 from variational_adaptivity.markers import doerfler_marking
 import argparse
 from scipy.sparse.linalg import cg
-from custom_callback import ConvergedException, CustomCallBack
+from custom_callback import ConvergedException, EnergyComparisonCustomCallback
 
 
 def calculate_energy(
@@ -34,6 +34,7 @@ def main() -> None:
     max_n_refinements = 20
     n_cg_steps = 5
     n_initial_refinements = 3
+    min_n_iterations_per_mesh = 10
 
     # ------------------------------------------------
     # Setup
@@ -140,7 +141,7 @@ def main() -> None:
         # Perform CG on the current mesh
         # ------------------------------
         # assembly of right hand side
-        custom_callback = CustomCallBack(
+        custom_callback = EnergyComparisonCustomCallback(
             batch_size=n_cg_steps,
             elements=elements,
             coordinates=coordinates,
@@ -151,7 +152,8 @@ def main() -> None:
                 rhs_vector=right_hand_side),
             eva_energy_gain_of_initial_guess=0.0,
             energy_gains_of_initial_guess=np.zeros(np.sum(free_nodes)),
-            fudge=FUDGE)
+            fudge=FUDGE,
+            min_n_iterations_per_mesh=min_n_iterations_per_mesh)
 
         try:
             current_iterate[free_nodes], _ = cg(

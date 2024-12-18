@@ -6,7 +6,7 @@ from configuration import f
 from scipy.sparse import csr_matrix
 from ismember import is_row_in
 from edge_based_variational_adaptivity import \
-    get_energy_gains_and_values_on_new_nodes
+    get_energy_gains_and_values_on_new_nodes, get_energy_gains
 from p1afempy.data_structures import ElementsType, CoordinatesType
 
 
@@ -136,15 +136,45 @@ class CustomCallBack():
     def perform_callback(
             self,
             current_iterate) -> None:
+        pass
+
+    def calculate_energy(self, current_iterate) -> float:
+        return (
+            0.5*current_iterate.dot(self.lhs_matrix.dot(current_iterate))
+            - self.rhs_vector.dot(current_iterate))
+
+    def __call__(self, current_iterate_on_free_nodes) -> None:
+        # we know that scipy.sparse.linalg.cg calls this after each iteration
+        self.n_iterations_done += 1
+
+        batch_size_reached = self.n_iterations_done % self.batch_size == 0
+        min_iterations_reached = (
+            self.n_iterations_done > self.min_n_iterations_per_mesh)
+        if batch_size_reached and min_iterations_reached:
+            # restoring the full iterate
+            current_iterate = np.zeros(self.coordinates.shape[0])
+            current_iterate[self.free_nodes] = current_iterate_on_free_nodes
+
+            # check if we must continue with iterations
+            self.perform_callback(
+                current_iterate=current_iterate)
+
+
+class EnergyComparisonCustomCallback(CustomCallBack):
+    """
+    After each batch of iteration,
+    compares EVA energy gain with energy gain
+    associated with another batch of iterations.
+    """
+    def perform_callback(
+            self,
+            current_iterate) -> None:
 
         current_energy = self.calculate_energy(
             current_iterate=current_iterate)
         energy_gain_iteration = self.energy_of_last_iterate - current_energy
 
         if self.last_energy_gain_eva > self.fudge * energy_gain_iteration:
-            # print(f'dE EVA: {self.last_energy_gain_eva:.2g}')
-            # print(f'dE CG : {energy_gain_iteration:.2g}')
-            # print(f'1/nDOF: {1./np.sum(self.free_nodes):.2g}')
             converged_exception = ConvergedException(
                 energy_gains=self.last_energy_gains,
                 last_iterate=current_iterate)
@@ -196,22 +226,51 @@ class CustomCallBack():
 
         self.last_energy_gain_eva = energy_gain_eva
 
-    def calculate_energy(self, current_iterate) -> float:
-        return (
-            0.5*current_iterate.dot(self.lhs_matrix.dot(current_iterate))
-            - self.rhs_vector.dot(current_iterate))
 
-    def __call__(self, current_iterate_on_free_nodes) -> None:
-        # we know that scipy.sparse.linalg.cg calls this after each iteration
-        self.n_iterations_done += 1
+class EnergyTailOffCustomCallback(CustomCallBack):
+    """
+    After each batch of iterations,
+    compares the accumulated energy gain with
+    the energy gain associated to another batch of iterations.
+    """
+    accumulated_energy_gain: float
 
-        if (
-                (self.n_iterations_done % self.batch_size == 0) and
-                self.n_iterations_done > self.min_n_iterations_per_mesh):
-            # restoring the full iterate
-            current_iterate = np.zeros(self.coordinates.shape[0])
-            current_iterate[self.free_nodes] = current_iterate_on_free_nodes
+    def __init__(
+            self, batch_size, elements, coordinates,
+            boundaries, energy_of_initial_guess,
+            eva_energy_gain_of_initial_guess,
+            energy_gains_of_initial_guess, fudge,
+            min_n_iterations_per_mesh,):
+        super().__init__(
+            batch_size, elements, coordinates, boundaries,
+            energy_of_initial_guess, eva_energy_gain_of_initial_guess,
+            energy_gains_of_initial_guess, fudge,
+            min_n_iterations_per_mesh)
+        self.accumulated_energy_gain = 0.
 
-            # check if we must continue with iterations
-            self.perform_callback(
-                current_iterate=current_iterate)
+    def perform_callback(
+            self,
+            current_iterate) -> None:
+
+        current_energy = self.calculate_energy(
+            current_iterate=current_iterate)
+        energy_gain_iteration = self.energy_of_last_iterate - current_energy
+        self.accumulated_energy_gain += energy_gain_iteration
+
+        if energy_gain_iteration < self.fudge * self.accumulated_energy_gain:
+            energy_gains = get_energy_gains(
+                coordinates=self.coordinates,
+                elements=self.elements,
+                non_boundary_edges=self.non_boundary_edges,
+                current_iterate=current_iterate,
+                f=f,
+                verbose=True)
+
+            self.last_energy_gains = energy_gains
+            converged_exception = ConvergedException(
+                energy_gains=self.last_energy_gains,
+                last_iterate=current_iterate)
+            raise converged_exception
+
+        # keep energy considerations in memory
+        self.energy_of_last_iterate = current_energy
