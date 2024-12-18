@@ -50,6 +50,8 @@ def main() -> None:
 
         # calculating the energy norm errors
         # ----------------------------------
+
+        # |u_n - u_h|^2
         energy_norm_error_squared_approximate = \
             calculate_energy_norm_error(
                 current_iterate=approximate_solution,
@@ -58,6 +60,7 @@ def main() -> None:
                 coordinates=coordinates,
                 cubature_rule=cubature_rule)
 
+        # |u - u_h|^2 without orthogonality
         energy_norm_error_squared_exact = calculate_energy_norm_error(
             current_iterate=exact_solution,
             gradient_u=grad_u,
@@ -65,6 +68,7 @@ def main() -> None:
             coordinates=coordinates,
             cubature_rule=cubature_rule)
 
+        # |u - u_h|^2 with orthogonality
         stiffness_matrix = csr_matrix(get_stiffness_matrix(
             coordinates=coordinates, elements=elements))
         energy_norm_squared_galerkin = exact_solution.dot(
