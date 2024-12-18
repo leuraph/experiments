@@ -1,11 +1,10 @@
 import numpy as np
 from p1afempy import io_helpers, refinement, solvers
-from p1afempy.mesh import provide_geometric_data, show_mesh, get_local_patch_edge_based
+from p1afempy.mesh import provide_geometric_data, get_local_patch_edge_based
 from p1afempy.solvers import get_right_hand_side, get_stiffness_matrix
 from p1afempy.refinement import refineNVB_edge_based, refine_single_edge
 from variational_adaptivity.markers import doerfler_marking
 from pathlib import Path
-from utils import shuffle_elements, distort_coordinates
 from configuration import uD, f
 from ismember import is_row_in
 import pickle

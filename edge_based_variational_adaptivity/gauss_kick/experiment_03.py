@@ -9,8 +9,6 @@ from scipy.sparse import csr_matrix
 from variational_adaptivity.markers import doerfler_marking
 import argparse
 from scipy.sparse.linalg import cg
-import matplotlib.pyplot as plt
-from matplotlib import cm
 from custom_callback import ConvergedException, CustomCallBack
 
 
