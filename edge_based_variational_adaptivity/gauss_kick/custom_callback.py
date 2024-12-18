@@ -35,6 +35,7 @@ class CustomCallBack():
     last_energy_gain_eva: float
     last_energy_gains: np.ndarray
     fudge: float
+    min_n_iterations_per_mesh: int
 
     def __init__(
             self,
@@ -45,7 +46,8 @@ class CustomCallBack():
             energy_of_initial_guess: float,
             eva_energy_gain_of_initial_guess: float,
             energy_gains_of_initial_guess: np.ndarray,
-            fudge: float) -> None:
+            fudge: float,
+            min_n_iterations_per_mesh: int) -> None:
         self.n_iterations_done = 0
         self.batch_size = batch_size
         self.elements = elements
@@ -55,6 +57,7 @@ class CustomCallBack():
         self.last_energy_gain_eva = eva_energy_gain_of_initial_guess
         self.last_energy_gains = energy_gains_of_initial_guess
         self.fudge = fudge
+        self.min_n_iterations_per_mesh = min_n_iterations_per_mesh
 
         # mesh specific setup
         # -------------------
@@ -99,9 +102,10 @@ class CustomCallBack():
             current_iterate=current_iterate)
         energy_gain_iteration = self.energy_of_last_iterate - current_energy
 
-        if self.last_energy_gain_eva > self.fudge*energy_gain_iteration:
-            print(self.last_energy_gain_eva)
-            print(energy_gain_iteration)
+        if self.last_energy_gain_eva > self.fudge * energy_gain_iteration:
+            # print(f'dE EVA: {self.last_energy_gain_eva:.2g}')
+            # print(f'dE CG : {energy_gain_iteration:.2g}')
+            # print(f'1/nDOF: {1./np.sum(self.free_nodes):.2g}')
             converged_exception = ConvergedException(
                 energy_gains=self.last_energy_gains,
                 last_iterate=current_iterate)
@@ -162,7 +166,9 @@ class CustomCallBack():
         # we know that scipy.sparse.linalg.cg calls this after each iteration
         self.n_iterations_done += 1
 
-        if self.n_iterations_done % self.batch_size == 0:
+        if (
+                (self.n_iterations_done % self.batch_size == 0) and
+                self.n_iterations_done > self.min_n_iterations_per_mesh):
             # restoring the full iterate
             current_iterate = np.zeros(self.coordinates.shape[0])
             current_iterate[self.free_nodes] = current_iterate_on_free_nodes
