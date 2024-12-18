@@ -21,6 +21,9 @@ def main() -> None:
     for path_to_n_dofs in tqdm(list(base_result_path.iterdir())):
         if not path_to_n_dofs.is_dir():
             continue
+
+        # specifying paths
+        # ----------------
         path_to_elements = path_to_n_dofs / Path('elements.pkl')
         path_to_coordinates = path_to_n_dofs / Path('coordinates.pkl')
         path_to_approximate_solution = path_to_n_dofs \
@@ -28,6 +31,8 @@ def main() -> None:
         path_to_exact_solution = path_to_n_dofs \
             / Path('exact_solution.pkl')
 
+        # loading data
+        # ------------
         elements = load_dump(path_to_dump=path_to_elements)
         coordinates = load_dump(path_to_dump=path_to_coordinates)
         approximate_solution = load_dump(
@@ -35,6 +40,8 @@ def main() -> None:
         exact_solution = load_dump(
             path_to_dump=path_to_exact_solution)
 
+        # calculating the energy norm errors
+        # ----------------------------------
         energy_norm_error_squared_approximate = \
             calculate_energy_norm_error(
                 current_iterate=approximate_solution,
@@ -50,6 +57,8 @@ def main() -> None:
             coordinates=coordinates,
             cubature_rule=cubature_rule)
 
+        # saving the energy norm errors to disk
+        # -------------------------------------
         dump_object(
             obj=energy_norm_error_squared_approximate,
             path_to_file=(
@@ -60,6 +69,7 @@ def main() -> None:
             path_to_file=(
                 path_to_n_dofs /
                 Path('energy_norm_error_squared_exact.pkl')))
+
 
 if __name__ == '__main__':
     main()
