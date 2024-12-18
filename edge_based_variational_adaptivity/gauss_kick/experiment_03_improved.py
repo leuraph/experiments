@@ -33,9 +33,9 @@ def main() -> None:
     THETA = args.theta
     FUDGE = args.fudge
 
-    max_n_refinements = 2
+    max_n_refinements = 20
     n_cg_steps = 5
-    n_initial_refinements = 6
+    n_initial_refinements = 3
 
     # ------------------------------------------------
     # Setup
