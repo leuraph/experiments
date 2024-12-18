@@ -24,8 +24,9 @@ def main() -> None:
     parser.add_argument("--theta", type=float, required=True,
                         help="value of theta used in the Dörfler marking")
     parser.add_argument("--fudge", type=float, required=True,
-                        help="if fudge * dE_CG < dE_EVA, then"
-                        " CG on current mesh is stopped and EVA kicks in")
+                        help="if current_ennergy_gain < fudge * "
+                        "accumulated_energy_gain, iteration is halted and "
+                        "refinement is started")
     args = parser.parse_args()
 
     THETA = args.theta
