@@ -68,7 +68,7 @@ $$
 - `edge_based_variational_adaptivity/gauss_kick/calc_errors_for_exp.py`:
   On each subspace, i.e. for every number of degrees of freedom,
   calculates the energy norm error squared for the exact galerkin solution
-  and the last iterate.
+  (with and without usinng Galerkin Orthogonality) and the last iterate.
 - `edge_based_variational_adaptivity/gauss_kick/calculate_energy_norms_squared.py`:
   On each subspace, i.e. for every number of degrees of freedom,
   calculates the energy norm error squared for `solution.pkl`
