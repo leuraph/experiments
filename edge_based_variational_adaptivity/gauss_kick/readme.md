@@ -22,23 +22,25 @@ and rebuild the whole stiffness matrix and the right hand side vector for each e
 ## Experiment 02
 Same experiment as experiment-01.
 However, this experiment runs faster as we extract the local patch of
-two elements before refining the mesh.
+two elements before refining the shared edge.
 
 ## Experiment 03
-global CG iterations stopped by comparison of global energy losses of EVA and n CG steps.
+Global CG iterations stopped by comparison of global energy losses of EVA and n CG steps.
+Note that this experiment makes use of `custom_callback.py` as we need not to interrupt the
+global CG iterations when checking for convergence.
 In this experiment, we
 - perform `n` global cg update steps
 - perform edge based variational adaptivity to get new values on non-boundary edges
-- in parallel, perform one more global CG step
+- in parallel, perform `n` more global CG step
 - compare the corresponding global energy gains and, depending on this comparison, decide whether to refine the mesh or not
 
-## Experiment 5
+## Experiment 4
 global CG iterations stopped by comparison of current energy losses and overall energy loss on current space. Namely, we stop the CG iterations and refine, as soon as we have
 $$
 E(u^{n-1}) - E(u^n) \leq \alpha(n) \Big(E(u^0) - E(u^n)\Big),
 $$
 where $\alpha(n) =\text{const}. \in (0, 1)$ or (even stronger) $\alpha(n) \propto n^{-1} \in (0, 1)$.
-This sanity check is motivated by [HAW23].
+This ciretrion is motivated by [HAW23].
 
 # Error Calculations
 
@@ -60,3 +62,17 @@ must compute (approximate) the integral
 $$
 \|u - u_n^N\|_a^2 = \int_{\Omega} |\nabla(u - u_n^N)|^2 ~ \mathrm{d}x.
 $$
+
+## Scripts
+
+- `edge_based_variational_adaptivity/gauss_kick/calc_errors_for_exp.py`:
+  On each subspace, i.e. for every number of degrees of freedom,
+  calculates the energy norm error squared for the exact galerkin solution
+  and the last iterate.
+- `edge_based_variational_adaptivity/gauss_kick/calculate_energy_norms_squared.py`:
+  On each subspace, i.e. for every number of degrees of freedom,
+  calculates the energy norm error squared for `solution.pkl`
+- `edge_based_variational_adaptivity/gauss_kick/plot_energy_errors_galerkin_decay.py`:
+  Plot the energy norm error decay for the exact Galerkin solutions.
+- `edge_based_variational_adaptivity/gauss_kick/plot_energy_norm_errors_for_exp.py`:
+  Plot the energy norm error decay for both the Galerkin solution as well as the last iterate.
