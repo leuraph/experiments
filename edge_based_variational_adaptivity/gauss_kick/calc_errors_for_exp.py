@@ -88,6 +88,12 @@ def main() -> None:
             path_to_file=(
                 path_to_n_dofs /
                 Path('energy_norm_error_squared_exact.pkl')))
+        dump_object(
+            obj=energy_norm_error_squared_exact_with_orthogonality,
+            path_to_file=(
+                path_to_n_dofs /
+                Path(
+                    'energy_norm_error_squared_exact_with_orthogonality.pkl')))
 
 
 if __name__ == '__main__':
