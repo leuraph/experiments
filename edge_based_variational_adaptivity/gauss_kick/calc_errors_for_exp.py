@@ -75,7 +75,7 @@ def main() -> None:
         energy_norm_squared_galerkin = exact_solution.dot(
             stiffness_matrix.dot(exact_solution))
         energy_norm_error_squared_exact_with_orthogonality =\
-            energy_norm_squared_galerkin - energy_norm_squared_exact
+            energy_norm_squared_exact - energy_norm_squared_galerkin
 
         # saving the energy norm errors to disk
         # -------------------------------------
