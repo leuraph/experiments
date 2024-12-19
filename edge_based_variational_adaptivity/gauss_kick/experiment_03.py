@@ -103,7 +103,7 @@ def main() -> None:
                 Path(f'{n_dofs}/boundaries.pkl'))
     dump_object(
         obj=solution, path_to_file=base_results_path /
-        Path(f'{n_dofs}/exact_solution.pkl'))
+        Path(f'{n_dofs}/galerkin_solution.pkl'))
     # -----------------------------------------------------
 
     for n_refinement in range(max_n_refinements):
@@ -177,9 +177,9 @@ def main() -> None:
                     Path(f'{n_dofs}/boundaries.pkl'))
         dump_object(
             obj=solution, path_to_file=base_results_path /
-            Path(f'{n_dofs}/exact_solution.pkl'))
+            Path(f'{n_dofs}/galerkin_solution.pkl'))
         dump_object(obj=current_iterate, path_to_file=base_results_path /
-                    Path(f'{n_dofs}/solution.pkl'))
+                    Path(f'{n_dofs}/last_iterate.pkl'))
 
         # in the last iteration, do not consider the possibility of refinement
         if n_refinement == max_n_refinements - 1:

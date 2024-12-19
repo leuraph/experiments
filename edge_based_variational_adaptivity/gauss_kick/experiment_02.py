@@ -83,7 +83,7 @@ def main() -> None:
 
     dump_object(obj=solution,
                 path_to_file=base_results_path / Path(
-                    f'{n_dofs}/solution.pkl'))
+                    f'{n_dofs}/galerkin_solution.pkl'))
     dump_object(obj=elements,
                 path_to_file=base_results_path / Path(
                     f'{n_dofs}/elements.pkl'))
@@ -201,7 +201,7 @@ def main() -> None:
         n_dofs = np.sum(free_nodes)
 
         dump_object(obj=solution, path_to_file=base_results_path /
-                    Path(f'{n_dofs}/solution.pkl'))
+                    Path(f'{n_dofs}/galerkin_solution.pkl'))
         dump_object(obj=elements, path_to_file=base_results_path /
                     Path(f'{n_dofs}/elements.pkl'))
         dump_object(obj=coordinates, path_to_file=base_results_path /
