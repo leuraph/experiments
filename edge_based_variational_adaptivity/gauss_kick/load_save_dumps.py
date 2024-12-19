@@ -1,5 +1,6 @@
 import pickle
 from pathlib import Path
+import warnings
 
 
 def dump_object(obj, path_to_file: Path) -> None:
@@ -11,5 +12,9 @@ def dump_object(obj, path_to_file: Path) -> None:
 
 
 def load_dump(path_to_dump: Path):
-    with open(path_to_dump, mode='rb') as file:
-        return pickle.load(file=file)
+    try:
+        with open(path_to_dump, mode='rb') as file:
+            return pickle.load(file=file)
+    except FileNotFoundError:
+        warnings.warn(f"Warning: The file '{path_to_dump}' does not exist.")
+        return None  # Return None or any other fallback value
