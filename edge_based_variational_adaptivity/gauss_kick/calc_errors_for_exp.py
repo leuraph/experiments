@@ -84,18 +84,18 @@ def main() -> None:
                 obj=energy_norm_error_squared_approximate,
                 path_to_file=(
                     path_to_n_dofs /
-                    Path('energy_norm_error_squared.pkl')))
+                    Path('energy_norm_error_squared_last_iterate.pkl')))
         dump_object(
             obj=energy_norm_error_squared_exact,
             path_to_file=(
                 path_to_n_dofs /
-                Path('energy_norm_error_squared_exact_without_orthogonality.pkl')))
+                Path('energy_norm_error_squared_galerkin_without_orthogonality.pkl')))
         dump_object(
             obj=energy_norm_error_squared_exact_with_orthogonality,
             path_to_file=(
                 path_to_n_dofs /
                 Path(
-                    'energy_norm_error_squared_exact_with_orthogonality.pkl')))
+                    'energy_norm_error_squared_galerkin_with_orthogonality.pkl')))
 
 
 if __name__ == '__main__':
