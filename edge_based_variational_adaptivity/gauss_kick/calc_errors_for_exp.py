@@ -52,13 +52,14 @@ def main() -> None:
         # ----------------------------------
 
         # |u_n - u_h|^2
-        energy_norm_error_squared_approximate = \
-            calculate_energy_norm_error(
-                current_iterate=approximate_solution,
-                gradient_u=grad_u,
-                elements=elements,
-                coordinates=coordinates,
-                cubature_rule=cubature_rule)
+        if approximate_solution is not None:
+            energy_norm_error_squared_approximate = \
+                calculate_energy_norm_error(
+                    current_iterate=approximate_solution,
+                    gradient_u=grad_u,
+                    elements=elements,
+                    coordinates=coordinates,
+                    cubature_rule=cubature_rule)
 
         # |u - u_h|^2 without orthogonality
         energy_norm_error_squared_exact = calculate_energy_norm_error(
@@ -78,16 +79,17 @@ def main() -> None:
 
         # saving the energy norm errors to disk
         # -------------------------------------
-        dump_object(
-            obj=energy_norm_error_squared_approximate,
-            path_to_file=(
-                path_to_n_dofs /
-                Path('energy_norm_error_squared.pkl')))
+        if approximate_solution is not None:
+            dump_object(
+                obj=energy_norm_error_squared_approximate,
+                path_to_file=(
+                    path_to_n_dofs /
+                    Path('energy_norm_error_squared.pkl')))
         dump_object(
             obj=energy_norm_error_squared_exact,
             path_to_file=(
                 path_to_n_dofs /
-                Path('energy_norm_error_squared_exact.pkl')))
+                Path('energy_norm_error_squared_exact_without_orthogonality.pkl')))
         dump_object(
             obj=energy_norm_error_squared_exact_with_orthogonality,
             path_to_file=(
