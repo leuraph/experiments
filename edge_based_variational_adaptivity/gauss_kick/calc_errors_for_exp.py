@@ -35,9 +35,9 @@ def main() -> None:
         path_to_elements = path_to_n_dofs / Path('elements.pkl')
         path_to_coordinates = path_to_n_dofs / Path('coordinates.pkl')
         path_to_approximate_solution = path_to_n_dofs \
-            / Path('solution.pkl')
+            / Path('last_iterate.pkl')
         path_to_exact_solution = path_to_n_dofs \
-            / Path('exact_solution.pkl')
+            / Path('galerkin_solution.pkl')
 
         # loading data
         # ------------
