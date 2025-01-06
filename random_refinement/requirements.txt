@@ -2,3 +2,4 @@ tqdm
 numpy
 p1afempy
 scipy
+jupyter
