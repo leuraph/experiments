@@ -85,11 +85,12 @@ def main() -> None:
     # random refinements and exact solves
     # -----------------------------------
 
-    n_refinements = 5
-    for _ in tqdm(range(n_refinements)):
+    max_n_dofs = 1e6
+    while True:
 
         # random refinement
         # -----------------
+
         # Calculate the number of elements to mark
         n_elements = elements.shape[0]
         n_to_mark = int(np.ceil(PERCENTAGE * n_elements))
@@ -97,6 +98,7 @@ def main() -> None:
         # Randomly select elements to mark
         marked = np.random.choice(n_elements, size=n_to_mark, replace=False)
 
+        # refine
         coordinates, elements, boundaries, _ = \
             refineNVB(
                 coordinates=coordinates,
@@ -104,16 +106,7 @@ def main() -> None:
                 marked_elements=marked,
                 boundary_conditions=boundaries)
 
-        # solve linear problem exactly on current mesh
-        # --------------------------------------------
-        solution, _ = solvers.solve_laplace(
-            coordinates=coordinates,
-            elements=elements,
-            dirichlet=boundaries[0],
-            neumann=np.array([]),
-            f=f, g=None, uD=uD,
-            cubature_rule=CubatureRuleEnum.DAYTAYLOR)
-
+        # calculate number of degrees of freedom
         n_vertices = coordinates.shape[0]
         indices_of_free_nodes = np.setdiff1d(
             ar1=np.arange(n_vertices),
@@ -121,6 +114,18 @@ def main() -> None:
         free_nodes = np.zeros(n_vertices, dtype=bool)
         free_nodes[indices_of_free_nodes] = 1
         n_dofs = np.sum(free_nodes)
+
+        # solve linear problem exactly on current mesh
+        # --------------------------------------------
+        print(f'Solving Problem for {n_dofs} DOFs...')
+        solution, _ = solvers.solve_laplace(
+            coordinates=coordinates,
+            elements=elements,
+            dirichlet=boundaries[0],
+            neumann=np.array([]),
+            f=f, g=None, uD=uD,
+            cubature_rule=CubatureRuleEnum.DAYTAYLOR)
+        print('Done!')
 
         dump_object(obj=solution, path_to_file=base_results_path /
                     Path(f'{n_dofs}/galerkin_solution.pkl'))
@@ -130,6 +135,9 @@ def main() -> None:
                     Path(f'{n_dofs}/coordinates.pkl'))
         dump_object(obj=boundaries, path_to_file=base_results_path /
                     Path(f'{n_dofs}/boundaries.pkl'))
+
+        if n_dofs >= max_n_dofs:
+            break
 
 
 def dump_object(obj, path_to_file: Path) -> None:
