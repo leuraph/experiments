@@ -10,6 +10,7 @@ from variational_adaptivity.markers import doerfler_marking
 import argparse
 from scipy.sparse.linalg import cg
 from custom_callback import ConvergedException, EnergyComparisonCustomCallback
+import copy
 
 
 def calculate_energy(
@@ -80,10 +81,8 @@ def main() -> None:
         g=None,
         uD=uD)
 
-    # initializing the solution to random values
-    current_iterate = np.random.rand(coordinates.shape[0])
-    # forcing the boundary values to be zero, nevertheless
-    current_iterate[np.unique(boundaries[0].flatten())] = 0.
+    # initializing the iterate with galerkin solution
+    current_iterate = (copy.deepcopy(galerkin_solution))
 
     # calculating free nodes on the initial mesh
     # ------------------------------------------
