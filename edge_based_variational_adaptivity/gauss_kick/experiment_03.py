@@ -10,7 +10,8 @@ from variational_adaptivity.markers import doerfler_marking
 import argparse
 from scipy.sparse.linalg import cg
 from custom_callback import ConvergedException, EnergyComparisonCustomCallback
-import copy
+from ismember import is_row_in
+from edge_based_variational_adaptivity import get_energy_gains
 
 
 def calculate_energy(
@@ -81,8 +82,8 @@ def main() -> None:
         g=None,
         uD=uD)
 
-    # initializing the iterate with galerkin solution
-    current_iterate = (copy.deepcopy(galerkin_solution))
+    # initializing the solution to random values
+    current_iterate = np.copy(galerkin_solution)
 
     # calculating free nodes on the initial mesh
     # ------------------------------------------
@@ -105,7 +106,67 @@ def main() -> None:
     dump_object(
         obj=galerkin_solution, path_to_file=base_results_path /
         Path(f'{n_dofs}/galerkin_solution.pkl'))
+    dump_object(
+        obj=current_iterate, path_to_file=base_results_path /
+        Path(f'{n_dofs}/last_iterate.pkl'))
     # -----------------------------------------------------
+
+    # perform first refinement by hand
+    # --------------------------------
+    # (non-boundary) edges
+    _, edge_to_nodes, _ = \
+        provide_geometric_data(
+            elements=elements,
+            boundaries=boundaries)
+
+    edge_to_nodes_flipped = np.column_stack(
+        [edge_to_nodes[:, 1], edge_to_nodes[:, 0]])
+    boundary = np.logical_or(
+        is_row_in(edge_to_nodes, boundaries[0]),
+        is_row_in(edge_to_nodes_flipped, boundaries[0])
+    )
+    non_boundary = np.logical_not(boundary)
+    edges = edge_to_nodes
+    non_boundary_edges = edge_to_nodes[non_boundary]
+
+    # free nodes / edges
+    n_vertices = coordinates.shape[0]
+    indices_of_free_nodes = np.setdiff1d(
+        ar1=np.arange(n_vertices),
+        ar2=np.unique(boundaries[0].flatten()))
+    free_nodes = np.zeros(n_vertices, dtype=bool)
+    free_nodes[indices_of_free_nodes] = 1
+    free_edges = non_boundary
+    free_nodes = free_nodes
+
+    energy_gains = get_energy_gains(
+        coordinates=coordinates,
+        elements=elements,
+        non_boundary_edges=non_boundary_edges,
+        current_iterate=current_iterate,
+        f=f,
+        verbose=False)
+
+    # dörfler based on EVA
+    marked_edges = np.zeros(edges.shape[0], dtype=int)
+    marked_non_boundary_egdes = doerfler_marking(
+        input=energy_gains, theta=THETA)
+    marked_edges[free_edges] = marked_non_boundary_egdes
+
+    element_to_edges, edge_to_nodes, boundaries_to_edges =\
+        provide_geometric_data(elements=elements, boundaries=boundaries)
+
+    coordinates, elements, boundaries, current_iterate = \
+        refineNVB_edge_based(
+            coordinates=coordinates,
+            elements=elements,
+            boundary_conditions=boundaries,
+            element2edges=element_to_edges,
+            edge_to_nodes=edge_to_nodes,
+            boundaries_to_edges=boundaries_to_edges,
+            edge2newNode=marked_edges,
+            to_embed=current_iterate)
+    # --------------------------------
 
     for n_refinement in range(max_n_refinements):
         # re-setup as the mesh has changed
