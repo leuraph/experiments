@@ -24,7 +24,7 @@ def main() -> None:
 
     # Cubature rule used for approximating
     # energy norm distance to exact solution
-    cubature_rule = CubatureRuleEnum.SMPLX1
+    cubature_rule = CubatureRuleEnum.DAYTAYLOR
 
     for path_to_n_dofs in tqdm(list(base_result_path.iterdir())):
         if not path_to_n_dofs.is_dir():
