@@ -23,9 +23,9 @@ def main() -> None:
         path_to_boundaries = n_dofs_dir / Path('boundaries.pkl')
         path_to_coordinates = n_dofs_dir / Path('coordinates.pkl')
         path_to_energy_norm_error_squared = n_dofs_dir / Path(
-            'energy_norm_error_squared.pkl')
+            'energy_norm_error_squared_last_iterate.pkl')
         path_to_energy_norm_error_squared_exact = n_dofs_dir / Path(
-            'energy_norm_error_squared_exact.pkl')
+            'energy_norm_error_squared_galerkin_without_orthogonality.pkl')
 
         coordinates = load_dump(path_to_coordinates)
         boundaries = load_dump(path_to_boundaries)
