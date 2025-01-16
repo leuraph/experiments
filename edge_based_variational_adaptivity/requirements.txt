@@ -1,7 +1,7 @@
 ismember
-variational_adaptivity @ git+ssh://git@github.com/leuraph/variational_adaptivity@v0.0.7
-p1afempy @ git+ssh://git@github.com/leuraph/p1afempy@3ae887ca8801c666d25bf5ff9ef36f655e390272
+variational_adaptivity @ git+ssh://git@github.com/leuraph/variational_adaptivity@v0.0.8
+p1afempy @ git+ssh://git@github.com/leuraph/p1afempy@v0.2.10
 jupyter
 scipy
 sympy
-iterative_methods @ git+ssh://git@github.com/leuraph/iterative_methods@v0.1.1
+iterative_methods @ git+ssh://git@github.com/leuraph/iterative_methods@v0.1.2
