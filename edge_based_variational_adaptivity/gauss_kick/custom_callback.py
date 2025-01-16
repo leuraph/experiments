@@ -182,6 +182,9 @@ class EnergyComparisonCustomCallback(CustomCallBack):
                 last_iterate=current_iterate)
             raise converged_exception
 
+        # BUG: this must also be calculated if we immediately converge!!
+        # otherwise, there will be a shape mismatch
+        # to fix this, calculate last energy gain eva on init
         energy_gains, values_on_new_nodes_non_boundary = \
             get_energy_gains_and_values_on_new_nodes(
                 coordinates=self.coordinates,
