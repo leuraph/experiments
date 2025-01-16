@@ -26,15 +26,17 @@ def main() -> None:
     parser.add_argument("--fudge", type=float, required=True,
                         help="if fudge * dE_CG < dE_EVA, then"
                         " CG on current mesh is stopped and EVA kicks in")
+    parser.add_argument("--miniter", type=int, required=True,
+                        help="minimum number of CG iterations on each mesh")
     args = parser.parse_args()
 
     THETA = args.theta
     FUDGE = args.fudge
+    MINITER = args.miniter
 
     max_n_refinements = 20
     n_cg_steps = 5
     n_initial_refinements = 3
-    min_n_iterations_per_mesh = 10
 
     # ------------------------------------------------
     # Setup
@@ -153,7 +155,7 @@ def main() -> None:
             eva_energy_gain_of_initial_guess=0.0,
             energy_gains_of_initial_guess=np.zeros(np.sum(free_nodes)),
             fudge=FUDGE,
-            min_n_iterations_per_mesh=min_n_iterations_per_mesh)
+            min_n_iterations_per_mesh=MINITER)
 
         try:
             current_iterate[free_nodes], _ = cg(
