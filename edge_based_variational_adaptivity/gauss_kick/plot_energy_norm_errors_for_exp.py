@@ -93,12 +93,16 @@ def main() -> None:
         n_dofs,
         energy_norm_errors_squared_exact,
         linestyle=None, marker='_', markersize=8,
-        linewidth=0, alpha=1.0, color=COLOR_RED)
+        linewidth=0, alpha=1.0, color=COLOR_RED,
+        label='Galerkin solutions')
 
     ax.loglog(
         n_dofs, energy_norm_errors_squared,
         linestyle=None, marker='_', markersize=8,
-        linewidth=0, alpha=1.0, color=COLOR_GREEN)
+        linewidth=0, alpha=1.0, color=COLOR_GREEN,
+        label='Last iterate')
+    
+    ax.legend(loc='best')
 
     fig.savefig(
         path_to_plot,
