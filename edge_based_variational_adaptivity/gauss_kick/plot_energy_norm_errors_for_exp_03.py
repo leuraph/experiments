@@ -69,7 +69,7 @@ def main() -> None:
     energy_norm_errors_squared_galerkin_without_orthogonality = \
         energy_norm_errors_squared_galerkin_without_orthogonality[sort_n_dof]
     energy_norm_errors_squared_last_iterate = \
-        energy_norm_error_squared_last_iterate[sort_n_dof]
+        energy_norm_errors_squared_last_iterate [sort_n_dof]
     n_dofs = n_dofs[sort_n_dof]
 
     def model(x, m):
