@@ -69,6 +69,17 @@ def main() -> None:
                                  marked_elements=marked,
                                  boundary_conditions=boundaries)
 
+    # initial exact galerkin solution
+    # -------------------------------
+    galerkin_solution, _ = solvers.solve_laplace(
+        coordinates=coordinates,
+        elements=elements,
+        dirichlet=boundaries[0],
+        neumann=np.array([]),
+        f=f,
+        g=None,
+        uD=uD)
+
     # initializing the solution to random values
     current_iterate = np.random.rand(coordinates.shape[0])
     # forcing the boundary values to be zero, nevertheless
@@ -83,17 +94,6 @@ def main() -> None:
     free_nodes = np.zeros(n_vertices, dtype=bool)
     free_nodes[indices_of_free_nodes] = 1
     n_dofs = np.sum(free_nodes)
-
-    # initial exact galerkin solution
-    # -------------------------------
-    galerkin_solution, _ = solvers.solve_laplace(
-        coordinates=coordinates,
-        elements=elements,
-        dirichlet=boundaries[0],
-        neumann=np.array([]),
-        f=f,
-        g=None,
-        uD=uD)
 
     # dump initial mesh and initial exact galerkin solution
     # -----------------------------------------------------
