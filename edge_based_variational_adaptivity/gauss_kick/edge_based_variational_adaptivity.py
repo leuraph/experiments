@@ -1,10 +1,11 @@
 import numpy as np
-from p1afempy.data_structures import CoordinatesType, ElementsType, BoundaryConditionType
+from p1afempy.data_structures import CoordinatesType, ElementsType, BoundaryConditionType, BoundaryType
 from scipy.sparse import csr_matrix
 from tqdm import tqdm
 from p1afempy.mesh import get_local_patch_edge_based
-from p1afempy.refinement import refine_single_edge
+from p1afempy.refinement import refine_single_edge, refineNVB
 from p1afempy.solvers import get_stiffness_matrix, get_right_hand_side
+from triangle_cubature.cubature_rule import CubatureRuleEnum
 
 
 def get_energy_gains_and_values_on_new_nodes(
@@ -141,3 +142,79 @@ def get_energy_gains(
         f=f,
         verbose=verbose)
     return energy_gains
+
+
+def get_energy_after_eva_and_local_energy_gains_eva(
+            current_iterate: np.ndarray,
+            coordinates: CoordinatesType,
+            elements: ElementsType,
+            boundaries: list[BoundaryType],
+            edges: np.ndarray,
+            free_edges: np.ndarray,
+            f) -> tuple[float, np.ndarray]:
+    """
+    returns both the new global energy and the local energy gains
+    associated to EVA.
+
+    parameters
+    ----------
+    current_iterate: np.ndarray
+    coordinates: CoordinatesType
+    elements: ElementsType
+    boundaries: list[BoundaryType]
+    edges: np.ndarray
+        all unique edges of the mesh at hand
+    free_edges: np.ndarray
+        boolean mask of non-boundary edges
+    f: BoundaryConditionType
+        right-hand side function of the problem at hand
+
+    returns
+    -------
+    energy_after_eva: float
+        energy of the iterate constructed out of the `current_iterate`
+        and the values on bisected free edges found by EVA
+    local_energy_gains_eva: np.ndarray
+        the local energy gains on all free edges found by EVA
+    """
+    non_boundary_edges = edges[free_edges]
+
+    local_energy_gains_eva, values_on_new_nodes_non_boundary = \
+        get_energy_gains_and_values_on_new_nodes(
+            coordinates=coordinates,
+            elements=elements,
+            non_boundary_edges=non_boundary_edges,
+            current_iterate=current_iterate,
+            f=f,
+            verbose=True)
+
+    # we get a new value on each edge
+    values_on_new_nodes = np.zeros(edges.shape[0])
+    values_on_new_nodes[free_edges] = \
+        values_on_new_nodes_non_boundary
+
+    current_iterate_after_eva = np.hstack(
+        [current_iterate, values_on_new_nodes])
+
+    # mark all elements for refinement
+    marked_elements = np.arange(elements.shape[0])
+    new_coordinates, new_elements, _, _ =\
+        refineNVB(
+            coordinates=coordinates,
+            elements=elements,
+            marked_elements=marked_elements,
+            boundary_conditions=boundaries)
+
+    new_stiffness_matrix = csr_matrix(
+        get_stiffness_matrix(
+            coordinates=new_coordinates,
+            elements=new_elements))
+    new_right_hand_side = get_right_hand_side(
+        coordinates=new_coordinates, elements=new_elements, f=f,
+        cubature_rule=CubatureRuleEnum.DAYTAYLOR)
+
+    energy_after_eva = 0.5 * current_iterate_after_eva.dot(
+        new_stiffness_matrix.dot(current_iterate_after_eva)) \
+        - new_right_hand_side.dot(current_iterate_after_eva)
+
+    return energy_after_eva, local_energy_gains_eva
