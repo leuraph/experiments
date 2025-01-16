@@ -83,9 +83,7 @@ class CustomCallBack():
             elements: ElementsType,
             coordinates: CoordinatesType,
             boundaries: list[np.ndarray],
-            energy_of_initial_guess: float,
-            eva_energy_gain_of_initial_guess: float,
-            energy_gains_of_initial_guess: np.ndarray,
+            initial_guess: np.ndarray,
             fudge: float,
             min_n_iterations_per_mesh: int) -> None:
         self.n_iterations_done = 0
@@ -93,9 +91,6 @@ class CustomCallBack():
         self.elements = elements
         self.coordinates = coordinates
         self.boundaries = boundaries
-        self.energy_of_last_iterate = energy_of_initial_guess
-        self.last_energy_gain_eva = eva_energy_gain_of_initial_guess
-        self.last_energy_gains = energy_gains_of_initial_guess
         self.fudge = fudge
         self.min_n_iterations_per_mesh = min_n_iterations_per_mesh
 
@@ -135,6 +130,25 @@ class CustomCallBack():
             coordinates=coordinates, elements=elements, f=f,
             cubature_rule=CubatureRuleEnum.DAYTAYLOR)
 
+        # initial energy considerations
+        # -----------------------------
+        initial_energy = self.calculate_energy(
+            current_iterate=initial_guess)
+
+        energy_after_eva, energy_gains_eva = \
+            get_energy_after_eva_and_local_energy_gains_eva(
+                current_iterate=initial_guess,
+                coordinates=coordinates,
+                elements=elements,
+                boundaries=boundaries,
+                edges=self.edges,
+                free_edges=self.free_edges,
+                f=f)
+
+        self.energy_of_last_iterate = initial_energy
+        self.last_energy_gain_eva = initial_energy - energy_after_eva
+        self.last_energy_gains = energy_gains_eva
+
     def perform_callback(
             self,
             current_iterate) -> None:
@@ -168,6 +182,13 @@ class EnergyComparisonCustomCallback(CustomCallBack):
     compares EVA energy gain with energy gain
     associated with another batch of iterations.
     """
+    def __init__(
+            self, batch_size, elements, coordinates, boundaries,
+            initial_guess, fudge, min_n_iterations_per_mesh):
+        super().__init__(
+            batch_size, elements, coordinates, boundaries,
+            initial_guess, fudge, min_n_iterations_per_mesh)
+
     def perform_callback(
             self,
             current_iterate) -> None:
