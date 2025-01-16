@@ -42,7 +42,7 @@ class CustomCallBack():
         non_boundary_edges (np.ndarray):
             Array of edges not on the boundary.
         free_edges (np.ndarray):
-            edges not on the boundary.
+            Boolean mask for free edges.
         free_nodes (np.ndarray):
             Boolean mask for nodes not on the boundary.
         energy_of_last_iterate (float):
