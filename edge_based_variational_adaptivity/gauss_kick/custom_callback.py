@@ -231,6 +231,61 @@ class EnergyComparisonCustomCallback(CustomCallBack):
 
         self.last_energy_gain_eva = energy_gain_eva
 
+    def get_energy_after_eva_and_local_energy_gains_eva(
+            self,
+            current_iterate: np.ndarray) -> tuple[float, np.ndarray]:
+        """
+        returns both the new global energy and the local energy gains
+        associated to EVA.
+
+        returns
+        -------
+        energy_after_eva: float
+            energy of the iterate constructed out of the `current_iterate`
+            and the values on bisected free edges found by EVA
+        local_energy_gains_eva: np.ndarray
+            the local energy gains on all free edges found by EVA
+        """
+        local_energy_gains_eva, values_on_new_nodes_non_boundary = \
+            get_energy_gains_and_values_on_new_nodes(
+                coordinates=self.coordinates,
+                elements=self.elements,
+                non_boundary_edges=self.non_boundary_edges,
+                current_iterate=current_iterate,
+                f=f,
+                verbose=True)
+
+        # we get a new value on each edge
+        values_on_new_nodes = np.zeros(self.edges.shape[0])
+        values_on_new_nodes[self.free_edges] = \
+            values_on_new_nodes_non_boundary
+
+        current_iterate_after_eva = np.hstack(
+            [current_iterate, values_on_new_nodes])
+
+        # mark all elements for refinement
+        marked_elements = np.arange(self.elements.shape[0])
+        new_coordinates, new_elements, _, _ =\
+            refineNVB(
+                coordinates=self.coordinates,
+                elements=self.elements,
+                marked_elements=marked_elements,
+                boundary_conditions=self.boundaries)
+
+        new_stiffness_matrix = csr_matrix(
+            get_stiffness_matrix(
+                coordinates=new_coordinates,
+                elements=new_elements))
+        new_right_hand_side = get_right_hand_side(
+            coordinates=new_coordinates, elements=new_elements, f=f,
+            cubature_rule=CubatureRuleEnum.DAYTAYLOR)
+
+        energy_after_eva = 0.5 * current_iterate_after_eva.dot(
+            new_stiffness_matrix.dot(current_iterate_after_eva)) \
+            - new_right_hand_side.dot(current_iterate_after_eva)
+
+        return energy_after_eva, local_energy_gains_eva
+
 
 class EnergyTailOffCustomCallback(CustomCallBack):
     """
