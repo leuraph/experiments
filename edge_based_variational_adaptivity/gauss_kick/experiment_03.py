@@ -211,12 +211,7 @@ def main() -> None:
             elements=elements,
             coordinates=coordinates,
             boundaries=boundaries,
-            energy_of_initial_guess=calculate_energy(
-                u=current_iterate,
-                lhs_matrix=stiffness_matrix,
-                rhs_vector=right_hand_side),
-            eva_energy_gain_of_initial_guess=0.0,
-            energy_gains_of_initial_guess=np.zeros(np.sum(free_nodes)),
+            initial_guess=current_iterate,
             fudge=FUDGE,
             min_n_iterations_per_mesh=MINITER)
 
