@@ -7,7 +7,7 @@ from scipy.sparse import csr_matrix
 from ismember import is_row_in
 from edge_based_variational_adaptivity import \
     get_energy_gains_and_values_on_new_nodes, get_energy_gains, get_energy_after_eva_and_local_energy_gains_eva
-from p1afempy.data_structures import ElementsType, CoordinatesType
+from p1afempy.data_structures import ElementsType, CoordinatesType, BoundaryType
 from triangle_cubature.cubature_rule import CubatureRuleEnum
 
 
@@ -22,77 +22,115 @@ class ConvergedException(Exception):
 
 class CustomCallBack():
     """
-    A callback class for iterative solvers that
-    monitors energy changes and refines the mesh
-    dynamically based on convergence criteria.
+    a callback class for iterative solvers
 
     Attributes:
         n_iterations_done (int):
             The number of single iterations completed.
         batch_size (int):
             The frequency of iterations to perform the callback.
-        elements (ElementsType):
-            The elements of the mesh.
-        coordinates (CoordinatesType):
-            The coordinates of the mesh nodes.
-        boundaries (list[np.ndarray]):
-            List of boundary edges/nodes.
-        edges (np.ndarray):
-            Array of all edges in the mesh.
-        non_boundary_edges (np.ndarray):
-            Array of edges not on the boundary.
-        free_edges (np.ndarray):
-            Boolean mask for free edges.
-        free_nodes (np.ndarray):
-            Boolean mask for nodes not on the boundary.
-        energy_of_last_iterate (float):
-            Energy of the last iteration.
-        lhs_matrix (csr_matrix):
-            The left-hand side matrix for the solver.
-        rhs_vector (np.ndarray):
-            The right-hand side vector for the solver.
-        last_energy_gain_eva (float):
-            EVA energy gain of the last iterate.
-        last_energy_gains (np.ndarray):
-            Array of EVA energy gains (per edge) from the last iteration.
-        fudge (float):
-            Fudge factor to scale thresholds.
         min_n_iterations_per_mesh (int):
             Minimum iterations required before refining the mesh.
     """
     n_iterations_done: int
     batch_size: int
-    elements: ElementsType
-    coordinates: CoordinatesType
-    boundaries: list[np.ndarray]
+    min_n_iterations_per_mesh: int
+
+    def __init__(
+            self,
+            batch_size: int,
+            min_n_iterations_per_mesh: int) -> None:
+        self.n_iterations_done = 0
+        self.batch_size = batch_size
+        self.min_n_iterations_per_mesh = min_n_iterations_per_mesh
+
+    def perform_callback(
+            self,
+            current_iterate) -> None:
+        pass
+
+    def __call__(self, current_iterate_on_free_nodes) -> None:
+        # we know that scipy.sparse.linalg.cg calls this after each iteration
+        self.n_iterations_done += 1
+
+        batch_size_reached = self.n_iterations_done % self.batch_size == 0
+        min_iterations_reached = (
+            self.n_iterations_done > self.min_n_iterations_per_mesh)
+        if batch_size_reached and min_iterations_reached:
+            # restoring the full iterate
+            current_iterate = np.zeros(self.coordinates.shape[0])
+            current_iterate[self.free_nodes] = current_iterate_on_free_nodes
+
+            # check if we must continue with iterations
+            self.perform_callback(
+                current_iterate=current_iterate)
+
+
+class EnergyComparisonCustomCallback(CustomCallBack):
+    """
+    After each batch of iteration,
+    compares EVA energy gain with energy gain
+    associated with another batch of iterations.
+
+    Attrubutes:
+    elements (ElementsType):
+        The elements of the mesh.
+    coordinates (CoordinatesType):
+        The coordinates of the mesh nodes.
+    boundaries (list[np.ndarray]):
+        List of boundary edges/nodes.
+    edges (np.ndarray):
+        Array of all edges in the mesh.
+    non_boundary_edges (np.ndarray):
+        Array of edges not on the boundary.
+    free_edges (np.ndarray):
+        Boolean mask for free edges.
+    free_nodes (np.ndarray):
+        Boolean mask for nodes not on the boundary.
+    energy_of_last_iterate (float):
+        Energy of the last iteration.
+    lhs_matrix (csr_matrix):
+        The left-hand side matrix for the solver.
+    rhs_vector (np.ndarray):
+        The right-hand side vector for the solver.
+    last_energy_gain_eva (float):
+        EVA energy gain of the last iterate.
+    last_energy_gains (np.ndarray):
+        Array of EVA energy gains (per edge) from the last iteration.
+    fudge (float):
+        Fudge factor to scale thresholds.
+    """
     edges: np.ndarray
     non_boundary_edges: np.ndarray
     free_edges: np.ndarray
+    last_energy_gain_eva: float
+    last_energy_gains: np.ndarray
+    elements: ElementsType
+    coordinates: CoordinatesType
+    boundaries: list[np.ndarray]
     free_nodes: np.ndarray
     energy_of_last_iterate: float
     lhs_matrix: csr_matrix
     rhs_vector: np.ndarray
-    last_energy_gain_eva: float
-    last_energy_gains: np.ndarray
     fudge: float
-    min_n_iterations_per_mesh: int
 
     def __init__(
             self,
             batch_size: int,
             elements: ElementsType,
             coordinates: CoordinatesType,
-            boundaries: list[np.ndarray],
+            boundaries: list[BoundaryType],
             initial_guess: np.ndarray,
             fudge: float,
-            min_n_iterations_per_mesh: int) -> None:
-        self.n_iterations_done = 0
-        self.batch_size = batch_size
+            min_n_iterations_per_mesh: int):
+        super().__init__(
+            batch_size=batch_size,
+            min_n_iterations_per_mesh=min_n_iterations_per_mesh)
+
         self.elements = elements
         self.coordinates = coordinates
         self.boundaries = boundaries
         self.fudge = fudge
-        self.min_n_iterations_per_mesh = min_n_iterations_per_mesh
 
         # mesh specific setup
         # -------------------
@@ -149,45 +187,10 @@ class CustomCallBack():
         self.last_energy_gain_eva = initial_energy - energy_after_eva
         self.last_energy_gains = energy_gains_eva
 
-    def perform_callback(
-            self,
-            current_iterate) -> None:
-        pass
-
     def calculate_energy(self, current_iterate) -> float:
         return (
             0.5*current_iterate.dot(self.lhs_matrix.dot(current_iterate))
             - self.rhs_vector.dot(current_iterate))
-
-    def __call__(self, current_iterate_on_free_nodes) -> None:
-        # we know that scipy.sparse.linalg.cg calls this after each iteration
-        self.n_iterations_done += 1
-
-        batch_size_reached = self.n_iterations_done % self.batch_size == 0
-        min_iterations_reached = (
-            self.n_iterations_done > self.min_n_iterations_per_mesh)
-        if batch_size_reached and min_iterations_reached:
-            # restoring the full iterate
-            current_iterate = np.zeros(self.coordinates.shape[0])
-            current_iterate[self.free_nodes] = current_iterate_on_free_nodes
-
-            # check if we must continue with iterations
-            self.perform_callback(
-                current_iterate=current_iterate)
-
-
-class EnergyComparisonCustomCallback(CustomCallBack):
-    """
-    After each batch of iteration,
-    compares EVA energy gain with energy gain
-    associated with another batch of iterations.
-    """
-    def __init__(
-            self, batch_size, elements, coordinates, boundaries,
-            initial_guess, fudge, min_n_iterations_per_mesh):
-        super().__init__(
-            batch_size, elements, coordinates, boundaries,
-            initial_guess, fudge, min_n_iterations_per_mesh)
 
     def perform_callback(
             self,
