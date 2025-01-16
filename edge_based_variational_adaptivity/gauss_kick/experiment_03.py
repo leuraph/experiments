@@ -12,6 +12,7 @@ from scipy.sparse.linalg import cg
 from custom_callback import ConvergedException, EnergyComparisonCustomCallback
 from ismember import is_row_in
 from edge_based_variational_adaptivity import get_energy_gains
+from triangle_cubature.cubature_rule import CubatureRuleEnum
 
 
 def calculate_energy(
@@ -80,7 +81,8 @@ def main() -> None:
         neumann=np.array([]),
         f=f,
         g=None,
-        uD=uD)
+        uD=uD,
+        cubature_rule=CubatureRuleEnum.DAYTAYLOR)
 
     # initializing the solution to random values
     current_iterate = np.copy(galerkin_solution)
@@ -187,12 +189,13 @@ def main() -> None:
             neumann=np.array([]),
             f=f,
             g=None,
-            uD=uD)
+            uD=uD,
+            cubature_rule=CubatureRuleEnum.DAYTAYLOR)
 
         right_hand_side = solvers.get_right_hand_side(
             coordinates=coordinates,
             elements=elements,
-            f=f)
+            f=f, cubature_rule=CubatureRuleEnum.DAYTAYLOR)
 
         # assembly of the stiffness matrix
         stiffness_matrix = csr_matrix(solvers.get_stiffness_matrix(
