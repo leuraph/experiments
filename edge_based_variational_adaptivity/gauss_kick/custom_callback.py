@@ -8,6 +8,7 @@ from ismember import is_row_in
 from edge_based_variational_adaptivity import \
     get_energy_gains_and_values_on_new_nodes, get_energy_gains
 from p1afempy.data_structures import ElementsType, CoordinatesType
+from triangle_cubature.cubature_rule import CubatureRuleEnum
 
 
 class ConvergedException(Exception):
@@ -131,7 +132,8 @@ class CustomCallBack():
         self.lhs_matrix = csr_matrix(get_stiffness_matrix(
             coordinates=coordinates, elements=elements))
         self.rhs_vector = get_right_hand_side(
-            coordinates=coordinates, elements=elements, f=f)
+            coordinates=coordinates, elements=elements, f=f,
+            cubature_rule=CubatureRuleEnum.DAYTAYLOR)
 
     def perform_callback(
             self,
