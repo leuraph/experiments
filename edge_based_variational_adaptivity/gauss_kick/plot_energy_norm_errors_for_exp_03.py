@@ -89,7 +89,7 @@ def main() -> None:
 
     fig, ax = plt.subplots()
     ax.set_xlabel(r'$n_{\text{DOF}}$')
-    ax.set_ylabel(r'$\| u_h - u \|_a^2$')
+    ax.set_ylabel(r'$\| \cdot - u \|_a^2$')
     ax.grid(True)
     ax.loglog(
         n_dofs, energy_norm_errors_squared_galerkin_with_orthogonality,
