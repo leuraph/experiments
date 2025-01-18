@@ -31,33 +31,22 @@ def main() -> None:
         path_to_energy_norm_error_squared_galerkin_with_orthogonality = \
             n_dofs_dir / Path(
                 'energy_norm_error_squared_galerkin_with_orthogonality.pkl')
-        path_to_energy_norm_error_squared_galerkin_without_orthogonality = \
-            n_dofs_dir / Path(
-                'energy_norm_error_squared_galerkin_without_orthogonality.pkl')    
 
         energy_norm_error_squared_galerkin_with_orthogonality = \
             load_dump(path_to_dump=path_to_energy_norm_error_squared_galerkin_with_orthogonality)
-        energy_norm_error_squared_galerkin_without_orthogonality = \
-            load_dump(path_to_dump=path_to_energy_norm_error_squared_galerkin_without_orthogonality)
 
         n_dofs.append(n_dof)
         energy_norm_errors_squared_galerkin_with_orthogonality.append(
             energy_norm_error_squared_galerkin_with_orthogonality)
-        energy_norm_errors_squared_galerkin_without_orthogonality.append(
-            energy_norm_error_squared_galerkin_without_orthogonality)
 
     energy_norm_errors_squared_galerkin_with_orthogonality = np.array(
         energy_norm_errors_squared_galerkin_with_orthogonality)
-    energy_norm_errors_squared_galerkin_without_orthogonality = np.array(
-        energy_norm_errors_squared_galerkin_without_orthogonality)
     n_dofs = np.array(n_dofs)
 
     sort_n_dof = n_dofs.argsort()
 
     energy_norm_errors_squared_galerkin_with_orthogonality = \
         energy_norm_errors_squared_galerkin_with_orthogonality[sort_n_dof]
-    energy_norm_errors_squared_galerkin_without_orthogonality = \
-        energy_norm_errors_squared_galerkin_without_orthogonality[sort_n_dof]
     n_dofs = n_dofs[sort_n_dof]
 
     def model(x, m):
@@ -82,10 +71,6 @@ def main() -> None:
     ax.loglog(
         n_dofs, energy_norm_errors_squared_galerkin_with_orthogonality,
         'b--', marker='s', label='with orthogonality',
-        markerfacecolor=(0, 0, 1, 0.5), markersize=4, linewidth=0.5)
-    ax.loglog(
-        n_dofs, energy_norm_errors_squared_galerkin_without_orthogonality,
-        'r--', marker='s', label='without orthogonality',
         markerfacecolor=(0, 0, 1, 0.5), markersize=4, linewidth=0.5)
     ax.loglog(n_dofs, np.exp(model(np.log(n_dofs), m_optimized)),
               'k--', linewidth=0.8)
