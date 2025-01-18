@@ -13,6 +13,7 @@ from scipy.sparse import csr_matrix
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 from matplotlib import cm
+from triangle_cubature.cubature_rule import CubatureRuleEnum
 
 
 def main() -> None:
@@ -30,11 +31,11 @@ def main() -> None:
     # ------------------------------------------------
     base_path = Path('data')
     # TODO if this order is what we want, then remove the other one and rename
-    path_to_elements = base_path / Path('elements_order1.dat')
+    path_to_elements = base_path / Path('elements.dat')
     path_to_coordinates = base_path / Path('coordinates.dat')
     path_to_dirichlet = base_path / Path('dirichlet.dat')
 
-    base_results_path = Path('results/experiment_02') / Path(f'theta_{THETA}')
+    base_results_path = Path('results/experiment_01') / Path(f'theta_{THETA}')
 
     coordinates, elements = io_helpers.read_mesh(
         path_to_coordinates=path_to_coordinates,
@@ -98,8 +99,8 @@ def main() -> None:
     # variational adaptivity
     # ------------------------------------------------
 
-    n_refinements = 40
-    for _ in range(n_refinements):
+    n_max_dofs = 1e5
+    while True:
 
         element_to_edges, edge_to_nodes, boundaries_to_edges =\
             provide_geometric_data(elements=elements, boundaries=boundaries)
@@ -145,7 +146,8 @@ def main() -> None:
                 elements=tmp_local_elements))
             tmp_rhs_vector = get_right_hand_side(
                 coordinates=tmp_local_coordinates,
-                elements=tmp_local_elements, f=f)
+                elements=tmp_local_elements, f=f,
+                cubature_rule=CubatureRuleEnum.DAYTAYLOR)
 
             # building the local 2x2 system
             A_12 = tmp_stiffness_matrix.dot(tmp_local_solution)[-1]
@@ -190,7 +192,8 @@ def main() -> None:
             elements=elements,
             dirichlet=boundaries[0],
             neumann=np.array([]),
-            f=f, g=None, uD=uD)
+            f=f, g=None, uD=uD,
+            cubature_rule=CubatureRuleEnum.DAYTAYLOR)
 
         n_vertices = coordinates.shape[0]
         indices_of_free_nodes = np.setdiff1d(
@@ -208,6 +211,9 @@ def main() -> None:
                     Path(f'{n_dofs}/coordinates.pkl'))
         dump_object(obj=boundaries, path_to_file=base_results_path /
                     Path(f'{n_dofs}/boundaries.pkl'))
+
+        if n_dofs >= n_max_dofs:
+            break
 
 
 def dump_object(obj, path_to_file: Path) -> None:
