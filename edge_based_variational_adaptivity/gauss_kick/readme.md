@@ -13,6 +13,8 @@ $$
 where $\|u_h^N\|_a^2 = a(u_h^N, u_h^N) = (u_h^N)^\top \mathbf{A} u_h^N$.
 
 ## Experiment 01
+> EDIT; I removed this experiment as it should be regarded obsolete.
+
 Exact solving and refining using Edge based variatioinal adaptivity.
 To calculate the energy drop per edge, we refine a single non-boundary edge
 and calculate the solution to the corresponding 2x2 system of linear equations.
