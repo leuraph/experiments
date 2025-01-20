@@ -72,7 +72,8 @@ class EnergyComparisonCustomCallback(CustomCallBack):
     compares EVA energy gain with energy gain
     associated with another batch of iterations.
 
-    Attrubutes:
+    Attributes
+    ----------
     elements (ElementsType):
         The elements of the mesh.
     coordinates (CoordinatesType):
@@ -236,20 +237,48 @@ class EnergyTailOffCustomCallback(CustomCallBack):
     After each batch of iterations,
     compares the accumulated energy gain with
     the energy gain associated to another batch of iterations.
+
+    Attributes
+    ----------
+    elements: ElementsType
+        elements of the underlying mesh
+    coordinates: CoordinatesType
+        coordinates of the underlying mesh
+    boundaries: list[BoundaryType]
+        boundaries of the underlying mesh
+    energy_of_last_iterate: float
+        energy of the last iterate considered
+    fudge: float
+        fudge parameter used when comparing accumulated
+        and current energy gain
+    accumulated_energy_gain: float
+        energy gain accumulated since initiation of
+        global CG iterations
     """
+    elements: ElementsType
+    coordinates: CoordinatesType
+    boundaries: list[BoundaryType]
+    energy_of_last_iterate: float
+    fudge: float
     accumulated_energy_gain: float
 
     def __init__(
-            self, batch_size, elements, coordinates,
-            boundaries, energy_of_initial_guess,
-            eva_energy_gain_of_initial_guess,
-            energy_gains_of_initial_guess, fudge,
-            min_n_iterations_per_mesh,):
+            self,
+            batch_size: int,
+            min_n_iterations_per_mesh: int,
+            elements: ElementsType,
+            coordinates: CoordinatesType,
+            boundaries: list[BoundaryType],
+            energy_of_initial_guess: float,
+            fudge: float):
         super().__init__(
-            batch_size, elements, coordinates, boundaries,
-            energy_of_initial_guess, eva_energy_gain_of_initial_guess,
-            energy_gains_of_initial_guess, fudge,
-            min_n_iterations_per_mesh)
+            batch_size=batch_size,
+            min_n_iterations_per_mesh=min_n_iterations_per_mesh)
+        self.elements = elements
+        self.coordinates = coordinates
+        self.boundaries = boundaries
+        self.energy_of_last_iterate = energy_of_initial_guess
+        self.fudge = fudge
         self.accumulated_energy_gain = 0.
 
     def perform_callback(
