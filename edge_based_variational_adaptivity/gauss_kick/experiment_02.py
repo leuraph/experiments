@@ -98,8 +98,8 @@ def main() -> None:
     # variational adaptivity
     # ------------------------------------------------
 
-    n_refinements = 40
-    for _ in range(n_refinements):
+    max_n_dofs = 1e6
+    while True:
 
         element_to_edges, edge_to_nodes, boundaries_to_edges =\
             provide_geometric_data(elements=elements, boundaries=boundaries)
@@ -208,6 +208,9 @@ def main() -> None:
                     Path(f'{n_dofs}/coordinates.pkl'))
         dump_object(obj=boundaries, path_to_file=base_results_path /
                     Path(f'{n_dofs}/boundaries.pkl'))
+
+        if n_dofs >= max_n_dofs:
+            break
 
 
 def dump_object(obj, path_to_file: Path) -> None:
