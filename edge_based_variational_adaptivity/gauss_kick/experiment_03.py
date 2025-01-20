@@ -11,7 +11,8 @@ import argparse
 from scipy.sparse.linalg import cg
 from custom_callback import ConvergedException, EnergyComparisonCustomCallback
 from ismember import is_row_in
-from edge_based_variational_adaptivity import get_energy_gains
+from variational_adaptivity.edge_based_variational_adaptivity import \
+    get_energy_gains
 from triangle_cubature.cubature_rule import CubatureRuleEnum
 
 
@@ -147,6 +148,7 @@ def main() -> None:
         non_boundary_edges=non_boundary_edges,
         current_iterate=current_iterate,
         f=f,
+        cubature_rule=CubatureRuleEnum.DAYTAYLOR,
         verbose=False)
 
     # dörfler based on EVA
