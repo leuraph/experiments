@@ -13,6 +13,9 @@ from scipy.sparse import csr_matrix
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 from matplotlib import cm
+from variational_adaptivity.edge_based_variational_adaptivity import \
+    get_energy_gains
+from triangle_cubature.cubature_rule import CubatureRuleEnum
 
 
 def main() -> None:
@@ -104,14 +107,6 @@ def main() -> None:
         element_to_edges, edge_to_nodes, boundaries_to_edges =\
             provide_geometric_data(elements=elements, boundaries=boundaries)
 
-        # computing global terms before loop
-        stiffness_matrix = get_stiffness_matrix(
-            coordinates=coordinates, elements=elements)
-        rhs_vector = get_right_hand_side(
-            coordinates=coordinates, elements=elements, f=f)
-        L_1 = rhs_vector.dot(solution)
-        A_11 = solution.dot(stiffness_matrix.dot(solution))
-
         # compute all local energy gains
         # ------------------------------
         edge_to_nodes_flipped = np.column_stack(
@@ -127,43 +122,15 @@ def main() -> None:
         non_boundary_edges = edge_to_nodes[non_boundary]
 
         print(f'Calculating all energy gains for {n_dofs} DOFs...')
-        for k, non_boundary_edge in enumerate(tqdm(non_boundary_edges)):
-            local_elements, local_coordinates, \
-                local_iterate, local_edge_indices = get_local_patch_edge_based(
-                    elements=elements,
-                    coordinates=coordinates,
-                    current_iterate=solution,
-                    edge=non_boundary_edge)
-            tmp_local_coordinates, tmp_local_elements, tmp_local_solution =\
-                refine_single_edge(
-                    coordinates=local_coordinates,
-                    elements=local_elements,
-                    edge=local_edge_indices,
-                    to_embed=local_iterate)
-            tmp_stiffness_matrix = csr_matrix(get_stiffness_matrix(
-                coordinates=tmp_local_coordinates,
-                elements=tmp_local_elements))
-            tmp_rhs_vector = get_right_hand_side(
-                coordinates=tmp_local_coordinates,
-                elements=tmp_local_elements, f=f)
 
-            # building the local 2x2 system
-            A_12 = tmp_stiffness_matrix.dot(tmp_local_solution)[-1]
-            A_22 = tmp_stiffness_matrix[-1, -1]
-
-            L_2 = tmp_rhs_vector[-1]
-
-            detA = (A_11 * A_22 - A_12 * A_12)
-
-            alpha = (A_22 * L_1 - A_12 * L_2)/detA
-            beta = (-A_12 * L_1 + A_11 * L_2)/detA
-
-            dE = 0.5*(
-                (alpha-1)**2 * A_11
-                + 2.*(alpha-1)*beta*A_12
-                + beta**2 * A_22)
-
-            energy_gains[k] = dE
+        energy_gains = get_energy_gains(
+            coordinates=coordinates,
+            elements=elements,
+            non_boundary_edges=non_boundary_edges,
+            current_iterate=solution,
+            f=f,
+            cubature_rule=CubatureRuleEnum.DAYTAYLOR,
+            verbose=True)
 
         # mark elements to be refined, then refine
         # ---------------------------------------
