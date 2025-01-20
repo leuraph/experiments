@@ -99,6 +99,8 @@ class EnergyComparisonCustomCallback(CustomCallBack):
         Array of EVA energy gains (per edge) from the last iteration.
     fudge (float):
         Fudge factor to scale thresholds.
+    cubature_rule (CubatureRuleEnum):
+        cubature rule used to approximate the load vector
     """
     edges: np.ndarray
     non_boundary_edges: np.ndarray
@@ -113,6 +115,7 @@ class EnergyComparisonCustomCallback(CustomCallBack):
     lhs_matrix: csr_matrix
     rhs_vector: np.ndarray
     fudge: float
+    cubature_rule: CubatureRuleEnum
 
     def __init__(
             self,
@@ -122,7 +125,8 @@ class EnergyComparisonCustomCallback(CustomCallBack):
             boundaries: list[BoundaryType],
             initial_guess: np.ndarray,
             fudge: float,
-            min_n_iterations_per_mesh: int):
+            min_n_iterations_per_mesh: int,
+            cubature_rule: CubatureRuleEnum = CubatureRuleEnum.MIDPOINT):
         super().__init__(
             batch_size=batch_size,
             min_n_iterations_per_mesh=min_n_iterations_per_mesh)
@@ -131,6 +135,7 @@ class EnergyComparisonCustomCallback(CustomCallBack):
         self.coordinates = coordinates
         self.boundaries = boundaries
         self.fudge = fudge
+        self.cubature_rule = cubature_rule
 
         # mesh specific setup
         # -------------------
@@ -166,7 +171,7 @@ class EnergyComparisonCustomCallback(CustomCallBack):
             coordinates=coordinates, elements=elements))
         self.rhs_vector = get_right_hand_side(
             coordinates=coordinates, elements=elements, f=f,
-            cubature_rule=CubatureRuleEnum.DAYTAYLOR)
+            cubature_rule=self.cubature_rule)
 
         # initial energy considerations
         # -----------------------------
@@ -181,6 +186,7 @@ class EnergyComparisonCustomCallback(CustomCallBack):
                 boundaries=boundaries,
                 edges=self.edges,
                 free_edges=self.free_edges,
+                cubature_rule=self.cubature_rule,
                 f=f)
 
         self.energy_of_last_iterate = initial_energy
@@ -214,6 +220,7 @@ class EnergyComparisonCustomCallback(CustomCallBack):
                 boundaries=self.boundaries,
                 edges=self.edges,
                 free_edges=self.free_edges,
+                cubature_rule=self.cubature_rule,
                 f=f)
 
         energy_gain_eva = current_energy - energy_after_eva
