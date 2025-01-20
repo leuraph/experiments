@@ -254,6 +254,8 @@ class EnergyTailOffCustomCallback(CustomCallBack):
     accumulated_energy_gain: float
         energy gain accumulated since initiation of
         global CG iterations
+    cubature_rule: CubatureRuleEnum
+        cubature rule used to approximate the load vector
     """
     elements: ElementsType
     coordinates: CoordinatesType
@@ -261,6 +263,7 @@ class EnergyTailOffCustomCallback(CustomCallBack):
     energy_of_last_iterate: float
     fudge: float
     accumulated_energy_gain: float
+    cubature_rule: CubatureRuleEnum
 
     def __init__(
             self,
@@ -270,7 +273,8 @@ class EnergyTailOffCustomCallback(CustomCallBack):
             coordinates: CoordinatesType,
             boundaries: list[BoundaryType],
             energy_of_initial_guess: float,
-            fudge: float):
+            fudge: float,
+            cubature_rule: CubatureRuleEnum = CubatureRuleEnum.MIDPOINT):
         super().__init__(
             batch_size=batch_size,
             min_n_iterations_per_mesh=min_n_iterations_per_mesh)
@@ -280,6 +284,7 @@ class EnergyTailOffCustomCallback(CustomCallBack):
         self.energy_of_last_iterate = energy_of_initial_guess
         self.fudge = fudge
         self.accumulated_energy_gain = 0.
+        self.cubature_rule = cubature_rule
 
     def perform_callback(
             self,
@@ -297,6 +302,7 @@ class EnergyTailOffCustomCallback(CustomCallBack):
                 non_boundary_edges=self.non_boundary_edges,
                 current_iterate=current_iterate,
                 f=f,
+                cubature_rule=self.cubature_rule,
                 verbose=True)
 
             self.last_energy_gains = energy_gains
