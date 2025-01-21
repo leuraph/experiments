@@ -215,6 +215,7 @@ def main() -> None:
             boundaries=boundaries,
             initial_guess=current_iterate,
             fudge=FUDGE,
+            cubature_rule=CubatureRuleEnum.DAYTAYLOR,
             min_n_iterations_per_mesh=MINITER)
 
         try:
