@@ -151,6 +151,7 @@ def main() -> None:
         # assembly of right hand side
         custom_callback = EnergyTailOffCustomCallback(
             batch_size=n_cg_steps,
+            min_n_iterations_per_mesh=min_n_iterations_per_mesh,
             elements=elements,
             coordinates=coordinates,
             boundaries=boundaries,
@@ -158,10 +159,7 @@ def main() -> None:
                 u=current_iterate,
                 lhs_matrix=stiffness_matrix,
                 rhs_vector=right_hand_side),
-            eva_energy_gain_of_initial_guess=0.0,
-            energy_gains_of_initial_guess=np.zeros(np.sum(free_nodes)),
-            fudge=FUDGE,
-            min_n_iterations_per_mesh=min_n_iterations_per_mesh)
+            fudge=FUDGE)
 
         try:
             current_iterate[free_nodes], _ = cg(
