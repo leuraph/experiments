@@ -223,7 +223,8 @@ def main() -> None:
             initial_guess=current_iterate,
             fudge=FUDGE,
             cubature_rule=CubatureRuleEnum.DAYTAYLOR,
-            min_n_iterations_per_mesh=MINITER)
+            min_n_iterations_per_mesh=MINITER,
+            verbose=True)
 
         try:
             current_iterate[free_nodes], _ = cg(

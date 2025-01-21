@@ -117,6 +117,7 @@ class EnergyComparisonCustomCallback(CustomCallBack):
     rhs_vector: np.ndarray
     fudge: float
     cubature_rule: CubatureRuleEnum
+    verbose: bool
 
     def __init__(
             self,
@@ -127,7 +128,8 @@ class EnergyComparisonCustomCallback(CustomCallBack):
             initial_guess: np.ndarray,
             fudge: float,
             min_n_iterations_per_mesh: int,
-            cubature_rule: CubatureRuleEnum = CubatureRuleEnum.MIDPOINT):
+            cubature_rule: CubatureRuleEnum = CubatureRuleEnum.MIDPOINT,
+            verbose: bool = False):
         super().__init__(
             batch_size=batch_size,
             min_n_iterations_per_mesh=min_n_iterations_per_mesh)
@@ -137,6 +139,7 @@ class EnergyComparisonCustomCallback(CustomCallBack):
         self.boundaries = boundaries
         self.fudge = fudge
         self.cubature_rule = cubature_rule
+        self.verbose = verbose
 
         # mesh specific setup
         # -------------------
@@ -188,7 +191,8 @@ class EnergyComparisonCustomCallback(CustomCallBack):
                 edges=self.edges,
                 free_edges=self.free_edges,
                 cubature_rule=self.cubature_rule,
-                f=f)
+                f=f,
+                verbose=self.verbose)
 
         self.energy_of_last_iterate = initial_energy
         self.last_energy_gain_eva = initial_energy - energy_after_eva
@@ -222,7 +226,8 @@ class EnergyComparisonCustomCallback(CustomCallBack):
                 edges=self.edges,
                 free_edges=self.free_edges,
                 cubature_rule=self.cubature_rule,
-                f=f)
+                f=f,
+                verbose=self.verbose)
 
         energy_gain_eva = current_energy - energy_after_eva
 
