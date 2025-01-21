@@ -85,7 +85,8 @@ def main() -> None:
         uD=uD,
         cubature_rule=CubatureRuleEnum.DAYTAYLOR)
 
-    # initializing the solution to random values
+    # initializing the iteration with Galerkin
+    # solution on first mesh
     current_iterate = np.copy(galerkin_solution)
 
     # calculating free nodes on the initial mesh
@@ -98,8 +99,8 @@ def main() -> None:
     free_nodes[indices_of_free_nodes] = 1
     n_dofs = np.sum(free_nodes)
 
-    # dump initial mesh and initial exact galerkin solution
-    # -----------------------------------------------------
+    # dump initial mesh and initial Galerkin solution
+    # -----------------------------------------------
     dump_object(obj=elements, path_to_file=base_results_path /
                 Path(f'{n_dofs}/elements.pkl'))
     dump_object(obj=coordinates, path_to_file=base_results_path /
