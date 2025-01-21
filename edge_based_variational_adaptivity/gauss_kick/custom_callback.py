@@ -66,6 +66,9 @@ class CustomCallBack():
 
         # mesh specific setup
         # -------------------
+        self.elements = elements
+        self.coordinates = coordinates
+        self.boundaries = boundaries
 
         # (non-boundary) edges
         _, edge_to_nodes, _ = \
@@ -173,79 +176,33 @@ class EnergyComparisonCustomCallback(CustomCallBack):
     cubature_rule (CubatureRuleEnum):
         cubature rule used to approximate the load vector
     """
-    edges: np.ndarray
-    non_boundary_edges: np.ndarray
-    free_edges: np.ndarray
     last_energy_gain_eva: float
     last_energy_gains: np.ndarray
-    elements: ElementsType
-    coordinates: CoordinatesType
-    boundaries: list[np.ndarray]
-    free_nodes: np.ndarray
     energy_of_last_iterate: float
-    lhs_matrix: csr_matrix
-    rhs_vector: np.ndarray
     fudge: float
-    cubature_rule: CubatureRuleEnum
     verbose: bool
 
     def __init__(
             self,
             batch_size: int,
+            min_n_iterations_per_mesh: int,
             elements: ElementsType,
             coordinates: CoordinatesType,
             boundaries: list[BoundaryType],
             initial_guess: np.ndarray,
             fudge: float,
-            min_n_iterations_per_mesh: int,
             cubature_rule: CubatureRuleEnum = CubatureRuleEnum.MIDPOINT,
             verbose: bool = False):
         super().__init__(
             batch_size=batch_size,
-            min_n_iterations_per_mesh=min_n_iterations_per_mesh)
+            min_n_iterations_per_mesh=min_n_iterations_per_mesh,
+            elements=elements,
+            coordinates=coordinates,
+            boundaries=boundaries,
+            cubature_rule=cubature_rule)
 
-        self.elements = elements
-        self.coordinates = coordinates
-        self.boundaries = boundaries
         self.fudge = fudge
-        self.cubature_rule = cubature_rule
         self.verbose = verbose
-
-        # mesh specific setup
-        # -------------------
-
-        # (non-boundary) edges
-        _, edge_to_nodes, _ = \
-            provide_geometric_data(
-                elements=elements,
-                boundaries=boundaries)
-
-        edge_to_nodes_flipped = np.column_stack(
-            [edge_to_nodes[:, 1], edge_to_nodes[:, 0]])
-        boundary = np.logical_or(
-            is_row_in(edge_to_nodes, self.boundaries[0]),
-            is_row_in(edge_to_nodes_flipped, self.boundaries[0])
-        )
-        non_boundary = np.logical_not(boundary)
-        self.edges = edge_to_nodes
-        self.non_boundary_edges = edge_to_nodes[non_boundary]
-
-        # free nodes / edges
-        n_vertices = coordinates.shape[0]
-        indices_of_free_nodes = np.setdiff1d(
-            ar1=np.arange(n_vertices),
-            ar2=np.unique(boundaries[0].flatten()))
-        free_nodes = np.zeros(n_vertices, dtype=bool)
-        free_nodes[indices_of_free_nodes] = 1
-        self.free_edges = non_boundary
-        self.free_nodes = free_nodes
-
-        # lhs-matrix / rhs-vector
-        self.lhs_matrix = csr_matrix(get_stiffness_matrix(
-            coordinates=coordinates, elements=elements))
-        self.rhs_vector = get_right_hand_side(
-            coordinates=coordinates, elements=elements, f=f,
-            cubature_rule=self.cubature_rule)
 
         # initial energy considerations
         # -----------------------------
@@ -275,12 +232,7 @@ class EnergyComparisonCustomCallback(CustomCallBack):
 
     def perform_callback(
             self,
-            current_iterate_on_free_nodes) -> None:
-
-        current_iterate = \
-            CustomCallBack.get_global_iterate_from_iterate_on_free_nodes(
-                current_iterate_on_free_nodes=current_iterate_on_free_nodes,
-                free_nodes=self.free_nodes)
+            current_iterate) -> None:
 
         current_energy = self.calculate_energy(
             current_iterate=current_iterate)
