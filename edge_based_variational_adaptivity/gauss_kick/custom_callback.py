@@ -272,12 +272,6 @@ class EnergyTailOffCustomCallback(CustomCallBack):
 
     Attributes
     ----------
-    elements: ElementsType
-        elements of the underlying mesh
-    coordinates: CoordinatesType
-        coordinates of the underlying mesh
-    boundaries: list[BoundaryType]
-        boundaries of the underlying mesh
     energy_of_last_iterate: float
         energy of the last iterate considered
     fudge: float
@@ -286,16 +280,12 @@ class EnergyTailOffCustomCallback(CustomCallBack):
     accumulated_energy_gain: float
         energy gain accumulated since initiation of
         global CG iterations
-    cubature_rule: CubatureRuleEnum
-        cubature rule used to approximate the load vector
+    verbose: bool
     """
-    elements: ElementsType
-    coordinates: CoordinatesType
-    boundaries: list[BoundaryType]
     energy_of_last_iterate: float
     fudge: float
     accumulated_energy_gain: float
-    cubature_rule: CubatureRuleEnum
+    verbose: bool
 
     def __init__(
             self,
@@ -309,14 +299,19 @@ class EnergyTailOffCustomCallback(CustomCallBack):
             cubature_rule: CubatureRuleEnum = CubatureRuleEnum.MIDPOINT):
         super().__init__(
             batch_size=batch_size,
-            min_n_iterations_per_mesh=min_n_iterations_per_mesh)
-        self.elements = elements
-        self.coordinates = coordinates
-        self.boundaries = boundaries
-        self.energy_of_last_iterate = energy_of_initial_guess
+            min_n_iterations_per_mesh=min_n_iterations_per_mesh,
+            elements=elements,
+            coordinates=coordinates,
+            boundaries=boundaries,
+            cubature_rule=cubature_rule)
         self.fudge = fudge
         self.accumulated_energy_gain = 0.
-        self.cubature_rule = cubature_rule
+        self.energy_of_last_iterate = energy_of_initial_guess
+
+    def calculate_energy(self, current_iterate) -> float:
+        return (
+            0.5*current_iterate.dot(self.lhs_matrix.dot(current_iterate))
+            - self.rhs_vector.dot(current_iterate))
 
     def perform_callback(
             self,
