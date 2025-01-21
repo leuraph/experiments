@@ -24,13 +24,14 @@ class CustomCallBack():
     """
     a callback class for iterative solvers
 
-    Attributes:
-        n_iterations_done (int):
-            The number of single iterations completed.
-        batch_size (int):
-            The frequency of iterations to perform the callback.
-        min_n_iterations_per_mesh (int):
-            Minimum iterations required before refining the mesh.
+    Attributes
+    ----------
+    n_iterations_done (int):
+        The number of single iterations completed.
+    batch_size (int):
+        The frequency of iterations to perform the callback.
+    min_n_iterations_per_mesh (int):
+        Minimum iterations required before refining the mesh.
     """
     n_iterations_done: int
     batch_size: int
