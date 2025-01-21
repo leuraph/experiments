@@ -222,7 +222,12 @@ class EnergyComparisonCustomCallback(CustomCallBack):
 
     def perform_callback(
             self,
-            current_iterate) -> None:
+            current_iterate_on_free_nodes) -> None:
+
+        current_iterate = \
+            CustomCallBack.get_global_iterate_from_iterate_on_free_nodes(
+                current_iterate_on_free_nodes=current_iterate_on_free_nodes,
+                free_nodes=self.free_nodes)
 
         current_energy = self.calculate_energy(
             current_iterate=current_iterate)
