@@ -38,7 +38,7 @@ def main() -> None:
     FUDGE = args.fudge
     MINITER = args.miniter
 
-    max_n_refinements = 20
+    max_n_dofs = 1e5
     n_cg_steps = 5
     n_initial_refinements = 3
 
@@ -172,7 +172,7 @@ def main() -> None:
             to_embed=current_iterate)
     # --------------------------------
 
-    for n_refinement in range(max_n_refinements):
+    while True:
         # re-setup as the mesh has changed
         # --------------------------------
         n_vertices = coordinates.shape[0]
@@ -183,7 +183,14 @@ def main() -> None:
         free_nodes[indices_of_free_nodes] = 1
         n_dofs = np.sum(free_nodes)
 
-        # compute exact galerkin solution on current mesh
+        # stop iteration if maximum number of DOF is reached
+        if n_dofs >= max_n_dofs:
+            print(
+                f'Maximum number of DOFs ({max_n_dofs})'
+                'reached, stopping iteration.')
+            break
+
+        # compute Galerkin solution on current mesh
         galerkin_solution, _ = solvers.solve_laplace(
             coordinates=coordinates,
             elements=elements,
@@ -244,11 +251,7 @@ def main() -> None:
         dump_object(obj=current_iterate, path_to_file=base_results_path /
                     Path(f'{n_dofs}/last_iterate.pkl'))
 
-        # in the last iteration, do not consider the possibility of refinement
-        if n_refinement == max_n_refinements - 1:
-            break
-
-        # dörfler based on EVA
+        # Dörfler based on EVA
         # --------------------
         marked_edges = np.zeros(custom_callback.edges.shape[0], dtype=int)
         marked_non_boundary_egdes = doerfler_marking(
