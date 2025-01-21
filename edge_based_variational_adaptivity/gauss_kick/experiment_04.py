@@ -32,7 +32,7 @@ def main() -> None:
     THETA = args.theta
     FUDGE = args.fudge
 
-    max_n_refinements = 20
+    n_max_dofs = 1e5
     n_cg_steps = 5
     n_initial_refinements = 3
     min_n_iterations_per_mesh = 10
@@ -107,7 +107,7 @@ def main() -> None:
         Path(f'{n_dofs}/galerkin_solution.pkl'))
     # -----------------------------------------------------
 
-    for n_refinement in range(max_n_refinements):
+    while True:
         # re-setup as the mesh has changed
         # --------------------------------
         n_vertices = coordinates.shape[0]
@@ -117,6 +117,13 @@ def main() -> None:
         free_nodes = np.zeros(n_vertices, dtype=bool)
         free_nodes[indices_of_free_nodes] = 1
         n_dofs = np.sum(free_nodes)
+
+        # stop iteration if maximum number of DOF is reached
+        if n_dofs >= n_max_dofs:
+            print(
+                f'Maximum number of DOFs ({n_max_dofs})'
+                'reached, stopping iteration.')
+            break
 
         # compute exact galerkin solution on current mesh
         solution, _ = solvers.solve_laplace(
@@ -181,10 +188,6 @@ def main() -> None:
             Path(f'{n_dofs}/galerkin_solution.pkl'))
         dump_object(obj=current_iterate, path_to_file=base_results_path /
                     Path(f'{n_dofs}/last_iterate.pkl'))
-
-        # in the last iteration, do not consider the possibility of refinement
-        if n_refinement == max_n_refinements - 1:
-            break
 
         # dörfler based on EVA
         # --------------------
