@@ -118,7 +118,7 @@ class CustomCallBack():
 
         batch_size_reached = self.n_iterations_done % self.batch_size == 0
         min_iterations_reached = (
-            self.n_iterations_done > self.min_n_iterations_per_mesh)
+            self.n_iterations_done >= self.min_n_iterations_per_mesh)
         if batch_size_reached and min_iterations_reached:
             current_iterate = np.zeros(self.coordinates.shape[0], dtype=float)
             current_iterate[self.free_nodes] = current_iterate_on_free_nodes
