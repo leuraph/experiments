@@ -40,7 +40,7 @@ def main() -> None:
 
     max_n_dofs = 1e5
     n_cg_steps = 5
-    n_initial_refinements = 3
+    n_initial_refinements = 5
 
     # ------------------------------------------------
     # Setup
