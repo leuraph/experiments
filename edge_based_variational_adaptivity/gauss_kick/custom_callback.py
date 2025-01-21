@@ -37,13 +37,68 @@ class CustomCallBack():
     batch_size: int
     min_n_iterations_per_mesh: int
 
+    # Mesh
+    elements: ElementsType
+    coordinates: CoordinatesType
+    boundaries: list[np.ndarray]
+    # ---
+    free_nodes: np.ndarray
+    edges: np.ndarray
+    non_boundary_edges: np.ndarray
+    free_edges: np.ndarray
+    # ---
+    cubature_rule: CubatureRuleEnum
+    lhs_matrix: csr_matrix
+    rhs_vector: np.ndarray
+
     def __init__(
             self,
             batch_size: int,
-            min_n_iterations_per_mesh: int) -> None:
+            min_n_iterations_per_mesh: int,
+            elements: ElementsType,
+            coordinates: CoordinatesType,
+            boundaries: list[BoundaryType],
+            cubature_rule: CubatureRuleEnum) -> None:
         self.n_iterations_done = 0
         self.batch_size = batch_size
         self.min_n_iterations_per_mesh = min_n_iterations_per_mesh
+        self.cubature_rule = cubature_rule
+
+        # mesh specific setup
+        # -------------------
+
+        # (non-boundary) edges
+        _, edge_to_nodes, _ = \
+            provide_geometric_data(
+                elements=elements,
+                boundaries=boundaries)
+
+        edge_to_nodes_flipped = np.column_stack(
+            [edge_to_nodes[:, 1], edge_to_nodes[:, 0]])
+        boundary = np.logical_or(
+            is_row_in(edge_to_nodes, self.boundaries[0]),
+            is_row_in(edge_to_nodes_flipped, self.boundaries[0])
+        )
+        non_boundary = np.logical_not(boundary)
+        self.edges = edge_to_nodes
+        self.non_boundary_edges = edge_to_nodes[non_boundary]
+
+        # free nodes / edges
+        n_vertices = coordinates.shape[0]
+        indices_of_free_nodes = np.setdiff1d(
+            ar1=np.arange(n_vertices),
+            ar2=np.unique(boundaries[0].flatten()))
+        free_nodes = np.zeros(n_vertices, dtype=bool)
+        free_nodes[indices_of_free_nodes] = 1
+        self.free_edges = non_boundary
+        self.free_nodes = free_nodes
+
+        # lhs-matrix / rhs-vector
+        self.lhs_matrix = csr_matrix(get_stiffness_matrix(
+            coordinates=coordinates, elements=elements))
+        self.rhs_vector = get_right_hand_side(
+            coordinates=coordinates, elements=elements, f=f,
+            cubature_rule=self.cubature_rule)
 
     def perform_callback(
             self,
