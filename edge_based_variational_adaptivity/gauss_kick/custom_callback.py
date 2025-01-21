@@ -47,7 +47,7 @@ class CustomCallBack():
 
     def perform_callback(
             self,
-            current_iterate) -> None:
+            current_iterate_on_free_nodes) -> None:
         pass
 
     def __call__(self, current_iterate_on_free_nodes) -> None:
@@ -58,13 +58,29 @@ class CustomCallBack():
         min_iterations_reached = (
             self.n_iterations_done > self.min_n_iterations_per_mesh)
         if batch_size_reached and min_iterations_reached:
-            # restoring the full iterate
-            current_iterate = np.zeros(self.coordinates.shape[0])
-            current_iterate[self.free_nodes] = current_iterate_on_free_nodes
 
             # check if we must continue with iterations
             self.perform_callback(
-                current_iterate=current_iterate)
+                current_iterate_on_free_nodes=current_iterate_on_free_nodes)
+
+    @staticmethod
+    def get_global_iterate_from_iterate_on_free_nodes(
+            current_iterate_on_free_nodes: np.ndarray,
+            free_nodes: np.ndarray) -> np.ndarray:
+        """
+        given the iterate on free nodes, restores the global iterate
+        on all nodes
+
+        parameters
+        ----------
+        current_iterate_on_free_nodes: np.ndarray
+            iterate on free nodes only
+        free_nodes: np.ndarray
+            boolean masak indicating free nods
+        """
+        global_iterate = np.zeros(free_nodes.shape[0])
+        global_iterate[free_nodes] = current_iterate_on_free_nodes
+        return global_iterate
 
 
 class EnergyComparisonCustomCallback(CustomCallBack):
