@@ -147,34 +147,15 @@ class EnergyComparisonCustomCallback(CustomCallBack):
 
     Attributes
     ----------
-    elements (ElementsType):
-        The elements of the mesh.
-    coordinates (CoordinatesType):
-        The coordinates of the mesh nodes.
-    boundaries (list[np.ndarray]):
-        List of boundary edges/nodes.
-    edges (np.ndarray):
-        Array of all edges in the mesh.
-    non_boundary_edges (np.ndarray):
-        Array of edges not on the boundary.
-    free_edges (np.ndarray):
-        Boolean mask for free edges.
-    free_nodes (np.ndarray):
-        Boolean mask for nodes not on the boundary.
     energy_of_last_iterate (float):
         Energy of the last iteration.
-    lhs_matrix (csr_matrix):
-        The left-hand side matrix for the solver.
-    rhs_vector (np.ndarray):
-        The right-hand side vector for the solver.
     last_energy_gain_eva (float):
         EVA energy gain of the last iterate.
     last_energy_gains (np.ndarray):
         Array of EVA energy gains (per edge) from the last iteration.
     fudge (float):
         Fudge factor to scale thresholds.
-    cubature_rule (CubatureRuleEnum):
-        cubature rule used to approximate the load vector
+    verbose: bool
     """
     last_energy_gain_eva: float
     last_energy_gains: np.ndarray
