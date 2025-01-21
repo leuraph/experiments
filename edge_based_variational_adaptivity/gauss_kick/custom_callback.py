@@ -14,10 +14,16 @@ from triangle_cubature.cubature_rule import CubatureRuleEnum
 class ConvergedException(Exception):
     energy_gains: np.ndarray
     last_iterate: np.ndarray
+    n_iterations_done: int
 
-    def __init__(self, energy_gains: np.ndarray, last_iterate: np.ndarray):
+    def __init__(
+            self,
+            energy_gains: np.ndarray,
+            last_iterate: np.ndarray,
+            n_iterations_done: int):
         self.energy_gains = energy_gains
         self.last_iterate = last_iterate
+        self.n_iterations_done = n_iterations_done
 
 
 class CustomCallBack():
@@ -222,7 +228,8 @@ class EnergyComparisonCustomCallback(CustomCallBack):
         if self.last_energy_gain_eva > self.fudge * energy_gain_iteration:
             converged_exception = ConvergedException(
                 energy_gains=self.last_energy_gains,
-                last_iterate=current_iterate)
+                last_iterate=current_iterate,
+                n_iterations_done=self.n_iterations_done)
             raise converged_exception
 
         energy_after_eva, local_energy_gains_eva = \
@@ -316,7 +323,8 @@ class EnergyTailOffCustomCallback(CustomCallBack):
             self.last_energy_gains = energy_gains
             converged_exception = ConvergedException(
                 energy_gains=self.last_energy_gains,
-                last_iterate=current_iterate)
+                last_iterate=current_iterate,
+                n_iterations_done=self.n_iterations_done)
             raise converged_exception
 
         # keep energy considerations in memory
