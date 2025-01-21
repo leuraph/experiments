@@ -38,7 +38,7 @@ def main() -> None:
 
     n_max_dofs = 1e5
     n_cg_steps = 5
-    n_initial_refinements = 3
+    n_initial_refinements = 5
     min_n_iterations_per_mesh = 10
 
     # ------------------------------------------------
