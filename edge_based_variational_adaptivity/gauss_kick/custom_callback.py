@@ -320,9 +320,8 @@ class EnergyTailOffCustomCallback(CustomCallBack):
                 cubature_rule=self.cubature_rule,
                 verbose=True)
 
-            self.last_energy_gains = energy_gains
             converged_exception = ConvergedException(
-                energy_gains=self.last_energy_gains,
+                energy_gains=energy_gains,
                 last_iterate=current_iterate,
                 n_iterations_done=self.n_iterations_done)
             raise converged_exception
