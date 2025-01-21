@@ -100,9 +100,7 @@ class CustomCallBack():
             coordinates=coordinates, elements=elements, f=f,
             cubature_rule=self.cubature_rule)
 
-    def perform_callback(
-            self,
-            current_iterate_on_free_nodes) -> None:
+    def perform_callback(self, current_iterate) -> None:
         pass
 
     def __call__(self, current_iterate_on_free_nodes) -> None:
@@ -113,10 +111,10 @@ class CustomCallBack():
         min_iterations_reached = (
             self.n_iterations_done > self.min_n_iterations_per_mesh)
         if batch_size_reached and min_iterations_reached:
-
+            current_iterate = np.zeros(self.coordinates.shape[0], dtype=float)
+            current_iterate[self.free_nodes] = current_iterate_on_free_nodes
             # check if we must continue with iterations
-            self.perform_callback(
-                current_iterate_on_free_nodes=current_iterate_on_free_nodes)
+            self.perform_callback(current_iterate=current_iterate)
 
     @staticmethod
     def get_global_iterate_from_iterate_on_free_nodes(
