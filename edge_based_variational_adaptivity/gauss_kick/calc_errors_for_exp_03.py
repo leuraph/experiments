@@ -101,7 +101,7 @@ def main() -> None:
 def calculate_energy_norm_error_squared_galerkin_with_orthogonality(
         base_result_path: Path,
         energy_norm_squared_exact: float,
-        verbose: bool = True):
+        verbose: bool = True) -> None:
     print('Calculating |u - u_h|_a^2 using Galerkin Orthogonality...')
     for path_to_n_dofs in tqdm(list(base_result_path.iterdir())):
         if not path_to_n_dofs.is_dir():
