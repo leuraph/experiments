@@ -1,19 +1,15 @@
 import numpy as np
 from p1afempy import io_helpers, refinement, solvers
-from p1afempy.mesh import provide_geometric_data, get_local_patch_edge_based
-from p1afempy.solvers import get_right_hand_side, get_stiffness_matrix
-from p1afempy.refinement import refineNVB_edge_based, refine_single_edge
+from p1afempy.mesh import provide_geometric_data
+from p1afempy.refinement import refineNVB_edge_based
 from variational_adaptivity.markers import doerfler_marking
-from variational_adaptivity.edge_based_variational_adaptivity import get_energy_gains
+from variational_adaptivity.edge_based_variational_adaptivity import\
+     get_energy_gains
 from pathlib import Path
 from configuration import uD, f
 from ismember import is_row_in
 import pickle
 import argparse
-from scipy.sparse import csr_matrix
-from tqdm import tqdm
-import matplotlib.pyplot as plt
-from matplotlib import cm
 from triangle_cubature.cubature_rule import CubatureRuleEnum
 
 
