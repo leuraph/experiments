@@ -26,76 +26,18 @@ def main() -> None:
     # energy norm distance to exact solution
     cubature_rule = CubatureRuleEnum.DAYTAYLOR
 
-    for path_to_n_dofs in tqdm(list(base_result_path.iterdir())):
-        if not path_to_n_dofs.is_dir():
-            continue
-
-        # specifying paths
-        # ----------------
-        path_to_elements = path_to_n_dofs / Path('elements.pkl')
-        path_to_coordinates = path_to_n_dofs / Path('coordinates.pkl')
-        path_to_approximate_solution = path_to_n_dofs \
-            / Path('last_iterate.pkl')
-        path_to_exact_solution = path_to_n_dofs \
-            / Path('galerkin_solution.pkl')
-
-        # loading data
-        # ------------
-        elements = load_dump(path_to_dump=path_to_elements)
-        coordinates = load_dump(path_to_dump=path_to_coordinates)
-        approximate_solution = load_dump(
-            path_to_dump=path_to_approximate_solution)
-        exact_solution = load_dump(
-            path_to_dump=path_to_exact_solution)
-
-        # calculating the energy norm errors
-        # ----------------------------------
-
-        # |u_n - u_h|^2
-        if approximate_solution is not None:
-            energy_norm_error_squared_approximate = \
-                calculate_energy_norm_error(
-                    current_iterate=approximate_solution,
-                    gradient_u=grad_u,
-                    elements=elements,
-                    coordinates=coordinates,
-                    cubature_rule=cubature_rule)
-
-        # |u - u_h|^2 without orthogonality
-        energy_norm_error_squared_exact = calculate_energy_norm_error(
-            current_iterate=exact_solution,
-            gradient_u=grad_u,
-            elements=elements,
-            coordinates=coordinates,
-            cubature_rule=cubature_rule)
-
-        # |u - u_h|^2 with orthogonality
-        stiffness_matrix = csr_matrix(get_stiffness_matrix(
-            coordinates=coordinates, elements=elements))
-        energy_norm_squared_galerkin = exact_solution.dot(
-            stiffness_matrix.dot(exact_solution))
-        energy_norm_error_squared_exact_with_orthogonality =\
-            energy_norm_squared_exact - energy_norm_squared_galerkin
-
-        # saving the energy norm errors to disk
-        # -------------------------------------
-        if approximate_solution is not None:
-            dump_object(
-                obj=energy_norm_error_squared_approximate,
-                path_to_file=(
-                    path_to_n_dofs /
-                    Path('energy_norm_error_squared_last_iterate.pkl')))
-        dump_object(
-            obj=energy_norm_error_squared_exact,
-            path_to_file=(
-                path_to_n_dofs /
-                Path('energy_norm_error_squared_galerkin_without_orthogonality.pkl')))
-        dump_object(
-            obj=energy_norm_error_squared_exact_with_orthogonality,
-            path_to_file=(
-                path_to_n_dofs /
-                Path(
-                    'energy_norm_error_squared_galerkin_with_orthogonality.pkl')))
+    calculate_energy_norm_error_squared_last_iterate(
+        base_result_path=base_result_path,
+        cubature_rule=cubature_rule,
+        verbose=True)
+    calculate_energy_norm_error_squared_galerkin_with_orthogonality(
+        base_result_path=base_result_path,
+        energy_norm_squared_exact=energy_norm_squared_exact,
+        verbose=True)
+    calculate_energy_norm_error_squared_galerkin_without_orthogonality(
+        base_result_path=base_result_path,
+        cubature_rule=cubature_rule,
+        verbose=True)
 
 
 def calculate_energy_norm_error_squared_last_iterate(
