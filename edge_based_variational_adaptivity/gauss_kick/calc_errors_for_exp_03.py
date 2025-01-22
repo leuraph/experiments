@@ -98,6 +98,52 @@ def main() -> None:
                     'energy_norm_error_squared_galerkin_with_orthogonality.pkl')))
 
 
+def calculate_energy_norm_error_squared_last_iterate(
+        base_result_path: Path,
+        cubature_rule: CubatureRuleEnum,
+        verbose: bool = True
+        ) -> None:
+    if verbose:
+        print('Calculating |u - u_n|_a^2 for last iterates...')
+    for path_to_n_dofs in tqdm(list(base_result_path.iterdir())):
+        if not path_to_n_dofs.is_dir():
+            continue
+
+        # specifying paths
+        # ----------------
+        path_to_elements = path_to_n_dofs / Path('elements.pkl')
+        path_to_coordinates = path_to_n_dofs / Path('coordinates.pkl')
+        path_to_last_iterate = path_to_n_dofs \
+            / Path('last_iterate.pkl')
+
+        # loading data
+        # ------------
+        elements = load_dump(path_to_dump=path_to_elements)
+        coordinates = load_dump(path_to_dump=path_to_coordinates)
+        last_iterate = load_dump(
+            path_to_dump=path_to_last_iterate)
+
+        # calculating the energy norm errors
+        # ----------------------------------
+
+        # |u_n - u_h|^2
+        energy_norm_error_squared_last_iterate = \
+            calculate_energy_norm_error(
+                current_iterate=last_iterate,
+                gradient_u=grad_u,
+                elements=elements,
+                coordinates=coordinates,
+                cubature_rule=cubature_rule)
+
+        # saving the energy norm errors to disk
+        # -------------------------------------
+        dump_object(
+            obj=energy_norm_error_squared_last_iterate,
+            path_to_file=(
+                path_to_n_dofs /
+                Path('energy_norm_error_squared_last_iterate.pkl')))
+
+
 def calculate_energy_norm_error_squared_galerkin_without_orthogonality(
         base_result_path: Path,
         cubature_rule: CubatureRuleEnum,
