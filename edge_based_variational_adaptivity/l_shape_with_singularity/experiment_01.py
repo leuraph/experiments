@@ -99,7 +99,7 @@ def main() -> None:
     # variational adaptivity
     # ------------------------------------------------
 
-    n_max_dofs = 1e5
+    n_max_dofs = 1e6
     while True:
 
         element_to_edges, edge_to_nodes, boundaries_to_edges =\
