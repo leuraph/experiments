@@ -98,6 +98,51 @@ def main() -> None:
                     'energy_norm_error_squared_galerkin_with_orthogonality.pkl')))
 
 
+def calculate_energy_norm_error_squared_galerkin_without_orthogonality(
+        base_result_path: Path,
+        cubature_rule: CubatureRuleEnum,
+        verbose: bool = True) -> None:
+    print('Calculating |u - u_h|_a^2 without using Galerkin Orthogonality...')
+    for path_to_n_dofs in tqdm(list(base_result_path.iterdir())):
+        if not path_to_n_dofs.is_dir():
+            continue
+
+        # specifying paths
+        # ----------------
+        path_to_elements = path_to_n_dofs / Path('elements.pkl')
+        path_to_coordinates = path_to_n_dofs / Path('coordinates.pkl')
+        path_to_galerkin_solution = path_to_n_dofs \
+            / Path('galerkin_solution.pkl')
+
+        # loading data
+        # ------------
+        elements = load_dump(path_to_dump=path_to_elements)
+        coordinates = load_dump(path_to_dump=path_to_coordinates)
+        galerkin_solution = load_dump(
+            path_to_dump=path_to_galerkin_solution)
+
+        # calculating the energy norm errors
+        # ----------------------------------
+
+        # |u - u_h|^2 without orthogonality
+        energy_norm_error_squared_exact = calculate_energy_norm_error(
+            current_iterate=galerkin_solution,
+            gradient_u=grad_u,
+            elements=elements,
+            coordinates=coordinates,
+            cubature_rule=cubature_rule)
+
+        # saving the energy norm errors to disk
+        # -------------------------------------
+        dump_object(
+            obj=energy_norm_error_squared_exact,
+            path_to_file=(
+                path_to_n_dofs /
+                Path(
+                    'energy_norm_error_squared_galerkin_'
+                    'without_orthogonality.pkl')))
+
+
 def calculate_energy_norm_error_squared_galerkin_with_orthogonality(
         base_result_path: Path,
         energy_norm_squared_exact: float,
