@@ -7,6 +7,7 @@ from iterative_methods.energy_norm import calculate_energy_norm_error
 from triangle_cubature.cubature_rule import CubatureRuleEnum
 from p1afempy.solvers import get_stiffness_matrix
 from scipy.sparse import csr_matrix
+import re
 
 
 def main() -> None:
@@ -26,18 +27,41 @@ def main() -> None:
     # energy norm distance to exact solution
     cubature_rule = CubatureRuleEnum.DAYTAYLOR
 
-    calculate_energy_norm_error_squared_last_iterate(
-        base_result_path=base_result_path,
-        cubature_rule=cubature_rule,
-        verbose=True)
-    calculate_energy_norm_error_squared_galerkin_with_orthogonality(
-        base_result_path=base_result_path,
-        energy_norm_squared_exact=energy_norm_squared_exact,
-        verbose=True)
-    calculate_energy_norm_error_squared_galerkin_without_orthogonality(
-        base_result_path=base_result_path,
-        cubature_rule=cubature_rule,
-        verbose=True)
+    # extracting the experiment number as integer
+    pattern = r"experiment_(\d+)"
+    match = re.search(pattern, str(base_result_path))
+    experiment_number = int(match.group(1))
+
+    if experiment_number in [3, 4]:
+        print(f'post-processing results from experiment {experiment_number}')
+        calculate_energy_norm_error_squared_last_iterate(
+            base_result_path=base_result_path,
+            cubature_rule=cubature_rule,
+            verbose=True)
+        calculate_energy_norm_error_squared_galerkin_with_orthogonality(
+            base_result_path=base_result_path,
+            energy_norm_squared_exact=energy_norm_squared_exact,
+            verbose=True)
+        calculate_energy_norm_error_squared_galerkin_without_orthogonality(
+            base_result_path=base_result_path,
+            cubature_rule=cubature_rule,
+            verbose=True)
+
+    elif experiment_number in [1, 2]:
+        print(f'post-processing results from experiment {experiment_number}')
+        calculate_energy_norm_error_squared_galerkin_with_orthogonality(
+            base_result_path=base_result_path,
+            energy_norm_squared_exact=energy_norm_squared_exact,
+            verbose=True)
+        calculate_energy_norm_error_squared_galerkin_without_orthogonality(
+            base_result_path=base_result_path,
+            cubature_rule=cubature_rule,
+            verbose=True)
+
+    else:
+        print(
+            f'experiment {experiment_number} not covered by this script, '
+            'doing nothinng...')
 
 
 def calculate_energy_norm_error_squared_last_iterate(
