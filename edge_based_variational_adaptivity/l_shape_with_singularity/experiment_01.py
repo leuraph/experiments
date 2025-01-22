@@ -27,7 +27,6 @@ def main() -> None:
     # Setup
     # ------------------------------------------------
     base_path = Path('data')
-    # TODO if this order is what we want, then remove the other one and rename
     path_to_elements = base_path / Path('elements.dat')
     path_to_coordinates = base_path / Path('coordinates.dat')
     path_to_dirichlet = base_path / Path('dirichlet.dat')
