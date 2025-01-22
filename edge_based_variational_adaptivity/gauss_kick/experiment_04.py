@@ -37,9 +37,9 @@ def main() -> None:
     FUDGE = args.fudge
 
     n_max_dofs = 1e5
-    n_cg_steps = 5
+    n_cg_steps = 2
     n_initial_refinements = 5
-    min_n_iterations_per_mesh = 10
+    min_n_iterations_per_mesh = 5
 
     # ------------------------------------------------
     # Setup
