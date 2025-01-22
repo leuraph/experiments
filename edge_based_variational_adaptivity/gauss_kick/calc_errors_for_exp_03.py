@@ -98,5 +98,52 @@ def main() -> None:
                     'energy_norm_error_squared_galerkin_with_orthogonality.pkl')))
 
 
+def calculate_energy_norm_error_squared_galerkin_with_orthogonality(
+        base_result_path: Path,
+        energy_norm_squared_exact: float,
+        verbose: bool = True):
+    print('Calculating |u - u_h|_a^2 using Galerkin Orthogonality...')
+    for path_to_n_dofs in tqdm(list(base_result_path.iterdir())):
+        if not path_to_n_dofs.is_dir():
+            continue
+
+        # specifying paths
+        # ----------------
+        path_to_elements = path_to_n_dofs / Path('elements.pkl')
+        path_to_coordinates = path_to_n_dofs / Path('coordinates.pkl')
+        path_to_galerkin_solution = path_to_n_dofs \
+            / Path('galerkin_solution.pkl')
+
+        # loading data
+        # ------------
+        elements = load_dump(path_to_dump=path_to_elements)
+        coordinates = load_dump(path_to_dump=path_to_coordinates)
+        galerkin_solution = load_dump(
+            path_to_dump=path_to_galerkin_solution)
+
+        # calculating the energy norm errors
+        # ----------------------------------
+
+        # |u - u_h|_a^2 with orthogonality, i.e.
+        # |u - u_h|_a^2 = |u|_a^2 - |u_h|_a^2
+        stiffness_matrix = csr_matrix(get_stiffness_matrix(
+            coordinates=coordinates, elements=elements))
+
+        energy_norm_squared_galerkin = galerkin_solution.dot(
+            stiffness_matrix.dot(galerkin_solution))
+
+        energy_norm_error_squared_exact_with_orthogonality =\
+            energy_norm_squared_exact - energy_norm_squared_galerkin
+
+        # saving the energy norm error to disk
+        # ------------------------------------
+        dump_object(
+            obj=energy_norm_error_squared_exact_with_orthogonality,
+            path_to_file=(
+                path_to_n_dofs /
+                Path(
+                    'energy_norm_error_squared_galerkin_with_orthogonality.pkl')))
+
+
 if __name__ == '__main__':
     main()
