@@ -63,7 +63,8 @@ def main() -> None:
         elements=elements,
         dirichlet=boundaries[0],
         neumann=np.array([]),
-        f=f, g=None, uD=uD)
+        f=f, g=None, uD=uD,
+        cubature_rule=CubatureRuleEnum.DAYTAYLOR)
 
     n_vertices = coordinates.shape[0]
     indices_of_free_nodes = np.setdiff1d(
