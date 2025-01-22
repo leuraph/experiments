@@ -278,6 +278,7 @@ class EnergyTailOffCustomCallback(CustomCallBack):
     accumulated_energy_gain: float
     verbose: bool
     energy_history: list[float]
+    n_callback_called: int
 
     def __init__(
             self,
@@ -299,7 +300,8 @@ class EnergyTailOffCustomCallback(CustomCallBack):
         self.fudge = fudge
         self.accumulated_energy_gain = 0.
         self.energy_of_last_iterate = energy_of_initial_guess
-        self.energy_history = [energy_of_initial_guess]
+        self.energy_history = []
+        self.n_callback_called = 0
 
     def calculate_energy(self, current_iterate) -> float:
         return (
@@ -309,10 +311,17 @@ class EnergyTailOffCustomCallback(CustomCallBack):
     def perform_callback(
             self,
             current_iterate) -> None:
+        self.n_callback_called += 1
 
         current_energy = self.calculate_energy(
             current_iterate=current_iterate)
         self.energy_history.append(current_energy)
+
+        # reset the accumulated energy drop to zero
+        # after min_n_iterationns is reached
+        if self.n_callback_called == 1:
+            self.energy_of_last_iterate = current_energy
+
         energy_gain_iteration = self.energy_of_last_iterate - current_energy
         self.accumulated_energy_gain += energy_gain_iteration
 
