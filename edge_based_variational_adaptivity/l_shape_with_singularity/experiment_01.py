@@ -56,16 +56,6 @@ def main() -> None:
                                  elements=elements,
                                  marked_elements=marked,
                                  boundary_conditions=boundaries)
-    # marking only non-boundary coordinates for jiggling
-    # all_coordinates_indices = np.arange(coordinates.shape[0])
-    # coordinates_on_boundary = np.isin(all_coordinates_indices, boundaries[0])
-    # marked_coordinates = np.logical_not(coordinates_on_boundary)
-    # # jiggle the initial mesh's non-boundary coordinates
-    # delta = 1./2**(n_initial_refinements+1)
-    # coordinates = distort_coordinates(coordinates=coordinates,
-    #                                   delta=delta, marked=marked_coordinates)
-    # # shuffle initial mesh's elements
-    # elements = shuffle_elements(elements=elements)
 
     # solve exactly on the initial mesh
     solution, _ = solvers.solve_laplace(
@@ -144,9 +134,6 @@ def main() -> None:
             boundaries_to_edges=boundaries_to_edges,
             edge2newNode=marked_edges)
 
-        # shuffle refined mesh's elements
-        # elements = shuffle_elements(elements=elements)
-
         # solve linear problem exactly on current mesh
         # --------------------------------------------
         solution, _ = solvers.solve_laplace(
@@ -184,37 +171,6 @@ def dump_object(obj, path_to_file: Path) -> None:
     with open(path_to_file, "wb") as file:
         # Dump the DataFrame into the file using pickle
         pickle.dump(obj, file)
-
-
-def show_solution(coordinates, solution):
-    plt.rcParams["mathtext.fontset"] = "cm"
-    plt.rcParams['xtick.labelsize'] = 12
-    plt.rcParams['ytick.labelsize'] = 12
-    plt.rcParams['axes.labelsize'] = 20
-    plt.rcParams['axes.titlesize'] = 12
-    plt.rcParams['legend.fontsize'] = 12
-
-    x_coords, y_coords = zip(*coordinates)
-
-    # Create a 3D scatter plot
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-
-    # Plot the points with scalar values as colors (adjust colormap as needed)
-    _ = ax.plot_trisurf(x_coords, y_coords, solution, linewidth=0.2,
-                        antialiased=True, cmap=cm.viridis)
-    # Add labels to the axes
-    ax.set_xlabel(r'$x$')
-    ax.set_ylabel(r'$y$')
-    ax.set_zlabel(r'$z$')
-
-    ax.set_xticks([0, 1])
-    ax.set_yticks([0, 1])
-    # ax.set_zticks([0, 0.02, 0.04, 0.06])
-
-    # Show and save the plot
-    # fig.savefig(out_path, dpi=300)
-    plt.show()
 
 
 if __name__ == '__main__':
