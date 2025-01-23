@@ -344,3 +344,94 @@ class EnergyTailOffCustomCallback(CustomCallBack):
 
         # keep energy considerations in memory
         self.energy_of_last_iterate = current_energy
+
+
+class EnergyTailOffAveragedCustomCallback(CustomCallBack):
+    """
+    After each batch of iterations,
+    compares the accumulated energy gain with
+    the energy gain associated to another batch of iterations.
+
+    Attributes
+    ----------
+    energy_of_last_iterate: float
+        energy of the last iterate considered
+    fudge: float
+        fudge parameter used when comparing accumulated
+        and current energy gain
+    accumulated_energy_gain: float
+        energy gain accumulated since initiation of
+        global CG iterations
+    verbose: bool
+    """
+    energy_of_last_iterate: float
+    fudge: float
+    accumulated_energy_gain: float
+    verbose: bool
+    energy_history: list[float]
+    n_callback_called: int
+
+    def __init__(
+            self,
+            batch_size: int,
+            min_n_iterations_per_mesh: int,
+            elements: ElementsType,
+            coordinates: CoordinatesType,
+            boundaries: list[BoundaryType],
+            energy_of_initial_guess: float,
+            fudge: float,
+            cubature_rule: CubatureRuleEnum = CubatureRuleEnum.MIDPOINT):
+        super().__init__(
+            batch_size=batch_size,
+            min_n_iterations_per_mesh=min_n_iterations_per_mesh,
+            elements=elements,
+            coordinates=coordinates,
+            boundaries=boundaries,
+            cubature_rule=cubature_rule)
+        self.fudge = fudge
+        self.accumulated_energy_gain = 0.
+        self.energy_of_last_iterate = energy_of_initial_guess
+        self.energy_history = []
+        self.n_callback_called = 0
+
+    def calculate_energy(self, current_iterate) -> float:
+        return (
+            0.5*current_iterate.dot(self.lhs_matrix.dot(current_iterate))
+            - self.rhs_vector.dot(current_iterate))
+
+    def perform_callback(
+            self,
+            current_iterate) -> None:
+        self.n_callback_called += 1
+
+        current_energy = self.calculate_energy(
+            current_iterate=current_iterate)
+        self.energy_history.append(current_energy)
+
+        # reset the accumulated energy drop to zero
+        # after min_n_iterationns is reached
+        if self.n_callback_called == 1:
+            self.energy_of_last_iterate = current_energy
+
+        energy_gain_iteration = self.energy_of_last_iterate - current_energy
+        self.accumulated_energy_gain += energy_gain_iteration
+
+        if energy_gain_iteration < self.fudge * self.accumulated_energy_gain/self.n_callback_called:
+            energy_gains = get_energy_gains(
+                coordinates=self.coordinates,
+                elements=self.elements,
+                non_boundary_edges=self.non_boundary_edges,
+                current_iterate=current_iterate,
+                f=f,
+                cubature_rule=self.cubature_rule,
+                verbose=True)
+
+            converged_exception = ConvergedException(
+                energy_gains=energy_gains,
+                last_iterate=current_iterate,
+                n_iterations_done=self.n_iterations_done,
+                energy_history=self.energy_history)
+            raise converged_exception
+
+        # keep energy considerations in memory
+        self.energy_of_last_iterate = current_energy
