@@ -32,7 +32,7 @@ def main() -> None:
     match = re.search(pattern, str(base_result_path))
     experiment_number = int(match.group(1))
 
-    if experiment_number in [3, 4]:
+    if experiment_number in [3, 4, 5]:
         print(f'post-processing results from experiment {experiment_number}')
         calculate_energy_norm_error_squared_last_iterate(
             base_result_path=base_result_path,
