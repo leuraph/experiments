@@ -32,13 +32,16 @@ def main() -> None:
                         help="if current_ennergy_gain < fudge * "
                         "accumulated_energy_gain / n_iterations, "
                         "iteration is halted and refinement is started")
-    parser.add_argument("--mininter", type=int, required=True,
+    parser.add_argument("--miniter", type=int, required=True,
                         help="minimum number of iterations on each mesh")
+    parser.add_argument("--batchsize", type=int, required=True,
+                        help="number of CG iterations per update step")
     args = parser.parse_args()
 
     THETA = args.theta
     FUDGE = args.fudge
     MINITER = args.miniter
+    BATCHSIZE = args.batchsize
 
     n_max_dofs = 1e6
     n_initial_refinements = 5
@@ -216,7 +219,7 @@ def main() -> None:
         # ------------------------------
         # assembly of right hand side
         custom_callback = EnergyTailOffCustomCallback(
-            batch_size=1,
+            batch_size=BATCHSIZE,
             min_n_iterations_per_mesh=MINITER,
             elements=elements,
             coordinates=coordinates,
