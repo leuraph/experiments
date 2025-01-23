@@ -318,7 +318,7 @@ class EnergyTailOffCustomCallback(CustomCallBack):
         self.energy_history.append(current_energy)
 
         # reset the accumulated energy drop to zero
-        # after min_n_iterationns is reached
+        # after min_n_iterations is reached
         if self.n_callback_called == 1:
             self.energy_of_last_iterate = current_energy
 
