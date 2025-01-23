@@ -30,17 +30,21 @@ def main() -> None:
                         help="value of theta used in the Dörfler marking")
     parser.add_argument("--fudge", type=float, required=True,
                         help="if current_ennergy_gain < fudge * "
-                        "accumulated_energy_gain, iteration is halted and "
-                        "refinement is started")
+                        "accumulated_energy_gain / n_iterations, "
+                        "iteration is halted and refinement is started")
+    parser.add_argument("--miniter", type=int, required=True,
+                        help="minimum number of iterations on each mesh")
+    parser.add_argument("--batchsize", type=int, required=True,
+                        help="number of CG iterations per update step")
     args = parser.parse_args()
 
+    MINITER = args.miniter
+    BATCHSIZE = args.batchsize
     THETA = args.theta
     FUDGE = args.fudge
 
-    n_max_dofs = 1e5
+    n_max_dofs = 1e6
     n_initial_refinements = 5
-    n_cg_steps = 2
-    min_n_iterations_per_mesh = 5
 
     # ------------------------------------------------
     # Setup
@@ -215,8 +219,8 @@ def main() -> None:
         # ------------------------------
         # assembly of right hand side
         custom_callback = EnergyTailOffAveragedCustomCallback(
-            batch_size=n_cg_steps,
-            min_n_iterations_per_mesh=min_n_iterations_per_mesh,
+            batch_size=BATCHSIZE,
+            min_n_iterations_per_mesh=MINITER,
             elements=elements,
             coordinates=coordinates,
             boundaries=boundaries,
