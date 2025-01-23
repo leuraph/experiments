@@ -9,7 +9,7 @@ from scipy.sparse import csr_matrix
 from variational_adaptivity.markers import doerfler_marking
 import argparse
 from scipy.sparse.linalg import cg
-from custom_callback import ConvergedException, EnergyTailOffCustomCallback
+from custom_callback import ConvergedException, EnergyTailOffAveragedCustomCallback
 from ismember import is_row_in
 from variational_adaptivity.edge_based_variational_adaptivity import \
     get_energy_gains
@@ -52,7 +52,7 @@ def main() -> None:
     path_to_dirichlet = base_path / Path('dirichlet.dat')
 
     base_results_path = (
-        Path('results/experiment_04') /
+        Path('results/experiment_05') /
         Path(f'theta-{THETA}_fudge-{FUDGE}'))
 
     coordinates, elements = io_helpers.read_mesh(
@@ -214,7 +214,7 @@ def main() -> None:
         # Perform CG on the current mesh
         # ------------------------------
         # assembly of right hand side
-        custom_callback = EnergyTailOffCustomCallback(
+        custom_callback = EnergyTailOffAveragedCustomCallback(
             batch_size=n_cg_steps,
             min_n_iterations_per_mesh=min_n_iterations_per_mesh,
             elements=elements,
