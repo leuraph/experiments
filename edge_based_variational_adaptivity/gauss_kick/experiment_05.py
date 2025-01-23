@@ -241,6 +241,8 @@ def main() -> None:
         except ConvergedException as conv:
             current_iterate = conv.last_iterate
             energy_gains = conv.energy_gains
+            energy_history = np.array(conv.energy_history)
+            n_iterations_done = conv.n_iterations_done
             print(f"CG stopped after {conv.n_iterations_done} iterations!")
 
         # dump the current state
@@ -251,6 +253,10 @@ def main() -> None:
                     Path(f'{n_dofs}/coordinates.pkl'))
         dump_object(obj=boundaries, path_to_file=base_results_path /
                     Path(f'{n_dofs}/boundaries.pkl'))
+        dump_object(obj=energy_history, path_to_file=base_results_path /
+                    Path(f'{n_dofs}/energy_history.pkl'))
+        dump_object(obj=n_iterations_done, path_to_file=base_results_path /
+                    Path(f'{n_dofs}/n_iterations_done.pkl'))
         dump_object(
             obj=solution, path_to_file=base_results_path /
             Path(f'{n_dofs}/galerkin_solution.pkl'))
