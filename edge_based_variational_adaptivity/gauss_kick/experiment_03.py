@@ -239,7 +239,7 @@ def main() -> None:
         except ConvergedException as conv:
             current_iterate = conv.last_iterate
             energy_gains = conv.energy_gains
-            print("CG stopped!")
+            print(f"CG stopped after {conv.n_iterations_done} iterations!")
 
         # dump the current state
         # ----------------------
