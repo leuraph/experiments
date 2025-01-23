@@ -19,7 +19,6 @@ def main() -> None:
     output_path = Path(args.o)
 
     energy_norm_errors_squared_galerkin_with_orthogonality = []
-    energy_norm_errors_squared_galerkin_without_orthogonality = []
     n_dofs = []
 
     for n_dofs_dir in base_path.iterdir():
@@ -70,11 +69,10 @@ def main() -> None:
     ax.grid(True)
     ax.loglog(
         n_dofs, energy_norm_errors_squared_galerkin_with_orthogonality,
-        'b--', marker='s', label='with orthogonality',
+        'b--', marker='s',
         markerfacecolor=(0, 0, 1, 0.5), markersize=4, linewidth=0.5)
     ax.loglog(n_dofs, np.exp(model(np.log(n_dofs), m_optimized)),
               'k--', linewidth=0.8)
-    ax.legend()
 
     fig.savefig(output_path, dpi=300, bbox_inches="tight")
 
