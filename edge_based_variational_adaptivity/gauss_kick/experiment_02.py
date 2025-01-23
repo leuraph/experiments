@@ -52,16 +52,6 @@ def main() -> None:
                                  elements=elements,
                                  marked_elements=marked,
                                  boundary_conditions=boundaries)
-    # marking only non-boundary coordinates for jiggling
-    # all_coordinates_indices = np.arange(coordinates.shape[0])
-    # coordinates_on_boundary = np.isin(all_coordinates_indices, boundaries[0])
-    # marked_coordinates = np.logical_not(coordinates_on_boundary)
-    # # jiggle the initial mesh's non-boundary coordinates
-    # delta = 1./2**(n_initial_refinements+1)
-    # coordinates = distort_coordinates(coordinates=coordinates,
-    #                                   delta=delta, marked=marked_coordinates)
-    # # shuffle initial mesh's elements
-    # elements = shuffle_elements(elements=elements)
 
     # solve exactly on the initial mesh
     solution, _ = solvers.solve_laplace(
