@@ -14,7 +14,6 @@ from ismember import is_row_in
 from variational_adaptivity.edge_based_variational_adaptivity import \
     get_energy_gains
 from triangle_cubature.cubature_rule import CubatureRuleEnum
-import matplotlib.pyplot as plt
 
 
 def calculate_energy(
@@ -243,8 +242,6 @@ def main() -> None:
             current_iterate = conv.last_iterate
             energy_gains = conv.energy_gains
             print(f"CG stopped after {conv.n_iterations_done} iterations!")
-            plt.plot(conv.energy_history)
-            plt.show()
 
         # dump the current state
         # ----------------------
