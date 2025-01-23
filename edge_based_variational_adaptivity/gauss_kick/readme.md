@@ -39,10 +39,20 @@ In this experiment, we
 ## Experiment 4
 global CG iterations stopped by comparison of current energy losses and overall energy loss on current space. Namely, we stop the CG iterations and refine, as soon as we have
 $$
-E(u^{n-1}) - E(u^n) \leq \alpha(n) \Big(E(u^0) - E(u^n)\Big),
+E(u^{n-1}) - E(u^n) \leq \alpha \Big(E(u^{n_{\text{min}}}) - E(u^n)\Big),
 $$
-where $\alpha(n) =\text{const}. \in (0, 1)$ or (even stronger) $\alpha(n) \propto n^{-1} \in (0, 1)$.
-This ciretrion is motivated by [HAW23].
+where $\alpha \in (0, 1)$.
+This criterion is motivated by [HAW23].
+
+## Experiment 5
+global CG iterations stopped by comparison of current energy losses and averaged overall energy loss on current space. Namely, we stop the CG iterations and refine, as soon as we have
+$$
+E(u^{n-1}) - E(u^n) <
+\alpha
+\frac{E(u^{n_{\text{min}}}) - E(u^n)}{n - n_{\text{min}}}
+$$
+where $\alpha \in (0, 1)$.
+This criterion is motivated by [HAW23].
 
 # Error Calculations
 
