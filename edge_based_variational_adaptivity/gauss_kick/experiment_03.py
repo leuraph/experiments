@@ -32,14 +32,16 @@ def main() -> None:
                         " CG on current mesh is stopped and EVA kicks in")
     parser.add_argument("--miniter", type=int, required=True,
                         help="minimum number of CG iterations on each mesh")
+    parser.add_argument("--batchsize", type=int, required=True,
+                        help="number of CG iterations per update step")
     args = parser.parse_args()
 
     THETA = args.theta
     FUDGE = args.fudge
     MINITER = args.miniter
+    BATCHSIZE = args.batchsize
 
     max_n_dofs = 1e5
-    n_cg_steps = 5
     n_initial_refinements = 5
 
     # ------------------------------------------------
@@ -217,7 +219,7 @@ def main() -> None:
         # ------------------------------
         # assembly of right hand side
         custom_callback = EnergyComparisonCustomCallback(
-            batch_size=n_cg_steps,
+            batch_size=BATCHSIZE,
             elements=elements,
             coordinates=coordinates,
             boundaries=boundaries,
