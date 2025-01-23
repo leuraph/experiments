@@ -87,7 +87,8 @@ def main() -> None:
         neumann=np.array([]),
         f=f,
         g=None,
-        uD=uD)
+        uD=uD,
+        cubature_rule=CubatureRuleEnum.DAYTAYLOR)
 
     # initializing the iteration with Galerkin
     # solution on first mesh
@@ -203,12 +204,14 @@ def main() -> None:
             neumann=np.array([]),
             f=f,
             g=None,
-            uD=uD)
+            uD=uD,
+            cubature_rule=CubatureRuleEnum.DAYTAYLOR)
 
         right_hand_side = solvers.get_right_hand_side(
             coordinates=coordinates,
             elements=elements,
-            f=f)
+            f=f,
+            cubature_rule=CubatureRuleEnum.DAYTAYLOR)
 
         # assembly of the stiffness matrix
         stiffness_matrix = csr_matrix(solvers.get_stiffness_matrix(
@@ -229,7 +232,8 @@ def main() -> None:
                 u=current_iterate,
                 lhs_matrix=stiffness_matrix,
                 rhs_vector=right_hand_side),
-            fudge=FUDGE)
+            fudge=FUDGE,
+            cubature_rule=CubatureRuleEnum.DAYTAYLOR)
 
         try:
             current_iterate[free_nodes], _ = cg(
