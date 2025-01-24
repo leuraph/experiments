@@ -118,6 +118,9 @@ def main() -> None:
     dump_object(
         obj=current_iterate, path_to_file=base_results_path /
         Path(f'{n_dofs}/last_iterate.pkl'))
+    dump_object(
+        obj=int(0), path_to_file=base_results_path /
+        Path(f'{n_dofs}/n_iterations_done.pkl'))
     # -----------------------------------------------------
 
     # perform first refinement by hand
