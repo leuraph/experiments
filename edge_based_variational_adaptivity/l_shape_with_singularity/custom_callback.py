@@ -539,3 +539,25 @@ class EnergyDifferenceProptoDOFCustomCallback(CustomCallBack):
 
         # keep energy considerations in memory
         self.energy_of_last_iterate = current_energy
+
+
+class ForcingIterationErrorToDiscretizationErrorCustomCallback(CustomCallBack):
+    def __init__(
+            self,
+            batch_size: int,
+            min_n_iterations_per_mesh: int,
+            elements: ElementsType,
+            coordinates: CoordinatesType,
+            boundaries: list[BoundaryType],
+            cubature_rule: CubatureRuleEnum):
+        super().__init__(
+            batch_size=batch_size,
+            min_n_iterations_per_mesh=min_n_iterations_per_mesh,
+            elements=elements,
+            coordinates=coordinates,
+            boundaries=boundaries,
+            cubature_rule=cubature_rule)
+
+    def perform_callback(self, current_iterate: np.ndarray):
+        # TODO implement
+        pass
