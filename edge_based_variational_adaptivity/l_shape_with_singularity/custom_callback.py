@@ -543,6 +543,9 @@ class EnergyDifferenceProptoDOFCustomCallback(CustomCallBack):
 
 class ForcingIterationErrorToDiscretizationErrorCustomCallback(CustomCallBack):
 
+    energy_norm_error_squared_galerkin_to_exact: float
+    fudge: float
+
     def __init__(
             self,
             batch_size: int,
@@ -550,7 +553,9 @@ class ForcingIterationErrorToDiscretizationErrorCustomCallback(CustomCallBack):
             elements: ElementsType,
             coordinates: CoordinatesType,
             boundaries: list[BoundaryType],
-            cubature_rule: CubatureRuleEnum):
+            cubature_rule: CubatureRuleEnum,
+            energy_norm_error_squared_galerkin_to_exact: float,
+            fudge: float):
         super().__init__(
             batch_size=batch_size,
             min_n_iterations_per_mesh=min_n_iterations_per_mesh,
@@ -558,6 +563,9 @@ class ForcingIterationErrorToDiscretizationErrorCustomCallback(CustomCallBack):
             coordinates=coordinates,
             boundaries=boundaries,
             cubature_rule=cubature_rule)
+        self.energy_norm_error_squared_galerkin_to_exact = \
+            energy_norm_error_squared_galerkin_to_exact
+        self.fudge = fudge
 
     def perform_callback(self, current_iterate: np.ndarray):
         # TODO implement
