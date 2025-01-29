@@ -543,8 +543,6 @@ class EnergyDifferenceProptoDOFCustomCallback(CustomCallBack):
 
 class ForcingIterationErrorToDiscretizationErrorCustomCallback(CustomCallBack):
 
-    n_callbacks_called: int
-
     def __init__(
             self,
             batch_size: int,
@@ -560,8 +558,7 @@ class ForcingIterationErrorToDiscretizationErrorCustomCallback(CustomCallBack):
             coordinates=coordinates,
             boundaries=boundaries,
             cubature_rule=cubature_rule)
-        self.n_callbacks_called = 0
 
     def perform_callback(self, current_iterate: np.ndarray):
         # TODO implement
-        self.n_callbacks_called += 1
+        pass
