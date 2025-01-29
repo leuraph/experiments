@@ -571,8 +571,13 @@ class ForcingIterationErrorToDiscretizationErrorCustomCallback(CustomCallBack):
         self.fudge = fudge
 
     def perform_callback(self, current_iterate: np.ndarray):
-        # TODO implement
-        pass
+        energy_norm_error_squared_iterate_to_galerkin = \
+            self.get_energy_norm_error_squared_iterate_to_galerkin(
+                current_iterate=current_iterate)
+        if energy_norm_error_squared_iterate_to_galerkin < \
+                self.fudge * self.energy_norm_error_squared_galerkin_to_exact:
+            # TODO implement
+            pass
 
     def get_energy_norm_error_squared_iterate_to_galerkin(
             self,
