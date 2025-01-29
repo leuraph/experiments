@@ -545,6 +545,7 @@ class ForcingIterationErrorToDiscretizationErrorCustomCallback(CustomCallBack):
 
     energy_norm_error_squared_galerkin_to_exact: float
     fudge: float
+    galerkin_solution: np.ndarray
 
     def __init__(
             self,
@@ -555,6 +556,7 @@ class ForcingIterationErrorToDiscretizationErrorCustomCallback(CustomCallBack):
             boundaries: list[BoundaryType],
             cubature_rule: CubatureRuleEnum,
             energy_norm_error_squared_galerkin_to_exact: float,
+            galerkin_solution: np.ndarray,
             fudge: float):
         super().__init__(
             batch_size=batch_size,
@@ -565,6 +567,7 @@ class ForcingIterationErrorToDiscretizationErrorCustomCallback(CustomCallBack):
             cubature_rule=cubature_rule)
         self.energy_norm_error_squared_galerkin_to_exact = \
             energy_norm_error_squared_galerkin_to_exact
+        self.galerkin_solution = galerkin_solution
         self.fudge = fudge
 
     def perform_callback(self, current_iterate: np.ndarray):
