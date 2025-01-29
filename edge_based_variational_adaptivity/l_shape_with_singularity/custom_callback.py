@@ -546,6 +546,7 @@ class ForcingIterationErrorToDiscretizationErrorCustomCallback(CustomCallBack):
     energy_norm_error_squared_galerkin_to_exact: float
     fudge: float
     galerkin_solution: np.ndarray
+    energy_history: list[float]
 
     def __init__(
             self,
@@ -569,6 +570,7 @@ class ForcingIterationErrorToDiscretizationErrorCustomCallback(CustomCallBack):
             energy_norm_error_squared_galerkin_to_exact
         self.galerkin_solution = galerkin_solution
         self.fudge = fudge
+        self.energy_history = []
 
     def calculate_energy(self, current_iterate) -> float:
         return (
@@ -576,6 +578,10 @@ class ForcingIterationErrorToDiscretizationErrorCustomCallback(CustomCallBack):
             - self.rhs_vector.dot(current_iterate))
 
     def perform_callback(self, current_iterate: np.ndarray):
+
+        self.energy_history.append(
+            self.calculate_energy(current_iterate=current_iterate))
+
         energy_norm_error_squared_iterate_to_galerkin = \
             self.get_energy_norm_error_squared_iterate_to_galerkin(
                 current_iterate=current_iterate)
