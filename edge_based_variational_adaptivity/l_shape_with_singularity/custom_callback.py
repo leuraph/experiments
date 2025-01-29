@@ -435,3 +435,107 @@ class EnergyTailOffAveragedCustomCallback(CustomCallBack):
 
         # keep energy considerations in memory
         self.energy_of_last_iterate = current_energy
+
+
+class EnergyDifferenceProptoDOFCustomCallback(CustomCallBack):
+    """
+    After each batch of iterations checks if
+    $E(u_n) - E(u_{n+1}) < alpha/nDOF$,
+    where alpha is a fudge parameter,
+    nDOF is the number of degrees of freedom
+    and E denotes the energy.
+
+    Attributes
+    ----------
+    energy_of_last_iterate: float
+        energy of the last iterate considered
+    fudge: float
+        fudge parameter used when comparing current energy gain
+        and alpha/n_DOF
+    verbose: bool
+    energy_history: list[float]
+        energy values after each batch iteration
+    n_callback_called: int
+        number of times the calback was called
+        (gets called after miniter is reached and
+        after eatch batch cycle of CG has completed)
+    n_dofs: int
+        number of degrees of freedom on the current mesh
+    """
+    energy_of_last_iterate: float
+    fudge: float
+    verbose: bool
+    energy_history: list[float]
+    n_callback_called: int
+    n_dofs: int
+
+    def __init__(
+            self,
+            batch_size: int,
+            min_n_iterations_per_mesh: int,
+            elements: ElementsType,
+            coordinates: CoordinatesType,
+            boundaries: list[BoundaryType],
+            fudge: float,
+            cubature_rule: CubatureRuleEnum = CubatureRuleEnum.MIDPOINT):
+        super().__init__(
+            batch_size=batch_size,
+            min_n_iterations_per_mesh=min_n_iterations_per_mesh,
+            elements=elements,
+            coordinates=coordinates,
+            boundaries=boundaries,
+            cubature_rule=cubature_rule)
+        self.fudge = fudge
+        self.energy_of_last_iterate = None
+        self.energy_history = []
+        self.n_callback_called = 0
+
+        # calculate number of degrees of freedom
+        n_vertices = coordinates.shape[0]
+        indices_of_free_nodes = np.setdiff1d(
+            ar1=np.arange(n_vertices),
+            ar2=np.unique(boundaries[0].flatten()))
+        free_nodes = np.zeros(n_vertices, dtype=bool)
+        free_nodes[indices_of_free_nodes] = 1
+        self.n_dofs = np.sum(free_nodes)
+
+    def calculate_energy(self, current_iterate) -> float:
+        return (
+            0.5*current_iterate.dot(self.lhs_matrix.dot(current_iterate))
+            - self.rhs_vector.dot(current_iterate))
+
+    def perform_callback(
+            self,
+            current_iterate) -> None:
+        self.n_callback_called += 1
+
+        current_energy = self.calculate_energy(
+            current_iterate=current_iterate)
+        self.energy_history.append(current_energy)
+
+        # in the first call, set last energy and continue
+        if self.n_callback_called == 1:
+            self.energy_of_last_iterate = current_energy
+            return
+
+        energy_gain_iteration = self.energy_of_last_iterate - current_energy
+
+        if energy_gain_iteration < self.fudge / self.n_dofs:
+            energy_gains = get_energy_gains(
+                coordinates=self.coordinates,
+                elements=self.elements,
+                non_boundary_edges=self.non_boundary_edges,
+                current_iterate=current_iterate,
+                f=f,
+                cubature_rule=self.cubature_rule,
+                verbose=True)
+
+            converged_exception = ConvergedException(
+                energy_gains=energy_gains,
+                last_iterate=current_iterate,
+                n_iterations_done=self.n_iterations_done,
+                energy_history=self.energy_history)
+            raise converged_exception
+
+        # keep energy considerations in memory
+        self.energy_of_last_iterate = current_energy
