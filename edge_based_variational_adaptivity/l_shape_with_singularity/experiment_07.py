@@ -9,11 +9,12 @@ from scipy.sparse import csr_matrix
 from variational_adaptivity.markers import doerfler_marking
 import argparse
 from scipy.sparse.linalg import cg
-from custom_callback import ConvergedException, EnergyDifferenceProptoDOFCustomCallback
+from custom_callback import ConvergedException, ForcingIterationErrorToDiscretizationErrorCustomCallback
 from ismember import is_row_in
 from variational_adaptivity.edge_based_variational_adaptivity import \
     get_energy_gains
 from triangle_cubature.cubature_rule import CubatureRuleEnum
+from load_save_dumps import load_dump
 
 
 def calculate_energy(
@@ -55,7 +56,7 @@ def main() -> None:
     path_to_dirichlet = base_path / Path('dirichlet.dat')
 
     base_results_path = (
-        Path('results/experiment_06') /
+        Path('results/experiment_07') /
         Path(
             f'theta-{THETA}_fudge-{FUDGE}_'
             f'miniter-{MINITER}_batchsize-{BATCHSIZE}'))
@@ -225,14 +226,23 @@ def main() -> None:
         # Perform CG on the current mesh
         # ------------------------------
         # assembly of right hand side
-        custom_callback = EnergyDifferenceProptoDOFCustomCallback(
+        with open(Path('energy_norm_squared_exact.dat')) as file:
+            energy_norm_squared_exact = float(file.readline())
+        energy_norm_squared_galerkin = galerkin_solution.dot(
+            stiffness_matrix.dot(galerkin_solution))
+        energy_norm_error_squared_galerkin_to_exact = \
+            energy_norm_squared_exact - energy_norm_squared_galerkin
+
+        custom_callback = ForcingIterationErrorToDiscretizationErrorCustomCallback(
             batch_size=BATCHSIZE,
             min_n_iterations_per_mesh=MINITER,
             elements=elements,
             coordinates=coordinates,
             boundaries=boundaries,
             fudge=FUDGE,
-            cubature_rule=CubatureRuleEnum.DAYTAYLOR)
+            cubature_rule=CubatureRuleEnum.DAYTAYLOR,
+            galerkin_solution=galerkin_solution,
+            energy_norm_error_squared_galerkin_to_exact=energy_norm_error_squared_galerkin_to_exact)
 
         try:
             current_iterate[free_nodes], _ = cg(
