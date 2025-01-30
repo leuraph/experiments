@@ -29,3 +29,11 @@ This experiment performs global batched CG iterations until the condition
 $E(u^{n-1}) - E(u^{n}) < \frac{\alpha}{n_{\text{DOF}}}$
 is met.
 Then, EVA is performed using the last iterate.
+
+## Experiment 07
+This experiment performs global batched CG iterations until the condition
+$\|u_N^n - u_N^h\|_a^2 \leq \alpha \|u_N^h - u\|_a^2$
+is met.
+Then, EVA is performed using the last iterate.
+This serves as a sort of sanity check, i.e. we may see if EVA still
+reaches optimal convergence (for the Galerkin solutions) if we set $\alpha \approx 1$.
