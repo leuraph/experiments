@@ -24,6 +24,11 @@ def main() -> None:
         n_dofs = get_energy_norm_errors_squared_and_dofs(
             results_path=results_path)
 
+    energy_norm_errors_galerkin_to_exact = np.sqrt(
+        energy_norm_errors_squared_galerkin_to_exact)
+    energy_norm_errors_last_iterate_to_galerkin = np.sqrt(
+        energy_norm_errors_squared_last_iterate_to_galerkin)
+
     # settinng plot params
     # --------------------
 
@@ -39,55 +44,56 @@ def main() -> None:
     # ax.set_ylabel(r'$\| u_h - u_N^{n^\star} \|_a^2$')
     ax.grid(True)
 
-    # plotting |u_h - u_N^{n^\star}|_a^2
-    # ----------------------------------
+    # plotting |u_h - u_N^{n^\star}|_a
+    # --------------------------------
     def model(x, m):
-        return -x + m
+        return -0.5*x + m
     popt, pcov = curve_fit(
         model,
         np.log(n_dofs[1:]),
-        np.log(energy_norm_errors_squared_last_iterate_to_galerkin[1:]))
+        np.log(energy_norm_errors_last_iterate_to_galerkin[1:]))
     m_optimized = popt[0]
 
     color = plt.cm.tab10(1)
     ax.loglog(
             n_dofs[1:],
-            energy_norm_errors_squared_last_iterate_to_galerkin[1:],
+            energy_norm_errors_last_iterate_to_galerkin[1:],
             linestyle='--',  # Dotted line
             marker='s',     # Square markers
             color=color,    # Line and marker color
             markerfacecolor=color,  # Marker fill color
             markeredgecolor=color,  # Marker outline color
             alpha=0.5,       # Transparency for markers
-            label=r'$\|u_h - u_N^{n^\star}\|^2_a$',
+            label=r'$\|u_h - u_N^{n^\star}\|_a$',
             markersize=5, linewidth=1.0)
     ax.loglog(n_dofs[1:], np.exp(model(np.log(n_dofs[1:]), m_optimized)),
               'k--', linewidth=0.8)
     # -------------------------------------
 
-    # plotting |u - u_h|_a^2
+    # plotting |u - u_h|_a
     # ----------------------
     def model(x, m):
-        return -x + m
+        return -0.5*x + m
     popt, pcov = curve_fit(
         model,
         np.log(n_dofs),
-        np.log(energy_norm_errors_squared_galerkin_to_exact))
+        np.log(energy_norm_errors_galerkin_to_exact))
     m_optimized = popt[0]
 
     color = plt.cm.tab10(2)
     ax.loglog(
-            n_dofs, energy_norm_errors_squared_galerkin_to_exact,
+            n_dofs, energy_norm_errors_galerkin_to_exact,
             linestyle='--',  # Dotted line
             marker='s',     # Square markers
             color=color,    # Line and marker color
             markerfacecolor=color,  # Marker fill color
             markeredgecolor=color,  # Marker outline color
             alpha=0.5,       # Transparency for markers
-            label=r'$\|u - u_h\|^2_a$',
+            label=r'$\|u - u_h\|_a$',
             markersize=5, linewidth=1.0)
     ax.loglog(n_dofs, np.exp(model(np.log(n_dofs), m_optimized)),
               'k--', linewidth=0.8)
+    # --------------------------------------
 
     ax.legend(loc='best')
 
