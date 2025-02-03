@@ -12,8 +12,6 @@ from variational_adaptivity.markers import doerfler_marking
 import argparse
 import matplotlib.pyplot as plt
 from matplotlib import cm
-import tqdm
-import copy
 
 
 def main() -> None:
@@ -68,10 +66,39 @@ def main() -> None:
     # variational adaptivity + Local Solvers
     # ------------------------------------------------
 
-    # initializing the solution to random values
-    current_iterate = np.random.rand(coordinates.shape[0])
-    # forcing the boundary values to be zero, nevertheless
-    current_iterate[np.unique(boundaries[0].flatten())] = 0.
+    # initializing the algorithm with Galerkin solution on initial mesh
+    galerkin_solution, _ = solvers.solve_laplace(
+            coordinates=coordinates,
+            elements=elements,
+            dirichlet=boundaries[0],
+            neumann=np.array([]),
+            f=f,
+            g=None,
+            uD=uD)
+    current_iterate = np.copy(galerkin_solution)
+
+    # performing the first refinement by hand
+    # ---------------------------------------
+    element_to_neighbours = get_element_to_neighbours(elements=elements)
+    print('computing all local energy gains with variational adaptivity')
+    energy_gains = algo_4_1.get_all_local_enery_gains(
+        coordinates=coordinates,
+        elements=elements,
+        boundaries=boundaries,
+        current_iterate=current_iterate,
+        element_to_neighbours=element_to_neighbours,
+        uD=uD,
+        rhs_function=f, lamba_a=1)
+
+    marked = doerfler_marking(input=energy_gains, theta=THETA)
+
+    coordinates, elements, boundaries, current_iterate = \
+        refinement.refineNVB(
+            coordinates=coordinates,
+            elements=elements,
+            marked_elements=marked,
+            boundary_conditions=boundaries,
+            to_embed=current_iterate)
 
     # number of refinement steps using variational adaptivity
     n_va_refinement_steps = 8
@@ -108,7 +135,7 @@ def main() -> None:
         # -----------------------------------
         # compute and drop the exact solution
         # -----------------------------------
-        solution, _ = solvers.solve_laplace(
+        galerkin_solution, _ = solvers.solve_laplace(
             coordinates=coordinates,
             elements=elements,
             dirichlet=boundaries[0],
@@ -118,7 +145,7 @@ def main() -> None:
             uD=uD)
 
         dump_object(
-            obj=solution, path_to_file=base_results_path /
+            obj=galerkin_solution, path_to_file=base_results_path /
             Path(f'{n_dofs}/exact_solution.pkl'))
 
         # ------------------------------------------------------------
@@ -126,9 +153,15 @@ def main() -> None:
         # ------------------------------------------------------------
         print('performing full sweeps of local solves')
         max_n_sweeps = 100
-        min_n_sweeps = 5
-        old_iterate = copy.deepcopy(current_iterate)
-        for n_sweep in tqdm.tqdm(range(max_n_sweeps)):
+
+        old_iterate = np.copy(current_iterate)
+
+        n_updates_done = 0
+        accumulated_energy_gain = 0
+        current_energy = 0
+        old_energy = 0
+
+        while True:
             local_energy_differences_solve = []
             local_increments = []
 
@@ -167,6 +200,7 @@ def main() -> None:
 
             # performing the update
             current_iterate += global_increment
+            n_updates_done += 1
 
             # flushing the cache asap as, in the next full sweep,
             # after performing the global update,
@@ -175,7 +209,7 @@ def main() -> None:
 
             # dump snapshot of current current state
             dump_object(obj=current_iterate, path_to_file=base_results_path /
-                        Path(f'{n_dofs}/{n_sweep+1}/solution.pkl'))
+                        Path(f'{n_dofs}/{n_updates_done}/solution.pkl'))
             dump_object(obj=elements, path_to_file=base_results_path /
                         Path(f'{n_dofs}/elements.pkl'))
             dump_object(obj=coordinates, path_to_file=base_results_path /
@@ -183,25 +217,29 @@ def main() -> None:
             dump_object(obj=boundaries, path_to_file=base_results_path /
                         Path(f'{n_dofs}/boundaries.pkl'))
 
-            if n_sweep + 1 < min_n_sweeps:
-                # keep track of old iterate and continue
-                old_iterate = copy.deepcopy(current_iterate)
+            if n_updates_done < MINITER:
                 continue
 
             def energy(u):
                 return 0.5 * u.dot(stiffness_matrix.dot(u)) \
                     - right_hand_side.dot(u)
 
-            relative_energy_difference = abs(
-                (energy(old_iterate) - energy(current_iterate))
-                / energy(old_iterate)
-            )
+            if n_updates_done == MINITER:
+                current_energy = energy(current_iterate)
+                old_energy = current_energy
+                continue
 
-            if relative_energy_difference < TOL:
+            current_energy = energy(current_iterate)
+            current_energy_gain = old_energy - current_energy
+            accumulated_energy_gain += current_energy_gain
+
+            print('---------------------------')
+            print(f'dE = {current_energy_gain}')
+            print(f'dE_avg = {accumulated_energy_gain / n_updates_done}')
+            if current_energy_gain < FUDGE * accumulated_energy_gain / n_updates_done:
                 break
 
-            # keep track of old iterate
-            old_iterate = copy.deepcopy(current_iterate)
+            old_energy = current_energy
 
         # --------------------------------------------------------------
         # compute all local energy gains via VA, based on exact solution
@@ -212,7 +250,7 @@ def main() -> None:
             coordinates=coordinates,
             elements=elements,
             boundaries=boundaries,
-            current_iterate=solution,
+            current_iterate=current_iterate,
             element_to_neighbours=element_to_neighbours,
             uD=uD,
             rhs_function=f, lamba_a=1)
