@@ -1,5 +1,5 @@
 ismember
-variational_adaptivity @ git+ssh://git@github.com/leuraph/variational_adaptivity@v0.1.0
+variational_adaptivity @ git+ssh://git@github.com/leuraph/variational_adaptivity@v1.0.0
 p1afempy @ git+ssh://git@github.com/leuraph/p1afempy@v0.2.10
 jupyter
 scipy
