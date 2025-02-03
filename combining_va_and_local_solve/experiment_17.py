@@ -20,13 +20,16 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--theta", type=float, required=True,
                         help="value of theta used in the Dörfler marking")
-    parser.add_argument("--tol", type=float, required=True,
-                        help="tolerance of relative difference in energy"
-                        " of consecutive iterates before VA kicks in")
+    parser.add_argument("--fudge", type=float, required=True,
+                        help="VA kicks in if current energy drop is smaller"
+                        " than fudge this the avg energy drop on the mesh")
+    parser.add_argument("--miniter", type=float, required=True,
+                        help="minimum number of full sweeps on each mesh")
     args = parser.parse_args()
 
     THETA = args.theta
-    TOL = args.tol
+    FUDGE = args.fudge
+    MINITER = args.miniter
 
     # ------------------------------------------------
     # Setup
@@ -38,8 +41,8 @@ def main() -> None:
     path_to_dirichlet = base_path / Path('dirichlet.dat')
 
     base_results_path = (
-        Path('results/experiment_6') /
-        Path(f'theta-{THETA}_tol-{TOL}'))
+        Path('results/experiment_17') /
+        Path(f'theta-{THETA}_fudge-{FUDGE}_miniter-{MINITER}'))
 
     coordinates, elements = io_helpers.read_mesh(
         path_to_coordinates=path_to_coordinates,
