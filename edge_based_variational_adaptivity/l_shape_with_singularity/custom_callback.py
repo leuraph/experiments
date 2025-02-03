@@ -558,7 +558,8 @@ class ForcingIterationErrorToDiscretizationErrorCustomCallback(CustomCallBack):
             cubature_rule: CubatureRuleEnum,
             energy_norm_error_squared_galerkin_to_exact: float,
             galerkin_solution: np.ndarray,
-            fudge: float):
+            fudge: float,
+            parallel_eva: bool = False):
         super().__init__(
             batch_size=batch_size,
             min_n_iterations_per_mesh=min_n_iterations_per_mesh,
@@ -570,6 +571,7 @@ class ForcingIterationErrorToDiscretizationErrorCustomCallback(CustomCallBack):
             energy_norm_error_squared_galerkin_to_exact
         self.galerkin_solution = galerkin_solution
         self.fudge = fudge
+        self.parallel_eva = parallel_eva
         self.energy_history = []
 
     def calculate_energy(self, current_iterate) -> float:
@@ -587,6 +589,7 @@ class ForcingIterationErrorToDiscretizationErrorCustomCallback(CustomCallBack):
                 current_iterate=current_iterate)
         if energy_norm_error_squared_iterate_to_galerkin < \
                 self.fudge * self.energy_norm_error_squared_galerkin_to_exact:
+
             energy_gains = get_energy_gains(
                 coordinates=self.coordinates,
                 elements=self.elements,
@@ -594,7 +597,8 @@ class ForcingIterationErrorToDiscretizationErrorCustomCallback(CustomCallBack):
                 current_iterate=current_iterate,
                 f=f,
                 cubature_rule=self.cubature_rule,
-                verbose=True)
+                verbose=True,
+                parallel=self.parallel_eva)
 
             converged_exception = ConvergedException(
                 energy_gains=energy_gains,
