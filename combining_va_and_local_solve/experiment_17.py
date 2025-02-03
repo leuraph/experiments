@@ -23,7 +23,7 @@ def main() -> None:
     parser.add_argument("--fudge", type=float, required=True,
                         help="VA kicks in if current energy drop is smaller"
                         " than fudge this the avg energy drop on the mesh")
-    parser.add_argument("--miniter", type=float, required=True,
+    parser.add_argument("--miniter", type=int, required=True,
                         help="minimum number of full sweeps on each mesh")
     args = parser.parse_args()
 
