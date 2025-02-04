@@ -128,6 +128,8 @@ def plot_errors_for_exp_with_sweeps(base_result_path, path_to_plot):
     energy_norm_error_squared_exact_solutions = []
     n_dofs = []
 
+    # looping over meshes
+    sweeps_needed_on_each_space = []
     for n_dofs_dir in base_result_path.iterdir():
 
         path_to_boundaries = n_dofs_dir / Path('boundaries.pkl')
@@ -151,15 +153,25 @@ def plot_errors_for_exp_with_sweeps(base_result_path, path_to_plot):
         n_dofs.append(len(indices_of_free_nodes))
 
         errs = []
+        n_sweeps = 0
         for n_sweeps_dir in n_dofs_dir.iterdir():
-            if n_sweeps_dir.is_dir():
-                energy_norm_error_squared = load_dump(
-                    path_to_dump=n_sweeps_dir/"energy_norm_error_squared.pkl")
-                errs.append(energy_norm_error_squared)
+            if not n_sweeps_dir.is_dir():
+                continue  # skip non-directories
+
+            # calculating the n_sweeps
+            n_sweeps_current = int(n_sweeps_dir.name)
+            if n_sweeps_current > n_sweeps:
+                n_sweeps = n_sweeps_current
+
+            energy_norm_error_squared = load_dump(
+                path_to_dump=n_sweeps_dir/"energy_norm_error_squared.pkl")
+            errs.append(energy_norm_error_squared)
         energy_norm_errors_squared.append(errs)
+        sweeps_needed_on_each_space.append(n_sweeps)
 
     energy_norm_error_squared_exact_solutions = np.array(
         energy_norm_error_squared_exact_solutions)
+    sweeps_needed_on_each_space = np.array(sweeps_needed_on_each_space)
     n_dofs = np.array(n_dofs)
 
     # --------
@@ -186,6 +198,7 @@ def plot_errors_for_exp_with_sweeps(base_result_path, path_to_plot):
 
     sort = np.argsort(n_dofs)
     n_dofs = n_dofs[sort]
+    sweeps_needed_on_each_space = sweeps_needed_on_each_space[sort]
     energy_norm_error_squared_exact_solutions = \
         energy_norm_error_squared_exact_solutions[sort]
     energy_norm_errors_squared = \
@@ -218,11 +231,27 @@ def plot_errors_for_exp_with_sweeps(base_result_path, path_to_plot):
         linewidth=0, alpha=0.6, color=COLOR_RED)
     merged.append((line, mark))
 
+    # plotting number of iterations on each mesh
+    # ------------------------------------------
+    # Create a second y-axis for the second array 'b'
+    ax_n_iterations = ax.twinx()
+    ax_n_iterations.set_ylabel(r'$n_{\text{iterations}}$')
+    ax_n_iterations.scatter(
+        n_dofs, sweeps_needed_on_each_space,
+        marker='D',  # Diamond marker
+        c=[(0.8, 0.1, 0.1, 0.5)],  # Fill color (RGB tuple)
+        edgecolors=[(0.8, 0.1, 0.1)],  # Outline color (same as fill)
+        s=20,  # Marker size (optional, adjust as needed)
+        label=r'$n_{\text{sweeps}}$'
+    )
+    ax_n_iterations.tick_params(axis='y')
+    # ------------------------------------------
+
     # ax.legend(merged, labels)
     fig.savefig(
         path_to_plot,
         dpi=300, bbox_inches="tight")
-    plt.show()
+    # plt.show()
 
 
 if __name__ == '__main__':
