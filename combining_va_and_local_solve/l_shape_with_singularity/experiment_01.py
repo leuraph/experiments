@@ -6,6 +6,10 @@ from p1afempy.solvers import solve_laplace
 import argparse
 from configuration import f, uD
 from triangle_cubature.cubature_rule import CubatureRuleEnum
+from variational_adaptivity.algo_4_1 import get_all_local_enery_gains
+from p1afempy.mesh import provide_geometric_data
+from p1afempy.mesh import get_element_to_neighbours
+from variational_adaptivity.markers import doerfler_marking
 
 
 def main() -> None:
@@ -78,6 +82,30 @@ def main() -> None:
 
     # perform initial VA by hand
     # --------------------------
+    element_to_neighbours = get_element_to_neighbours(elements=elements)
+
+    energy_gains = get_all_local_enery_gains(
+        coordinates=coordinates,
+        elements=elements,
+        boundaries=boundaries,
+        current_iterate=current_iterate,
+        rhs_function=f,
+        element_to_neighbours=element_to_neighbours,
+        uD=uD,
+        lamba_a=1.,
+        return_local_solutions=False,
+        display_progress_bar=True,
+        cubature_rule=CubatureRuleEnum.DAYTAYLOR)
+
+    marked = doerfler_marking(input=energy_gains, theta=THETA)
+
+    coordinates, elements, boundaries, current_iterate = \
+        refineNVB(
+            coordinates=coordinates,
+            elements=elements,
+            marked_elements=marked,
+            boundary_conditions=boundaries,
+            to_embed=current_iterate)
 
     # loop until maximum number of degrees of freedom is reached
     # ----------------------------------------------------------
