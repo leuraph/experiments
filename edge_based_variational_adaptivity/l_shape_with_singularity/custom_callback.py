@@ -171,6 +171,7 @@ class EnergyComparisonCustomCallback(CustomCallBack):
     energy_of_last_iterate: float
     fudge: float
     verbose: bool
+    n_callback_called: int
 
     def __init__(
             self,
@@ -193,6 +194,7 @@ class EnergyComparisonCustomCallback(CustomCallBack):
 
         self.fudge = fudge
         self.verbose = verbose
+        self.n_callback_called = 0
 
         # initial energy considerations
         # -----------------------------
@@ -223,6 +225,29 @@ class EnergyComparisonCustomCallback(CustomCallBack):
     def perform_callback(
             self,
             current_iterate) -> None:
+        self.n_callback_called += 1
+
+        if self.n_callback_called == 1:
+            # calculate current energy
+            current_energy = self.calculate_energy(
+                current_iterate=current_iterate)
+            # set last energy to current
+            self.energy_of_last_iterate = current_energy
+            # calculate energy gain eva and its gains
+            energy_after_eva, local_energy_gains_eva = \
+                get_energy_after_eva_and_local_energy_gains_eva(
+                    current_iterate=current_iterate,
+                    coordinates=self.coordinates,
+                    elements=self.elements,
+                    boundaries=self.boundaries,
+                    edges=self.edges,
+                    free_edges=self.free_edges,
+                    cubature_rule=self.cubature_rule,
+                    f=f,
+                    verbose=self.verbose)
+            self.last_energy_gain_eva = current_energy - energy_after_eva
+            self.last_energy_gains = local_energy_gains_eva
+            return
 
         current_energy = self.calculate_energy(
             current_iterate=current_iterate)
