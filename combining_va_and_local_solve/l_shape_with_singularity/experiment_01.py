@@ -1,6 +1,7 @@
 import numpy as np
 from pathlib import Path
 from p1afempy import io_helpers
+from p1afempy.refinement import refineNVB
 import argparse
 
 
@@ -15,7 +16,7 @@ def main() -> None:
     parser.add_argument("--fudge", type=float, required=True,
                         help="fudge parameter used when deciding"
                         " whether to refine an element or locally solve")
-    parser.add_argument("--miinter", type=int, required=True,
+    parser.add_argument("--miniter", type=int, required=True,
                         help="minimum number of full sweeps performed"
                         " on each mesh")
     args = parser.parse_args()
@@ -50,7 +51,13 @@ def main() -> None:
     # perform initial refinement to get a decent mesh
     # -----------------------------------------------
     for _ in range(n_initial_refinement_steps):
-        pass
+        marked = np.arange(elements.shape[0])
+        coordinates, elements, boundaries, _ = \
+            refineNVB(
+                coordinates=coordinates,
+                elements=elements,
+                marked_elements=marked,
+                boundary_conditions=boundaries)
 
     # solve problem on initial mesh
     # -----------------------------
