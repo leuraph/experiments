@@ -239,12 +239,15 @@ def main() -> None:
                 rtol=1e-100,
                 callback=custom_callback)
         except ConvergedException as conv:
+            n_iterations_done = conv.n_iterations_done
             current_iterate = conv.last_iterate
             energy_gains = conv.energy_gains
             print(f"CG stopped after {conv.n_iterations_done} iterations!")
 
         # dump the current state
         # ----------------------
+        dump_object(obj=n_iterations_done, path_to_file=base_results_path /
+                    Path(f'{n_dofs}/n_iterations_done.pkl'))
         dump_object(obj=elements, path_to_file=base_results_path /
                     Path(f'{n_dofs}/elements.pkl'))
         dump_object(obj=coordinates, path_to_file=base_results_path /
