@@ -264,12 +264,45 @@ def main() -> None:
         dump_object(obj=boundaries, path_to_file=base_results_path /
                     Path(f'{n_dofs}/boundaries.pkl'))
 
-        # perform EVA with the last iterate
-        # ---------------------------------
+        # perform element-based VA with the last iterate
+        # ----------------------------------------------
+        element_to_neighbours = p1afempy.mesh.get_element_to_neighbours(
+            elements=elements)
+
+        energy_gains = get_all_local_enery_gains(
+            coordinates=coordinates,
+            elements=elements,
+            boundaries=boundaries,
+            current_iterate=current_iterate,
+            rhs_function=f,
+            element_to_neighbours=element_to_neighbours,
+            uD=uD,
+            lamba_a=1.,
+            return_local_solutions=False,
+            display_progress_bar=True,
+            cubature_rule=CubatureRuleEnum.DAYTAYLOR)
+
+        marked = doerfler_marking(input=energy_gains, theta=THETA)
+
+        coordinates, elements, boundaries, current_iterate = \
+            p1afempy.refinement.refineNVB(
+                coordinates=coordinates,
+                elements=elements,
+                marked_elements=marked,
+                boundary_conditions=boundaries,
+                to_embed=current_iterate)
 
         # calculate the number of degrees of freedom on the new mesh
         # ----------------------------------------------------------
-        n_dofs: int = int(1e8)
+        n_vertices = coordinates.shape[0]
+        n_elements = elements.shape[0]
+        indices_of_free_nodes = np.setdiff1d(
+            ar1=np.arange(n_vertices),
+            ar2=np.unique(boundaries[0].flatten()))
+        free_nodes = np.zeros(n_vertices, dtype=bool)
+        free_nodes[indices_of_free_nodes] = 1
+        n_dofs = np.sum(free_nodes)
+
         if n_dofs > max_n_dofs:
             break
 
