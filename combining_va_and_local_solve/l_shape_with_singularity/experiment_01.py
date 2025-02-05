@@ -1,15 +1,14 @@
 import numpy as np
-from pathlib import Path
-from p1afempy import io_helpers
-from p1afempy.refinement import refineNVB
-from p1afempy.solvers import solve_laplace
+import p1afempy
 import argparse
+from pathlib import Path
 from configuration import f, uD
 from triangle_cubature.cubature_rule import CubatureRuleEnum
 from variational_adaptivity.algo_4_1 import get_all_local_enery_gains
-from p1afempy.mesh import provide_geometric_data
-from p1afempy.mesh import get_element_to_neighbours
 from variational_adaptivity.markers import doerfler_marking
+from iterative_methods.local_solvers \
+    import LocalContextSolver
+from scipy.sparse import csr_matrix
 
 
 def main() -> None:
@@ -47,11 +46,11 @@ def main() -> None:
         Path('results/experiment_01') /
         Path(f'theta-{THETA}_fudge-{FUDGE_PARAMETER}_miniter-{MINITER}'))
 
-    coordinates, elements = io_helpers.read_mesh(
+    coordinates, elements = p1afempy.io_helpers.read_mesh(
         path_to_coordinates=path_to_coordinates,
         path_to_elements=path_to_elements,
         shift_indices=False)
-    boundaries = [io_helpers.read_boundary_condition(
+    boundaries = [p1afempy.io_helpers.read_boundary_condition(
         path_to_boundary=path_to_dirichlet,
         shift_indices=False)]
 
@@ -60,7 +59,7 @@ def main() -> None:
     for _ in range(n_initial_refinement_steps):
         marked = np.arange(elements.shape[0])
         coordinates, elements, boundaries, _ = \
-            refineNVB(
+            p1afempy.refinement.refineNVB(
                 coordinates=coordinates,
                 elements=elements,
                 marked_elements=marked,
@@ -68,7 +67,7 @@ def main() -> None:
 
     # solve problem on initial mesh
     # -----------------------------
-    galerkin_solution, _ = solve_laplace(
+    galerkin_solution, _ = p1afempy.solvers.solve_laplace(
         coordinates=coordinates,
         elements=elements,
         dirichlet=boundaries[0],
@@ -82,7 +81,8 @@ def main() -> None:
 
     # perform initial VA by hand
     # --------------------------
-    element_to_neighbours = get_element_to_neighbours(elements=elements)
+    element_to_neighbours = p1afempy.mesh.get_element_to_neighbours(
+        elements=elements)
 
     energy_gains = get_all_local_enery_gains(
         coordinates=coordinates,
@@ -100,7 +100,7 @@ def main() -> None:
     marked = doerfler_marking(input=energy_gains, theta=THETA)
 
     coordinates, elements, boundaries, current_iterate = \
-        refineNVB(
+        p1afempy.refinement.refineNVB(
             coordinates=coordinates,
             elements=elements,
             marked_elements=marked,
