@@ -109,20 +109,20 @@ def main() -> None:
             boundary_conditions=boundaries,
             to_embed=current_iterate)
 
+    n_vertices = coordinates.shape[0]
+    n_elements = elements.shape[0]
+    indices_of_free_nodes = np.setdiff1d(
+        ar1=np.arange(n_vertices),
+        ar2=np.unique(boundaries[0].flatten()))
+    free_nodes = np.zeros(n_vertices, dtype=bool)
+    free_nodes[indices_of_free_nodes] = 1
+    n_dofs = np.sum(free_nodes)
+
     # loop until maximum number of degrees of freedom is reached
     # ----------------------------------------------------------
     while True:
         # recalculate mesh specific objects / parameters
         # ----------------------------------------------
-        n_vertices = coordinates.shape[0]
-        n_elements = elements.shape[0]
-        indices_of_free_nodes = np.setdiff1d(
-            ar1=np.arange(n_vertices),
-            ar2=np.unique(boundaries[0].flatten()))
-        free_nodes = np.zeros(n_vertices, dtype=bool)
-        free_nodes[indices_of_free_nodes] = 1
-        n_dofs = np.sum(free_nodes)
-
         stiffness_matrix = csr_matrix(p1afempy.solvers.get_stiffness_matrix(
             coordinates=coordinates,
             elements=elements))
