@@ -10,7 +10,6 @@ from iterative_methods.local_solvers \
     import LocalContextSolver
 from scipy.sparse import csr_matrix
 from tqdm import tqdm
-import matplotlib.pyplot as plt
 
 
 def main() -> None:
