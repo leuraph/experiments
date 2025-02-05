@@ -9,6 +9,7 @@ from variational_adaptivity.markers import doerfler_marking
 from iterative_methods.local_solvers \
     import LocalContextSolver
 from scipy.sparse import csr_matrix
+from tqdm import tqdm
 
 
 def main() -> None:
@@ -142,13 +143,16 @@ def main() -> None:
         # perform iterations until stopping criterion is met
         # --------------------------------------------------
         n_iterations_done = 0
+        accumulated_energy_gain = 0.
+        old_energy: float = None  # gets initializied when miniter reached
         while True:
             # solving locally on each element, separately
             # -------------------------------------------
             local_energy_differences_solve = []
             local_increments = []
 
-            for k in range(n_elements):
+            print(f'performing full sweep of local solve for {n_dofs} DOFs')
+            for k in tqdm(range(n_elements)):
                 local_increment, local_energy_difference = \
                     local_context_solver.get_local_increment_and_energy_difference(
                         current_iterate=current_iterate,
@@ -187,8 +191,40 @@ def main() -> None:
             # the global contribution has changed
             local_context_solver.flush_cache()
 
-            if True:
+            if n_iterations_done < MINITER:
+                continue
+
+            if n_iterations_done == MINITER:
+                # initialize old energy
+                old_energy = get_energy(
+                    current_iterate=current_iterate,
+                    stiffness_matrix=stiffness_matrix,
+                    right_hand_side=right_hand_side)
+                continue
+
+            current_energy = get_energy(
+                current_iterate=current_iterate,
+                stiffness_matrix=stiffness_matrix,
+                right_hand_side=right_hand_side)
+            current_energy_gain = old_energy - current_energy
+            accumulated_energy_gain += current_energy_gain
+
+            avg_de = accumulated_energy_gain / (n_iterations_done - MINITER)
+
+            print(f'current energy gain  = {current_energy_gain}')
+            print(f'averaged energy gain = {avg_de}')
+
+            stopping_criterion_met = (
+                current_energy_gain <
+                FUDGE_PARAMETER * avg_de)
+
+            if stopping_criterion_met:
+                print(
+                    'stopping criterion met, stopping iteration after'
+                    f' {n_iterations_done} iterations')
                 break
+
+            old_energy = current_energy
 
         # drop all the data accumulated in the corresponding results directory
         # --------------------------------------------------------------------
