@@ -257,6 +257,11 @@ def main() -> None:
         dump_object(obj=galerkin_solution, path_to_file=base_results_path /
                     Path(f'{n_dofs}/galerkin_solution.pkl'))
 
+        dump_object(obj=energy_history, path_to_file=base_results_path /
+                    Path(f'{n_dofs}/energy_history.pkl'))
+        dump_object(obj=energy_history_per_element, path_to_file=base_results_path /
+                    Path(f'{n_dofs}/energy_history_per_element.pkl'))
+
         dump_object(obj=elements, path_to_file=base_results_path /
                     Path(f'{n_dofs}/elements.pkl'))
         dump_object(obj=coordinates, path_to_file=base_results_path /
