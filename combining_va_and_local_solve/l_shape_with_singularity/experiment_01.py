@@ -112,6 +112,29 @@ def main() -> None:
     while True:
         # recalculate mesh specific objects / parameters
         # ----------------------------------------------
+        n_vertices = coordinates.shape[0]
+        n_elements = elements.shape[0]
+        indices_of_free_nodes = np.setdiff1d(
+            ar1=np.arange(n_vertices),
+            ar2=np.unique(boundaries[0].flatten()))
+        free_nodes = np.zeros(n_vertices, dtype=bool)
+        free_nodes[indices_of_free_nodes] = 1
+        n_dofs = np.sum(free_nodes)
+
+        stiffness_matrix = csr_matrix(p1afempy.solvers.get_stiffness_matrix(
+            coordinates=coordinates,
+            elements=elements))
+        right_hand_side = p1afempy.solvers.get_right_hand_side(
+            coordinates=coordinates,
+            elements=elements,
+            f=f,
+            cubature_rule=CubatureRuleEnum.DAYTAYLOR)
+
+        local_context_solver = LocalContextSolver(
+            elements=elements,
+            free_nodes=free_nodes,
+            lhs_matrix=stiffness_matrix,
+            rhs_vector=right_hand_side)
 
         # calculate the Galerkin solution on the current mesh
         # ---------------------------------------------------
