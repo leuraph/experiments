@@ -203,5 +203,13 @@ def main() -> None:
             break
 
 
+def get_energy(
+        current_iterate: np.ndarray,
+        stiffness_matrix: csr_matrix,
+        right_hand_side: np.ndarray) -> float:
+    return 0.5 * current_iterate.dot(stiffness_matrix.dot(current_iterate)) \
+        - current_iterate.dot(right_hand_side)
+
+
 if __name__ == '__main__':
     main()
