@@ -10,6 +10,7 @@ from iterative_methods.local_solvers \
     import LocalContextSolver
 from scipy.sparse import csr_matrix
 from tqdm import tqdm
+from load_save_dumps import dump_object
 
 
 def main() -> None:
@@ -248,6 +249,20 @@ def main() -> None:
 
         # drop all the data accumulated in the corresponding results directory
         # --------------------------------------------------------------------
+
+        dump_object(obj=n_iterations_done, path_to_file=base_results_path /
+                    Path(f'{n_dofs}/n_iterations_done.pkl'))
+        dump_object(obj=current_iterate, path_to_file=base_results_path /
+                    Path(f'{n_dofs}/last_iterate.pkl'))
+        dump_object(obj=galerkin_solution, path_to_file=base_results_path /
+                    Path(f'{n_dofs}/galerkin_solution.pkl'))
+
+        dump_object(obj=elements, path_to_file=base_results_path /
+                    Path(f'{n_dofs}/elements.pkl'))
+        dump_object(obj=coordinates, path_to_file=base_results_path /
+                    Path(f'{n_dofs}/coordinates.pkl'))
+        dump_object(obj=boundaries, path_to_file=base_results_path /
+                    Path(f'{n_dofs}/boundaries.pkl'))
 
         # perform EVA with the last iterate
         # ---------------------------------
