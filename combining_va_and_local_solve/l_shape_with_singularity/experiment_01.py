@@ -141,6 +141,54 @@ def main() -> None:
 
         # perform iterations until stopping criterion is met
         # --------------------------------------------------
+        n_iterations_done = 0
+        while True:
+            # solving locally on each element, separately
+            # -------------------------------------------
+            local_energy_differences_solve = []
+            local_increments = []
+
+            for k in range(n_elements):
+                local_increment, local_energy_difference = \
+                    local_context_solver.get_local_increment_and_energy_difference(
+                        current_iterate=current_iterate,
+                        element=k)
+                local_energy_differences_solve.append(local_energy_difference)
+                local_increments.append(local_increment)
+
+            local_energy_differences_solve = np.array(
+                local_energy_differences_solve)
+            local_increments = np.array(local_increments)
+
+            # performing a global increment for all elements
+            # ----------------------------------------------
+            global_increment = np.zeros_like(current_iterate)
+
+            # sorting such that local increments corresponding
+            # to biggest energy gain come last
+            energy_based_sorting = np.argsort(local_energy_differences_solve)
+            sorted_elements = elements[energy_based_sorting]
+            local_increments = local_increments[energy_based_sorting]
+
+            # collect all local increments in a single vector
+            # in a way that local increments corresponding to the
+            # same node are overwritten by the one corresponding
+            # to the bigger change in energy
+            for element, local_increment in zip(
+                    sorted_elements, local_increments):
+                global_increment[element] = local_increment
+
+            # performing the update
+            current_iterate += global_increment
+            n_iterations_done += 1
+
+            # flushing the cache asap as, in the next sweep,
+            # after performing the global update,
+            # the global contribution has changed
+            local_context_solver.flush_cache()
+
+            if True:
+                break
 
         # drop all the data accumulated in the corresponding results directory
         # --------------------------------------------------------------------
