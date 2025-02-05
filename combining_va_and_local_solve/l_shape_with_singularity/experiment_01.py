@@ -74,6 +74,7 @@ def main() -> None:
 
     # initialize the iteration with Galerkin solution on initial mesh
     # ---------------------------------------------------------------
+    current_iterate = np.copy(galerkin_solution)
 
     # perform initial EVA by hand
     # ---------------------------
