@@ -76,8 +76,8 @@ def main() -> None:
     # ---------------------------------------------------------------
     current_iterate = np.copy(galerkin_solution)
 
-    # perform initial EVA by hand
-    # ---------------------------
+    # perform initial VA by hand
+    # --------------------------
 
     # loop until maximum number of degrees of freedom is reached
     # ----------------------------------------------------------
