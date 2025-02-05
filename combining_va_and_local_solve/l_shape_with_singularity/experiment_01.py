@@ -10,6 +10,7 @@ from iterative_methods.local_solvers \
     import LocalContextSolver
 from scipy.sparse import csr_matrix
 from tqdm import tqdm
+import matplotlib.pyplot as plt
 
 
 def main() -> None:
@@ -34,7 +35,7 @@ def main() -> None:
 
     # hard-coded variables
     max_n_dofs: int = int(1e7)
-    n_initial_refinement_steps: int = 5
+    n_initial_refinement_steps: int = 3
 
     # read the initial data
     # ---------------------
@@ -145,6 +146,8 @@ def main() -> None:
         n_iterations_done = 0
         accumulated_energy_gain = 0.
         old_energy: float = None  # gets initializied when miniter reached
+        energy_history_per_element: list[np.ndarray] = []
+        energy_history: list[float] = []
         while True:
             # solving locally on each element, separately
             # -------------------------------------------
@@ -202,10 +205,18 @@ def main() -> None:
                     right_hand_side=right_hand_side)
                 continue
 
+            energy_per_element = get_energy_per_element(
+                current_iterate=current_iterate,
+                elements=elements,
+                coordinates=coordinates)
             current_energy = get_energy(
                 current_iterate=current_iterate,
                 stiffness_matrix=stiffness_matrix,
                 right_hand_side=right_hand_side)
+
+            energy_history_per_element.append(energy_per_element)
+            energy_history.append(current_energy)
+
             current_energy_gain = old_energy - current_energy
             accumulated_energy_gain += current_energy_gain
 
@@ -222,6 +233,9 @@ def main() -> None:
                 print(
                     'stopping criterion met, stopping iteration after'
                     f' {n_iterations_done} iterations')
+                energy_history_per_element = \
+                    np.array(energy_history_per_element)
+                energy_history = np.array(energy_history)
                 break
 
             old_energy = current_energy
@@ -245,6 +259,30 @@ def get_energy(
         right_hand_side: np.ndarray) -> float:
     return 0.5 * current_iterate.dot(stiffness_matrix.dot(current_iterate)) \
         - current_iterate.dot(right_hand_side)
+
+
+def get_energy_per_element(
+        current_iterate: np.ndarray,
+        elements: p1afempy.data_structures.ElementsType,
+        coordinates: p1afempy.data_structures.CoordinatesType,
+        cubature_rule: CubatureRuleEnum = CubatureRuleEnum.DAYTAYLOR) -> np.ndarray:
+    virtual_element = np.array([[0, 1, 2]])
+    energy_per_element = np.zeros(elements.shape[0])
+    print('calculating energy contribution of each element...')
+    for k, element in tqdm(enumerate(elements)):
+        local_iterate = current_iterate[element]
+        local_coordinates = coordinates[element]
+        A = p1afempy.solvers.get_stiffness_matrix(
+            coordinates=local_coordinates, elements=virtual_element)
+        rhs = p1afempy.solvers.get_right_hand_side(
+            coordinates=local_coordinates,
+            elements=virtual_element,
+            f=f, cubature_rule=cubature_rule)
+        energy_on_current_element = (
+            0.5 * local_iterate.dot(A.dot(local_iterate))
+            - local_iterate.dot(rhs))
+        energy_per_element[k] = energy_on_current_element
+    return energy_per_element
 
 
 if __name__ == '__main__':
