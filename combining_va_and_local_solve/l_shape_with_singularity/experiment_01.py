@@ -140,6 +140,13 @@ def main() -> None:
 
         # calculate the Galerkin solution on the current mesh
         # ---------------------------------------------------
+        galerkin_solution, _ = p1afempy.solvers.solve_laplace(
+            coordinates=coordinates,
+            elements=elements,
+            dirichlet=boundaries[0],
+            neumann=np.array([]),
+            f=f, g=None, uD=uD,
+            cubature_rule=CubatureRuleEnum.DAYTAYLOR)
 
         # perform iterations until stopping criterion is met
         # --------------------------------------------------
