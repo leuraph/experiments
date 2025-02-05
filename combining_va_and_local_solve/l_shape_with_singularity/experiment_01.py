@@ -2,7 +2,10 @@ import numpy as np
 from pathlib import Path
 from p1afempy import io_helpers
 from p1afempy.refinement import refineNVB
+from p1afempy.solvers import solve_laplace
 import argparse
+from configuration import f, uD
+from triangle_cubature.cubature_rule import CubatureRuleEnum
 
 
 def main() -> None:
@@ -61,6 +64,13 @@ def main() -> None:
 
     # solve problem on initial mesh
     # -----------------------------
+    galerkin_solution, _ = solve_laplace(
+        coordinates=coordinates,
+        elements=elements,
+        dirichlet=boundaries[0],
+        neumann=np.array([]),
+        f=f, g=None, uD=uD,
+        cubature_rule=CubatureRuleEnum.DAYTAYLOR)
 
     # initialize the iteration with Galerkin solution on initial mesh
     # ---------------------------------------------------------------
