@@ -46,7 +46,7 @@ def main() -> None:
     path_to_dirichlet = base_path / Path('dirichlet.dat')
 
     base_results_path = (
-        Path('results/experiment_02') /
+        Path('results/experiment_03') /
         Path(f'theta-{THETA}_fudge-{FUDGE_PARAMETER}_miniter-{MINITER}'))
 
     coordinates, elements = p1afempy.io_helpers.read_mesh(
