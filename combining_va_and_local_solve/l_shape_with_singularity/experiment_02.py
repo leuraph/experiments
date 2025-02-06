@@ -28,11 +28,15 @@ def main() -> None:
     parser.add_argument("--miniter", type=int, required=True,
                         help="minimum number of full sweeps performed"
                         " on each mesh")
+    parser.add_argument("--fraction", type=float, required=True,
+                        help="if specified fraction of elements meet"
+                        " stopping criterion, refine the mesh")
     args = parser.parse_args()
 
     THETA = args.theta
     FUDGE_PARAMETER = args.fudge
     MINITER = args.miniter
+    FRACTION = args.fraction
 
     # hard-coded variables
     max_n_dofs: int = int(1e7)
@@ -47,7 +51,9 @@ def main() -> None:
 
     base_results_path = (
         Path('results/experiment_02') /
-        Path(f'theta-{THETA}_fudge-{FUDGE_PARAMETER}_miniter-{MINITER}'))
+        Path(
+            f'theta-{THETA}_fudge-{FUDGE_PARAMETER}"
+            f"_miniter-{MINITER}_fraction-{FRACTION}'))
 
     coordinates, elements = p1afempy.io_helpers.read_mesh(
         path_to_coordinates=path_to_coordinates,
@@ -265,11 +271,16 @@ def main() -> None:
 
             stopping_criterion_met_per_element = (
                 np.abs(current_energy_gain_per_element) < FUDGE_PARAMETER * avg_de_per_element)
+
             n_elements_meeting_stopping_criterion = float(np.sum(stopping_criterion_met_per_element))
-            print(f'stopping criterion met for {n_elements_meeting_stopping_criterion/float(n_elements)*100.} % of the elements')
+            fraction_of_elements_meeting_stopping_criterion = \
+                n_elements_meeting_stopping_criterion/float(n_elements)
+            print(f'stopping criterion met for {fraction_of_elements_meeting_stopping_criterion*100.} % of the elements')
             active_elements = np.arange(n_elements)[np.logical_not(stopping_criterion_met_per_element)]
 
-            stopping_criterion_met = n_elements_meeting_stopping_criterion/float(n_elements) > 0.9
+            stopping_criterion_met = (
+                fraction_of_elements_meeting_stopping_criterion
+                > FRACTION)
 
             if stopping_criterion_met:
                 print(
