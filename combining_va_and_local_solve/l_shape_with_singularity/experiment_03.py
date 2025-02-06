@@ -281,7 +281,7 @@ def main() -> None:
             active_elements = np.arange(n_elements)[np.logical_not(stopping_criterion_met_per_element)]
 
             stopping_criterion_met = (
-                n_elements_meeting_stopping_criterion/float(n_elements) > FRACTION)
+                n_elements_meeting_stopping_criterion/float(n_elements) >= FRACTION)
 
             if stopping_criterion_met:
                 print(

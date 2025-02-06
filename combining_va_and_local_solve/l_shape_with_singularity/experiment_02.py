@@ -280,7 +280,7 @@ def main() -> None:
 
             stopping_criterion_met = (
                 fraction_of_elements_meeting_stopping_criterion
-                > FRACTION)
+                >= FRACTION)
 
             if stopping_criterion_met:
                 print(
