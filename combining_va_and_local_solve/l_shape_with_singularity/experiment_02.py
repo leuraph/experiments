@@ -152,18 +152,26 @@ def main() -> None:
         # perform iterations until stopping criterion is met
         # --------------------------------------------------
         n_iterations_done = 0
+
         accumulated_energy_gain = 0.
         old_energy: float = None  # gets initializied when miniter reached
+
+        active_elements = np.arange(n_elements)
+        accumulated_energy_gain_per_element = np.zeros(
+            elements.shape[0], dtype=float)
+        old_energy_per_element: np.ndarray = None
+
         energy_history_per_element: list[np.ndarray] = []
         energy_history: list[float] = []
+
         while True:
             # solving locally on each element, separately
             # -------------------------------------------
             local_energy_differences_solve = []
             local_increments = []
 
-            print(f'performing full sweep of local solve for {n_dofs} DOFs')
-            for k in tqdm(range(n_elements)):
+            print(f'performing sweep of local solve for {n_dofs} DOFs on {len(active_elements)} active elements')
+            for k in tqdm(active_elements):
                 local_increment, local_energy_difference = \
                     local_context_solver.get_local_increment_and_energy_difference(
                         current_iterate=current_iterate,
@@ -182,7 +190,8 @@ def main() -> None:
             # sorting such that local increments corresponding
             # to biggest energy gain come last
             energy_based_sorting = np.argsort(local_energy_differences_solve)
-            sorted_elements = elements[energy_based_sorting]
+            sorted_active_elements = \
+                elements[active_elements][energy_based_sorting]
             local_increments = local_increments[energy_based_sorting]
 
             # collect all local increments in a single vector
@@ -190,7 +199,7 @@ def main() -> None:
             # same node are overwritten by the one corresponding
             # to the bigger change in energy
             for element, local_increment in zip(
-                    sorted_elements, local_increments):
+                    sorted_active_elements, local_increments):
                 global_increment[element] = local_increment
 
             # performing the update
@@ -211,24 +220,41 @@ def main() -> None:
                     current_iterate=current_iterate,
                     stiffness_matrix=stiffness_matrix,
                     right_hand_side=right_hand_side)
+                old_energy_per_element = get_energy_per_element(
+                    current_iterate=current_iterate,
+                    elements=elements,
+                    coordinates=coordinates,
+                    cubature_rule=CubatureRuleEnum.DAYTAYLOR,
+                    f=f)
                 continue
 
-            energy_per_element = get_energy_per_element(
+            current_energy_per_element = get_energy_per_element(
                 current_iterate=current_iterate,
                 elements=elements,
-                coordinates=coordinates)
+                coordinates=coordinates,
+                cubature_rule=CubatureRuleEnum.DAYTAYLOR,
+                f=f)
+
             current_energy = get_energy(
                 current_iterate=current_iterate,
                 stiffness_matrix=stiffness_matrix,
                 right_hand_side=right_hand_side)
 
-            energy_history_per_element.append(energy_per_element)
+            energy_history_per_element.append(current_energy_per_element)
             energy_history.append(current_energy)
 
             current_energy_gain = old_energy - current_energy
             accumulated_energy_gain += current_energy_gain
 
+            current_energy_gain_per_element = (
+                old_energy_per_element - current_energy_per_element)
+            accumulated_energy_gain_per_element += \
+                np.abs(current_energy_gain_per_element)
+
             avg_de = accumulated_energy_gain / (n_iterations_done - MINITER)
+
+            avg_de_per_element = accumulated_energy_gain_per_element \
+                / (n_iterations_done - MINITER)
 
             print(f'current energy gain  = {current_energy_gain}')
             print(f'averaged energy gain = {avg_de}')
@@ -236,6 +262,14 @@ def main() -> None:
             stopping_criterion_met = (
                 current_energy_gain <
                 FUDGE_PARAMETER * avg_de)
+
+            stopping_criterion_met_per_element = (
+                np.abs(current_energy_gain_per_element) < FUDGE_PARAMETER * avg_de_per_element)
+            n_elements_meeting_stopping_criterion = float(np.sum(stopping_criterion_met_per_element))
+            print(f'stopping criterion met for {n_elements_meeting_stopping_criterion/float(n_elements)*100.} % of the elements')
+            active_elements = np.arange(n_elements)[np.logical_not(stopping_criterion_met_per_element)]
+
+            stopping_criterion_met = n_elements_meeting_stopping_criterion/float(n_elements) > 0.9
 
             if stopping_criterion_met:
                 print(
@@ -247,6 +281,7 @@ def main() -> None:
                 break
 
             old_energy = current_energy
+            old_energy_per_element = current_energy_per_element
 
         # drop all the data accumulated in the corresponding results directory
         # --------------------------------------------------------------------
