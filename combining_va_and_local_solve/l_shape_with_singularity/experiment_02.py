@@ -320,28 +320,112 @@ def get_energy(
         - current_iterate.dot(right_hand_side)
 
 
-def get_energy_per_element(
-        current_iterate: np.ndarray,
-        elements: p1afempy.data_structures.ElementsType,
-        coordinates: p1afempy.data_structures.CoordinatesType,
-        cubature_rule: CubatureRuleEnum = CubatureRuleEnum.DAYTAYLOR) -> np.ndarray:
-    virtual_element = np.array([[0, 1, 2]])
-    energy_per_element = np.zeros(elements.shape[0])
+def get_energy_per_element_vectorized(
+        coordinates,
+        elements, current_iterate,
+        cubature_rule: CubatureRuleEnum) -> np.ndarray:
     print('calculating energy contribution of each element...')
-    for k, element in tqdm(enumerate(elements)):
-        local_iterate = current_iterate[element]
-        local_coordinates = coordinates[element]
-        A = p1afempy.solvers.get_stiffness_matrix(
-            coordinates=local_coordinates, elements=virtual_element)
-        rhs = p1afempy.solvers.get_right_hand_side(
-            coordinates=local_coordinates,
-            elements=virtual_element,
-            f=f, cubature_rule=cubature_rule)
-        energy_on_current_element = (
-            0.5 * local_iterate.dot(A.dot(local_iterate))
-            - local_iterate.dot(rhs))
-        energy_per_element[k] = energy_on_current_element
-    return energy_per_element
+
+    rhs_vectorized = compute_rhs_element_integrals(
+        coordinates=coordinates,
+        elements=elements,
+        U=current_iterate,
+        cubature_rule=cubature_rule,
+        f=f)
+    element_integrals = compute_element_integrals(
+        coordinates=coordinates, elements=elements, U=current_iterate)
+    return -rhs_vectorized + 0.5 * element_integrals
+
+
+def compute_rhs_element_integrals(
+        coordinates: p1afempy.data_structures.CoordinatesType,
+        elements: p1afempy.data_structures.ElementsType,
+        U: np.ndarray,
+        cubature_rule: CubatureRuleEnum,
+        f: p1afempy.data_structures.BoundaryConditionType) -> np.ndarray:
+    # Extract triangle vertex coordinates
+    X = coordinates[elements, 0]  # Shape: (N_E, 3)
+    Y = coordinates[elements, 1]  # Shape: (N_E, 3)
+
+    z_0 = coordinates[elements[:, 0], :]
+    z_1 = coordinates[elements[:, 1], :]
+    z_2 = coordinates[elements[:, 2], :]
+
+    # Compute edge vectors
+    v1x, v1y = X[:, 1] - X[:, 0], Y[:, 1] - Y[:, 0]
+    v2x, v2y = X[:, 2] - X[:, 0], Y[:, 2] - Y[:, 0]
+
+    # Compute twice the area of each triangle (using determinant formula)
+    area2 = np.abs(v1x * v2y - v1y * v2x)  # Shape: (N_E,)
+
+    # get weights and integration points from rule
+    rule = get_rule(rule=cubature_rule)
+    waip = rule.weights_and_integration_points
+    weights = waip.weights
+    integration_points = waip.integration_points
+
+    results = np.zeros(elements.shape[0])
+    for weight, integration_point in zip(weights, integration_points):
+        eta, xi = integration_point
+
+        transformed_integration_points = (
+            z_0 + eta * (z_1 - z_0) + xi * (z_2 - z_0))
+        f_on_integration_points = f(transformed_integration_points)
+
+        phi = np.array([1.-eta-xi, eta, xi])
+
+        U_on_elements = np.sum(U[elements] * phi, axis=1)
+
+        results += weight * f_on_integration_points * U_on_elements
+
+    results *= area2
+
+    return results
+
+
+def compute_element_integrals(coordinates, elements, U):
+    """
+    Compute the integral ∫_T |∇u^n|^2 dx for each element in a P1 FEM triangulation.
+
+    Parameters:
+        coordinates (np.ndarray): N_C x 2 array of (x, y) coordinates.
+        elements (np.ndarray): N_E x 3 array of node indices forming each triangle.
+        U (np.ndarray): N_C array of function values at the nodes.
+
+    Returns:
+        np.ndarray: N_E array of integral values for each element.
+    """
+
+    # Extract triangle vertex coordinates
+    X = coordinates[elements, 0]  # Shape: (N_E, 3)
+    Y = coordinates[elements, 1]  # Shape: (N_E, 3)
+
+    # Compute edge vectors
+    v1x, v1y = X[:, 1] - X[:, 0], Y[:, 1] - Y[:, 0]
+    v2x, v2y = X[:, 2] - X[:, 0], Y[:, 2] - Y[:, 0]
+
+    # Compute twice the area of each triangle (using determinant formula)
+    area2 = np.abs(v1x * v2y - v1y * v2x)  # Shape: (N_E,)
+    area = 0.5 * area2  # Actual area
+
+    # Compute gradients of basis functions (shape: (N_E, 2) for each)
+    dphi1 = np.stack([(Y[:, 1] - Y[:, 2]), (X[:, 2] - X[:, 1])], axis=1) / area2[:, None]
+    dphi2 = np.stack([(Y[:, 2] - Y[:, 0]), (X[:, 0] - X[:, 2])], axis=1) / area2[:, None]
+    dphi3 = np.stack([(Y[:, 0] - Y[:, 1]), (X[:, 1] - X[:, 0])], axis=1) / area2[:, None]
+
+    # Compute the gradient of u^n in each triangle (∇u^n = U1 * ∇φ1 + U2 * ∇φ2 + U3 * ∇φ3)
+    U_local = U[elements]  # Shape: (N_E, 3)
+    grad_u = (U_local[:, 0, None] * dphi1 +
+              U_local[:, 1, None] * dphi2 +
+              U_local[:, 2, None] * dphi3)  # Shape: (N_E, 2)
+
+    # Compute |∇u^n|^2
+    grad_u_sq = np.sum(grad_u**2, axis=1)  # Shape: (N_E,)
+
+    # Compute integral |T| * |∇u^n|^2
+    integral_values = area * grad_u_sq  # Shape: (N_E,)
+
+    return integral_values
 
 
 if __name__ == '__main__':
