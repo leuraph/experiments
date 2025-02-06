@@ -163,6 +163,7 @@ def main() -> None:
 
         energy_history_per_element: list[np.ndarray] = []
         energy_history: list[float] = []
+        stopping_criterion_met_per_element = np.zeros(n_elements, dtype=bool)
 
         while True:
             # solving locally on each element, separately
@@ -263,8 +264,12 @@ def main() -> None:
                 current_energy_gain <
                 FUDGE_PARAMETER * avg_de)
 
-            stopping_criterion_met_per_element = (
-                np.abs(current_energy_gain_per_element) < FUDGE_PARAMETER * avg_de_per_element)
+            stopping_criterion_met_per_element = \
+                np.logical_or(
+                    np.abs(current_energy_gain_per_element)
+                    < FUDGE_PARAMETER * avg_de_per_element,
+                    stopping_criterion_met_per_element
+                )
             n_elements_meeting_stopping_criterion = float(np.sum(stopping_criterion_met_per_element))
             print(f'stopping criterion met for {n_elements_meeting_stopping_criterion/float(n_elements)*100.} % of the elements')
             active_elements = np.arange(n_elements)[np.logical_not(stopping_criterion_met_per_element)]
