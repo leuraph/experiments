@@ -52,8 +52,8 @@ def main() -> None:
     base_results_path = (
         Path('results/experiment_02') /
         Path(
-            f'theta-{THETA}_fudge-{FUDGE_PARAMETER}"
-            f"_miniter-{MINITER}_fraction-{FRACTION}'))
+            f"theta-{THETA}_fudge-{FUDGE_PARAMETER}"
+            f"_miniter-{MINITER}_fraction-{FRACTION}"))
 
     coordinates, elements = p1afempy.io_helpers.read_mesh(
         path_to_coordinates=path_to_coordinates,
