@@ -11,6 +11,7 @@ from iterative_methods.local_solvers \
 from scipy.sparse import csr_matrix
 from tqdm import tqdm
 from load_save_dumps import dump_object
+from triangle_cubature.rule_factory import get_rule
 
 
 def main() -> None:
