@@ -168,6 +168,8 @@ def main() -> None:
         old_energy_per_element: np.ndarray = None
 
         energy_history: list[float] = []
+        fractions_active_elements: list[float] = []
+        n_solves_done: int = 0
 
         while True:
             # solving locally on each element, separately
@@ -181,6 +183,7 @@ def main() -> None:
                     local_context_solver.get_local_increment_and_energy_difference(
                         current_iterate=current_iterate,
                         element=k)
+                n_solves_done += 1
                 local_energy_differences_solve.append(local_energy_difference)
                 local_increments.append(local_increment)
 
@@ -231,6 +234,17 @@ def main() -> None:
                     coordinates=coordinates,
                     cubature_rule=CubatureRuleEnum.DAYTAYLOR,
                     f=f)
+
+                # consistency check:
+                # sum over energy per element must be equal (close)
+                # to the total energy
+                old_energy_summed = np.sum(old_energy_per_element)
+                if not np.isclose(old_energy_summed, old_energy):
+                    raise RuntimeError(
+                        "Sum of energy per element = "
+                        f"{old_energy_summed} "
+                        "does not sum to total energy "
+                        f"E = {old_energy}!")
                 continue
 
             current_energy_per_element = get_energy_per_element(
@@ -244,6 +258,16 @@ def main() -> None:
                 current_iterate=current_iterate,
                 stiffness_matrix=stiffness_matrix,
                 right_hand_side=right_hand_side)
+
+            # consistency check:
+            # sum over energy per element must be equal (close)
+            # to the total energy
+            current_energy_summed = np.sum(current_energy_per_element)
+            if not np.isclose(current_energy_summed, current_energy):
+                raise RuntimeError(
+                    "Sum of energy per element does ="
+                    f" {current_energy_summed} "
+                    f"not sum to total energy E = {current_energy}!")
 
             energy_history.append(current_energy)
 
@@ -276,6 +300,9 @@ def main() -> None:
             print(f'stopping criterion met for {fraction_of_elements_meeting_stopping_criterion*100.} % of the elements')
             active_elements = np.arange(n_elements)[np.logical_not(stopping_criterion_met_per_element)]
 
+            fractions_active_elements.append(
+                float(len(active_elements)) / float(n_elements))
+
             stopping_criterion_met = (
                 fraction_of_elements_meeting_stopping_criterion
                 >= FRACTION)
@@ -285,6 +312,7 @@ def main() -> None:
                     'stopping criterion met, stopping iteration after'
                     f' {n_iterations_done} iterations')
                 energy_history = np.array(energy_history)
+                fractions_active_elements = np.array(fractions_active_elements)
                 break
 
             old_energy = current_energy
@@ -302,6 +330,12 @@ def main() -> None:
 
         dump_object(obj=energy_history, path_to_file=base_results_path /
                     Path(f'{n_dofs}/energy_history.pkl'))
+        dump_object(obj=n_solves_done, path_to_file=base_results_path /
+                    Path(f'{n_dofs}/n_solves_done.pkl'))
+        dump_object(
+            obj=fractions_active_elements,
+            path_to_file=base_results_path /
+            Path(f'{n_dofs}/fractions_active_elements.pkl'))
 
         dump_object(obj=elements, path_to_file=base_results_path /
                     Path(f'{n_dofs}/elements.pkl'))
