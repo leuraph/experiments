@@ -151,6 +151,7 @@ def main() -> None:
         # perform iterations until stopping criterion is met
         # --------------------------------------------------
         n_iterations_done = 0
+        n_solves_done: int = 0
         accumulated_energy_gain = 0.
         old_energy: float = None  # gets initializied when miniter reached
         energy_history: list[float] = []
@@ -166,6 +167,7 @@ def main() -> None:
                     local_context_solver.get_local_increment_and_energy_difference(
                         current_iterate=current_iterate,
                         element=k)
+                n_solves_done += 1
                 local_energy_differences_solve.append(local_energy_difference)
                 local_increments.append(local_increment)
 
@@ -251,6 +253,8 @@ def main() -> None:
 
         dump_object(obj=energy_history, path_to_file=base_results_path /
                     Path(f'{n_dofs}/energy_history.pkl'))
+        dump_object(obj=n_solves_done, path_to_file=base_results_path /
+                    Path(f'{n_dofs}/n_solves_done.pkl'))
 
         dump_object(obj=elements, path_to_file=base_results_path /
                     Path(f'{n_dofs}/elements.pkl'))
