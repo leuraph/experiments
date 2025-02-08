@@ -27,7 +27,7 @@ def main() -> None:
     match = re.search(pattern, str(base_result_path))
     experiment_number = int(match.group(1))
 
-    if experiment_number in [2, 3]:
+    if experiment_number in [1, 2, 3]:
         print(f'post-processing results from experiment {experiment_number}')
         calculate_energy_norm_error_squared_last_iterate_to_galerkin(
             base_result_path=base_result_path, verbose=True)
