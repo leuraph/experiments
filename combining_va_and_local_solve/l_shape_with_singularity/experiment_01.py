@@ -211,10 +211,6 @@ def main() -> None:
                     right_hand_side=right_hand_side)
                 continue
 
-            energy_per_element = get_energy_per_element(
-                current_iterate=current_iterate,
-                elements=elements,
-                coordinates=coordinates)
             current_energy = get_energy(
                 current_iterate=current_iterate,
                 stiffness_matrix=stiffness_matrix,
