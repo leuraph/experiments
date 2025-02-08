@@ -153,7 +153,6 @@ def main() -> None:
         n_iterations_done = 0
         accumulated_energy_gain = 0.
         old_energy: float = None  # gets initializied when miniter reached
-        energy_history_per_element: list[np.ndarray] = []
         energy_history: list[float] = []
         while True:
             # solving locally on each element, separately
@@ -221,7 +220,6 @@ def main() -> None:
                 stiffness_matrix=stiffness_matrix,
                 right_hand_side=right_hand_side)
 
-            energy_history_per_element.append(energy_per_element)
             energy_history.append(current_energy)
 
             current_energy_gain = old_energy - current_energy
@@ -240,8 +238,6 @@ def main() -> None:
                 print(
                     'stopping criterion met, stopping iteration after'
                     f' {n_iterations_done} iterations')
-                energy_history_per_element = \
-                    np.array(energy_history_per_element)
                 energy_history = np.array(energy_history)
                 break
 
@@ -259,8 +255,6 @@ def main() -> None:
 
         dump_object(obj=energy_history, path_to_file=base_results_path /
                     Path(f'{n_dofs}/energy_history.pkl'))
-        dump_object(obj=energy_history_per_element, path_to_file=base_results_path /
-                    Path(f'{n_dofs}/energy_history_per_element.pkl'))
 
         dump_object(obj=elements, path_to_file=base_results_path /
                     Path(f'{n_dofs}/elements.pkl'))
