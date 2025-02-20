@@ -19,8 +19,8 @@ class ConvergedException(Exception):
 
     def __init__(
             self,
-            energy_gains: np.ndarray,
-            last_iterate: np.ndarray,
+            energy_gains: np.ndarray = None,
+            last_iterate: np.ndarray = None,
             n_iterations_done: int = None,
             energy_history: list[float] = None):
         self.energy_gains = energy_gains
@@ -647,6 +647,9 @@ class AriolisCustomCallback(CustomCallBack):
 
     Attributes
     ----------
+    delay: int
+        delay parameter in the Hestenes-Stiefel Estimator,
+        see [1] for details
 
     References
     ----------
@@ -658,6 +661,10 @@ class AriolisCustomCallback(CustomCallBack):
 
     """
     n_dofs: int
+    delay: int
+    n_callback_called: int
+    energy_history: list[float]
+    fudge: float
 
     def __init__(
             self,
@@ -666,6 +673,8 @@ class AriolisCustomCallback(CustomCallBack):
             elements: ElementsType,
             coordinates: CoordinatesType,
             boundaries: list[BoundaryType],
+            delay: int,
+            fudge: float,
             cubature_rule: CubatureRuleEnum = CubatureRuleEnum.MIDPOINT):
         super().__init__(
             batch_size=batch_size,
@@ -674,6 +683,10 @@ class AriolisCustomCallback(CustomCallBack):
             coordinates=coordinates,
             boundaries=boundaries,
             cubature_rule=cubature_rule)
+        self.delay = delay
+        self.fudge = fudge
+        self.n_callback_called = 0
+        self.energy_history = []
 
         # calculate number of degrees of freedom
         n_vertices = coordinates.shape[0]
@@ -697,3 +710,20 @@ class AriolisCustomCallback(CustomCallBack):
         current_energy = self.calculate_energy(
             current_iterate=current_iterate)
         self.energy_history.append(current_energy)
+
+        delay_reached = self.n_callback_called >= self.delay + 1
+        if not delay_reached:
+            return
+
+        energy_before_delay = self.energy_history[-(self.delay+1)]
+
+        lhs = energy_before_delay - current_energy
+        rhs = -(self.fudge/self.n_dofs) * energy_before_delay
+        converged = lhs <= rhs
+
+        if converged:
+            converged_exception = ConvergedException(
+                last_iterate=current_iterate,
+                n_iterations_done=self.n_iterations_done,
+                energy_history=self.energy_history)
+            raise converged_exception
