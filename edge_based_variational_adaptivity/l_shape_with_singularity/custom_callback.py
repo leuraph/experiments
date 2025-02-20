@@ -638,3 +638,62 @@ class ForcingIterationErrorToDiscretizationErrorCustomCallback(CustomCallBack):
         du = current_iterate - self.galerkin_solution
         energy_err_squared = du.dot(self.lhs_matrix.dot(du))
         return energy_err_squared
+
+
+class AriolisCustomCallback(CustomCallBack):
+    """
+    Implements the stopping criterion from [1]
+    in an an energy fashion.
+
+    Attributes
+    ----------
+
+    References
+    ----------
+    [1] Arioli, M.
+    A Stopping Criterion for the Conjugate Gradient Algorithm
+    in a Finite Element Method Framework.
+    Numerische Mathematik 97, no. 1 (1 March 2004): 1-24.
+    https://doi.org/10.1007/s00211-003-0500-y.
+
+    """
+    n_dofs: int
+
+    def __init__(
+            self,
+            batch_size: int,
+            min_n_iterations_per_mesh: int,
+            elements: ElementsType,
+            coordinates: CoordinatesType,
+            boundaries: list[BoundaryType],
+            cubature_rule: CubatureRuleEnum = CubatureRuleEnum.MIDPOINT):
+        super().__init__(
+            batch_size=batch_size,
+            min_n_iterations_per_mesh=min_n_iterations_per_mesh,
+            elements=elements,
+            coordinates=coordinates,
+            boundaries=boundaries,
+            cubature_rule=cubature_rule)
+
+        # calculate number of degrees of freedom
+        n_vertices = coordinates.shape[0]
+        indices_of_free_nodes = np.setdiff1d(
+            ar1=np.arange(n_vertices),
+            ar2=np.unique(boundaries[0].flatten()))
+        free_nodes = np.zeros(n_vertices, dtype=bool)
+        free_nodes[indices_of_free_nodes] = 1
+        self.n_dofs = np.sum(free_nodes)
+
+    def calculate_energy(self, current_iterate) -> float:
+        return (
+            0.5*current_iterate.dot(self.lhs_matrix.dot(current_iterate))
+            - self.rhs_vector.dot(current_iterate))
+
+    def perform_callback(
+            self,
+            current_iterate) -> None:
+        self.n_callback_called += 1
+
+        current_energy = self.calculate_energy(
+            current_iterate=current_iterate)
+        self.energy_history.append(current_energy)
