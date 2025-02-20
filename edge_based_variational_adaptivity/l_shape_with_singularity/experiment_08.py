@@ -9,7 +9,7 @@ from scipy.sparse import csr_matrix
 from variational_adaptivity.markers import doerfler_marking
 import argparse
 from scipy.sparse.linalg import cg
-from custom_callback import ConvergedException, EnergyTailOffAveragedCustomCallback
+from custom_callback import ConvergedException, AriolisCustomCallback
 from ismember import is_row_in
 from variational_adaptivity.edge_based_variational_adaptivity import \
     get_energy_gains
@@ -28,17 +28,17 @@ def main() -> None:
     parser.add_argument("--theta", type=float, required=True,
                         help="value of theta used in the Dörfler marking")
     parser.add_argument("--fudge", type=float, required=True,
-                        help="if current_ennergy_gain < fudge * "
-                        "accumulated_energy_gain / n_iterations, "
-                        "iteration is halted and refinement is started")
+                        help="additional fudge parameter "
+                        "in Ariolis stopping criterion")
     parser.add_argument("--miniter", type=int, required=True,
                         help="minimum number of iterations on each mesh")
-    parser.add_argument("--batchsize", type=int, required=True,
-                        help="number of CG iterations per update step")
+    parser.add_argument("--delay", type=int, required=True,
+                        help="delay parameter in the "
+                        "Hestenes-Stiefel Estimator")
     args = parser.parse_args()
 
     MINITER = args.miniter
-    BATCHSIZE = args.batchsize
+    DELAY = args.delay
     THETA = args.theta
     FUDGE = args.fudge
 
@@ -55,10 +55,10 @@ def main() -> None:
     path_to_dirichlet = base_path / Path('dirichlet.dat')
 
     base_results_path = (
-        Path('results/experiment_05') /
+        Path('results/experiment_08') /
         Path(
             f'theta-{THETA}_fudge-{FUDGE}_'
-            f'miniter-{MINITER}_batchsize-{BATCHSIZE}'))
+            f'miniter-{MINITER}delay-{DELAY}'))
 
     coordinates, elements = io_helpers.read_mesh(
         path_to_coordinates=path_to_coordinates,
@@ -225,16 +225,13 @@ def main() -> None:
         # Perform CG on the current mesh
         # ------------------------------
         # assembly of right hand side
-        custom_callback = EnergyTailOffAveragedCustomCallback(
-            batch_size=BATCHSIZE,
+        custom_callback = AriolisCustomCallback(
+            batch_size=1,
             min_n_iterations_per_mesh=MINITER,
             elements=elements,
             coordinates=coordinates,
             boundaries=boundaries,
-            energy_of_initial_guess=calculate_energy(
-                u=current_iterate,
-                lhs_matrix=stiffness_matrix,
-                rhs_vector=right_hand_side),
+            delay=DELAY,
             fudge=FUDGE,
             cubature_rule=CubatureRuleEnum.DAYTAYLOR)
 
@@ -247,7 +244,6 @@ def main() -> None:
                 callback=custom_callback)
         except ConvergedException as conv:
             current_iterate = conv.last_iterate
-            energy_gains = conv.energy_gains
             energy_history = np.array(conv.energy_history)
             n_iterations_done = conv.n_iterations_done
             print(f"CG stopped after {conv.n_iterations_done} iterations!")
@@ -269,6 +265,40 @@ def main() -> None:
             Path(f'{n_dofs}/galerkin_solution.pkl'))
         dump_object(obj=current_iterate, path_to_file=base_results_path /
                     Path(f'{n_dofs}/last_iterate.pkl'))
+
+        _, edge_to_nodes, _ = \
+            provide_geometric_data(
+                elements=elements,
+                boundaries=boundaries)
+
+        edge_to_nodes_flipped = np.column_stack(
+            [edge_to_nodes[:, 1], edge_to_nodes[:, 0]])
+        boundary = np.logical_or(
+            is_row_in(edge_to_nodes, boundaries[0]),
+            is_row_in(edge_to_nodes_flipped, boundaries[0])
+        )
+        non_boundary = np.logical_not(boundary)
+        edges = edge_to_nodes
+        non_boundary_edges = edge_to_nodes[non_boundary]
+
+        # free nodes / edges
+        n_vertices = coordinates.shape[0]
+        indices_of_free_nodes = np.setdiff1d(
+            ar1=np.arange(n_vertices),
+            ar2=np.unique(boundaries[0].flatten()))
+        free_nodes = np.zeros(n_vertices, dtype=bool)
+        free_nodes[indices_of_free_nodes] = 1
+        free_edges = non_boundary
+        free_nodes = free_nodes
+
+        energy_gains = get_energy_gains(
+            coordinates=coordinates,
+            elements=elements,
+            non_boundary_edges=non_boundary_edges,
+            current_iterate=current_iterate,
+            f=f,
+            cubature_rule=CubatureRuleEnum.DAYTAYLOR,
+            verbose=True)
 
         # dörfler based on EVA
         # --------------------
