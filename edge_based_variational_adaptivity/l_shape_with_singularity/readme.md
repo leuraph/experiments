@@ -37,3 +37,19 @@ is met.
 Then, EVA is performed using the last iterate.
 This serves as a sort of sanity check, i.e. we may see if EVA still
 reaches optimal convergence (for the Galerkin solutions) if we set $\alpha \approx 1$.
+
+## Experiment 08
+This experiment performs global CG iterations until an energy-based version
+of Ariolis [1] stopping criterion is met, i.e.
+$$
+E(u^n) - E(u^{n+d}) \leq \left(\frac{- \alpha}{n_{\text{Dof}}}\right) E(u^n),
+$$
+where $\alpha$ denotes an additional fudge parameter, not mentioned in [1].
+Then, EVA is performed using the last iterate $u^{n+d}$.
+
+# References
+- [1] Arioli, M.
+    A Stopping Criterion for the Conjugate Gradient Algorithm
+    in a Finite Element Method Framework.
+    Numerische Mathematik 97, no. 1 (1 March 2004): 1-24.
+    https://doi.org/10.1007/s00211-003-0500-y.
