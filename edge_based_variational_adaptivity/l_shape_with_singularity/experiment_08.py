@@ -299,7 +299,7 @@ def main() -> None:
             f=f,
             cubature_rule=CubatureRuleEnum.DAYTAYLOR,
             verbose=True,
-            parallel=True)
+            parallel=False)
 
         # dörfler based on EVA
         # --------------------
