@@ -4,9 +4,10 @@ from tqdm import tqdm
 import argparse
 from iterative_methods.energy_norm import calculate_energy_norm_error
 from triangle_cubature.cubature_rule import CubatureRuleEnum
-from p1afempy.solvers import get_stiffness_matrix
+from p1afempy.solvers import get_stiffness_matrix, get_right_hand_side
 from scipy.sparse import csr_matrix
 import re
+from configuration import f
 
 
 def main() -> None:
@@ -27,11 +28,15 @@ def main() -> None:
     match = re.search(pattern, str(base_result_path))
     experiment_number = int(match.group(1))
 
-    if experiment_number in [5, 6, 7]:
+    if experiment_number in [5, 6, 7, 8]:
         print(f'post-processing results from experiment {experiment_number}')
         calculate_energy_norm_error_squared_last_iterate_to_galerkin(
             base_result_path=base_result_path, verbose=True)
         calculate_energy_norm_error_squared_galerkin_with_orthogonality(
+            base_result_path=base_result_path,
+            energy_norm_squared_exact=energy_norm_squared_exact,
+            verbose=True)
+        calculate_energy_norm_error_squared_last_iterate_to_exact(
             base_result_path=base_result_path,
             energy_norm_squared_exact=energy_norm_squared_exact,
             verbose=True)
@@ -47,6 +52,63 @@ def main() -> None:
         print(
             f'experiment {experiment_number} not covered by this script, '
             'doing nothinng...')
+
+
+def calculate_energy_norm_error_squared_last_iterate_to_exact(
+        base_result_path: Path,
+        energy_norm_squared_exact: float,
+        verbose: bool = True) -> None:
+    if verbose:
+        print(
+            'Calculating |u_n^\star - u|_a^2')
+    for path_to_n_dofs in tqdm(list(base_result_path.iterdir())):
+        if not path_to_n_dofs.is_dir():
+            continue
+
+        # specifying paths
+        # ----------------
+        path_to_elements = path_to_n_dofs / Path('elements.pkl')
+        path_to_coordinates = path_to_n_dofs / Path('coordinates.pkl')
+        path_to_last_iterate = path_to_n_dofs \
+            / Path('last_iterate.pkl')
+
+        # loading data
+        # ------------
+        elements = load_dump(path_to_dump=path_to_elements)
+        coordinates = load_dump(path_to_dump=path_to_coordinates)
+        last_iterate = load_dump(
+            path_to_dump=path_to_last_iterate)
+
+        # calculating the energy norm errors
+        # ----------------------------------
+
+        stiffness_matrix = csr_matrix(get_stiffness_matrix(
+            coordinates=coordinates, elements=elements))
+        right_hand_side = get_right_hand_side(
+            coordinates=coordinates,
+            elements=elements,
+            f=f,
+            cubature_rule=CubatureRuleEnum.DAYTAYLOR)
+
+        energy_last_iterate = (
+            0.5 * last_iterate.dot(stiffness_matrix.dot(last_iterate))
+            - right_hand_side.dot(last_iterate))
+
+        energy_norm_error_squared_last_iterate_to_exact = (
+            energy_norm_squared_exact
+            + 2. * energy_last_iterate)
+
+        if energy_norm_error_squared_last_iterate_to_exact < 0:
+            raise RuntimeError('this should be positive!!!')
+
+        # saving the energy norm error to disk
+        # ------------------------------------
+        dump_object(
+            obj=energy_norm_error_squared_last_iterate_to_exact,
+            path_to_file=(
+                path_to_n_dofs /
+                Path(
+                    'energy_norm_error_squared_last_iterate_to_exact.pkl')))
 
 
 def calculate_energy_norm_error_squared_last_iterate_to_galerkin(
