@@ -19,12 +19,15 @@ def main() -> None:
     results_path = Path(args.path)
     output_path = Path(args.o)
 
+    # extracting the experiment number as integer
+    pattern = r"experiment_(\d+)"
+    match = re.search(pattern, str(results_path))
+    experiment_number = int(match.group(1))
+
     energy_norm_errors_squared_galerkin_to_exact, \
         energy_norm_errors_squared_last_iterate_to_galerkin, \
         n_dofs = get_energy_norm_errors_squared_and_dofs(
             results_path=results_path)
-    n_iterations_on_each_mesh = get_n_iterations_on_each_mesh(
-        results_path=results_path)
 
     energy_norm_errors_galerkin_to_exact = np.sqrt(
         energy_norm_errors_squared_galerkin_to_exact)
@@ -100,6 +103,12 @@ def main() -> None:
     # plotting number of iterations on each mesh
     # ------------------------------------------
     # Create a second y-axis for the second array 'b'
+    if experiment_number in [1, 2, 3]:
+        n_iterations_on_each_mesh = get_n_iterations_on_each_mesh(
+            results_path=results_path)
+    elif experiment_number in [2, 3]:
+        n_iterations_on_each_mesh = get_n_local_solves_on_each_mesh(
+            results_path=results_path)
     ax_n_iterations = ax.twinx()
     ax_n_iterations.set_ylabel(r'$n_{\text{iterations}}$')
     ax_n_iterations.scatter(
@@ -189,8 +198,31 @@ def get_energy_norm_errors_squared_and_dofs(
 
 def get_n_iterations_on_each_mesh(
         results_path: Path) -> np.ndarray:
+    n_full_sweeps_on_each_mesh = get_iteration_number_per_mesh(
+        results_path=results_path,
+        iter_info_array_name='n_iterations_done.pkl')
+
+    return n_full_sweeps_on_each_mesh
+
+
+def get_n_local_solves_on_each_mesh(
+        results_path: Path) -> np.ndarray:
+    n_full_local_solves_on_each_mesh = get_iteration_number_per_mesh(
+        results_path=results_path,
+        iter_info_array_name='n_solves_done.pkl')
+
+    return n_full_local_solves_on_each_mesh
+
+
+def get_iteration_number_per_mesh(
+        results_path: Path,
+        iter_info_array_name: str) -> np.ndarray:
     """
-    reads and returns the number of iterations done on each mesh
+    reads and returns iterations info on each mesh
+
+    note
+    ----
+    either number of sweeps or number of local solves
     """
 
     n_iterations_on_each_mesh = []
@@ -203,7 +235,7 @@ def get_n_iterations_on_each_mesh(
         n_dof = int(n_dofs_dir.name)
         path_to_n_iterations_done = \
             n_dofs_dir / Path(
-                'n_iterations_done.pkl')
+                iter_info_array_name)
 
         n_iterations_done = \
             load_dump(path_to_dump=path_to_n_iterations_done)
