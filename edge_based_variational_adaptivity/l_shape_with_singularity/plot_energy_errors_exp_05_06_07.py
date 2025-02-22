@@ -21,6 +21,7 @@ def main() -> None:
 
     energy_norm_errors_squared_galerkin_to_exact, \
         energy_norm_errors_squared_last_iterate_to_galerkin, \
+            energy_norm_errors_squared_last_iterate_to_exact, \
         n_dofs = get_energy_norm_errors_squared_and_dofs(
             results_path=results_path)
     n_iterations_on_each_mesh = get_n_iterations_on_each_mesh(
@@ -30,6 +31,8 @@ def main() -> None:
         energy_norm_errors_squared_galerkin_to_exact)
     energy_norm_errors_last_iterate_to_galerkin = np.sqrt(
         energy_norm_errors_squared_last_iterate_to_galerkin)
+    energy_norm_errors_last_iterate_to_exact = np.sqrt(
+        energy_norm_errors_squared_last_iterate_to_exact)
 
     # settinng plot params
     # --------------------
@@ -97,6 +100,31 @@ def main() -> None:
               'k--', linewidth=0.8)
     # --------------------------------------
 
+    # plotting |u - u_N^{n^\star}|_a
+    # ----------------------
+    def model(x, m):
+        return -0.5*x + m
+    popt, pcov = curve_fit(
+        model,
+        np.log(n_dofs),
+        np.log(energy_norm_errors_last_iterate_to_exact))
+    m_optimized = popt[0]
+
+    color = plt.cm.tab10(3)
+    ax.loglog(
+            n_dofs, energy_norm_errors_last_iterate_to_exact,
+            linestyle='--',  # Dotted line
+            marker='s',     # Square markers
+            color=color,    # Line and marker color
+            markerfacecolor=color,  # Marker fill color
+            markeredgecolor=color,  # Marker outline color
+            alpha=0.5,       # Transparency for markers
+            label=r'$\|u - u_N^{n^\star}\|_a$',
+            markersize=5, linewidth=1.0)
+    ax.loglog(n_dofs, np.exp(model(np.log(n_dofs), m_optimized)),
+              'k--', linewidth=0.8)
+    # --------------------------------------
+
     # plotting number of iterations on each mesh
     # ------------------------------------------
     # Create a second y-axis for the second array 'b'
@@ -137,12 +165,16 @@ def get_energy_norm_errors_squared_and_dofs(
     energy_norm_errors_squared_last_iterate_to_galerkin: np.ndarray
         energy norm error squared of last iterate to the Galerkin solution
         of the corresponding meshes
+    energy_norm_errors_squared_last_iterate_to_exact: np.ndarray
+        energy norm error squared of last iterate to the exact solution
+        of the corresponding meshes
     n_dofs: np.ndarray
         number of degrees of freedom
     """
 
     energy_norm_errors_squared_galerkin_to_exact = []
     energy_norm_errors_squared_last_iterate_to_galerkin = []
+    energy_norm_errors_squared_last_iterate_to_exact = []
     n_dofs = []
 
     for n_dofs_dir in results_path.iterdir():
@@ -156,22 +188,32 @@ def get_energy_norm_errors_squared_and_dofs(
         path_to_energy_norm_error_squared_last_iterate_to_galerkin = \
             n_dofs_dir / Path(
                 'energy_norm_error_squared_last_iterate_to_galerkin.pkl')
+        path_to_energy_norm_error_squared_last_iterate_to_exact = \
+            n_dofs_dir / Path(
+                'energy_norm_error_squared_last_iterate_to_exact.pkl')
 
         energy_norm_error_squared_galerkin_with_orthogonality = \
             load_dump(path_to_dump=path_to_energy_norm_error_squared_galerkin_with_orthogonality)
         energy_norm_error_squared_last_iterate_to_galerkin = \
             load_dump(path_to_dump=path_to_energy_norm_error_squared_last_iterate_to_galerkin)
+        energy_norm_error_squared_last_iterate_to_exact = \
+            load_dump(path_to_dump=path_to_energy_norm_error_squared_last_iterate_to_exact)
 
         n_dofs.append(n_dof)
         energy_norm_errors_squared_galerkin_to_exact.append(
             energy_norm_error_squared_galerkin_with_orthogonality)
         energy_norm_errors_squared_last_iterate_to_galerkin.append(
             energy_norm_error_squared_last_iterate_to_galerkin)
+        energy_norm_errors_squared_last_iterate_to_exact.append(
+            energy_norm_error_squared_last_iterate_to_exact)
 
     energy_norm_errors_squared_galerkin_to_exact = np.array(
         energy_norm_errors_squared_galerkin_to_exact)
     energy_norm_errors_squared_last_iterate_to_galerkin = np.array(
         energy_norm_errors_squared_last_iterate_to_galerkin)
+    energy_norm_errors_squared_last_iterate_to_exact = np.array(
+        energy_norm_errors_squared_last_iterate_to_exact
+    )
     n_dofs = np.array(n_dofs)
 
     sort_n_dof = n_dofs.argsort()
@@ -180,10 +222,13 @@ def get_energy_norm_errors_squared_and_dofs(
         energy_norm_errors_squared_galerkin_to_exact[sort_n_dof]
     energy_norm_errors_squared_last_iterate_to_galerkin = \
         energy_norm_errors_squared_last_iterate_to_galerkin[sort_n_dof]
+    energy_norm_errors_squared_last_iterate_to_exact =\
+        energy_norm_errors_squared_last_iterate_to_exact[sort_n_dof]
     n_dofs = n_dofs[sort_n_dof]
 
     return energy_norm_errors_squared_galerkin_to_exact, \
         energy_norm_errors_squared_last_iterate_to_galerkin, \
+        energy_norm_errors_squared_last_iterate_to_exact, \
         n_dofs
 
 
