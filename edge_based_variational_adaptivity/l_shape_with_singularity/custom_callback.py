@@ -727,3 +727,94 @@ class AriolisCustomCallback(CustomCallBack):
                 n_iterations_done=self.n_iterations_done,
                 energy_history=self.energy_history)
             raise converged_exception
+
+
+class ArioliSanityCheckCustomCallback(CustomCallBack):
+    """
+    Implements the stopping criterion from [1]
+    in an an exact fashion, without approximations.
+    This custom callback is used to perform sanity
+    checks on the stopping criterion found in [1].
+
+    Attributes
+    ----------
+    delay: int
+        delay parameter in the Hestenes-Stiefel Estimator,
+        see [1] for details
+
+    References
+    ----------
+    [1] Arioli, M.
+    A Stopping Criterion for the Conjugate Gradient Algorithm
+    in a Finite Element Method Framework.
+    Numerische Mathematik 97, no. 1 (1 March 2004): 1-24.
+    https://doi.org/10.1007/s00211-003-0500-y.
+
+    """
+    n_dofs: int
+    delay: int
+    n_callback_called: int
+    energy_history: list[float]
+    fudge: float
+
+    def __init__(
+            self,
+            batch_size: int,
+            min_n_iterations_per_mesh: int,
+            elements: ElementsType,
+            coordinates: CoordinatesType,
+            boundaries: list[BoundaryType],
+            delay: int,
+            fudge: float,
+            cubature_rule: CubatureRuleEnum = CubatureRuleEnum.MIDPOINT):
+        super().__init__(
+            batch_size=batch_size,
+            min_n_iterations_per_mesh=min_n_iterations_per_mesh,
+            elements=elements,
+            coordinates=coordinates,
+            boundaries=boundaries,
+            cubature_rule=cubature_rule)
+        self.delay = delay
+        self.fudge = fudge
+        self.n_callback_called = 0
+        self.energy_history = []
+
+        # calculate number of degrees of freedom
+        n_vertices = coordinates.shape[0]
+        indices_of_free_nodes = np.setdiff1d(
+            ar1=np.arange(n_vertices),
+            ar2=np.unique(boundaries[0].flatten()))
+        free_nodes = np.zeros(n_vertices, dtype=bool)
+        free_nodes[indices_of_free_nodes] = 1
+        self.n_dofs = np.sum(free_nodes)
+
+    def calculate_energy(self, current_iterate) -> float:
+        return (
+            0.5*current_iterate.dot(self.lhs_matrix.dot(current_iterate))
+            - self.rhs_vector.dot(current_iterate))
+
+    def perform_callback(
+            self,
+            current_iterate) -> None:
+        self.n_callback_called += 1
+
+        current_energy = self.calculate_energy(
+            current_iterate=current_iterate)
+        self.energy_history.append(current_energy)
+
+        delay_reached = self.n_callback_called >= self.delay + 1
+        if not delay_reached:
+            return
+
+        energy_before_delay = self.energy_history[-(self.delay+1)]
+
+        lhs = energy_before_delay - current_energy
+        rhs = -(self.fudge/self.n_dofs) * energy_before_delay
+        converged = lhs <= rhs
+
+        if converged:
+            converged_exception = ConvergedException(
+                last_iterate=current_iterate,
+                n_iterations_done=self.n_iterations_done,
+                energy_history=self.energy_history)
+            raise converged_exception
