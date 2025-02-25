@@ -738,9 +738,8 @@ class ArioliSanityCheckCustomCallback(CustomCallBack):
 
     Attributes
     ----------
-    delay: int
-        delay parameter in the Hestenes-Stiefel Estimator,
-        see [1] for details
+    galerkin_solution: np.ndarray
+        galerkin solution on the current mesh
 
     References
     ----------
@@ -752,9 +751,8 @@ class ArioliSanityCheckCustomCallback(CustomCallBack):
 
     """
     n_dofs: int
-    delay: int
+    galerkin_solution: np.ndarray
     n_callback_called: int
-    energy_history: list[float]
     fudge: float
 
     def __init__(
@@ -764,7 +762,7 @@ class ArioliSanityCheckCustomCallback(CustomCallBack):
             elements: ElementsType,
             coordinates: CoordinatesType,
             boundaries: list[BoundaryType],
-            delay: int,
+            galerkin_solution: np.ndarray,
             fudge: float,
             cubature_rule: CubatureRuleEnum = CubatureRuleEnum.MIDPOINT):
         super().__init__(
@@ -774,10 +772,9 @@ class ArioliSanityCheckCustomCallback(CustomCallBack):
             coordinates=coordinates,
             boundaries=boundaries,
             cubature_rule=cubature_rule)
-        self.delay = delay
+        self.galerkin_solution = galerkin_solution
         self.fudge = fudge
         self.n_callback_called = 0
-        self.energy_history = []
 
         # calculate number of degrees of freedom
         n_vertices = coordinates.shape[0]
@@ -788,33 +785,22 @@ class ArioliSanityCheckCustomCallback(CustomCallBack):
         free_nodes[indices_of_free_nodes] = 1
         self.n_dofs = np.sum(free_nodes)
 
-    def calculate_energy(self, current_iterate) -> float:
-        return (
-            0.5*current_iterate.dot(self.lhs_matrix.dot(current_iterate))
-            - self.rhs_vector.dot(current_iterate))
+    def calculate_energy_norm_squared(self, u) -> float:
+        return u.dot(self.lhs_matrix.dot(u))
 
     def perform_callback(
             self,
-            current_iterate) -> None:
+            current_iterate: np.ndarray) -> None:
         self.n_callback_called += 1
 
-        current_energy = self.calculate_energy(
-            current_iterate=current_iterate)
-        self.energy_history.append(current_energy)
-
-        delay_reached = self.n_callback_called >= self.delay + 1
-        if not delay_reached:
-            return
-
-        energy_before_delay = self.energy_history[-(self.delay+1)]
-
-        lhs = energy_before_delay - current_energy
-        rhs = -(self.fudge/self.n_dofs) * energy_before_delay
+        du = current_iterate - self.galerkin_solution
+        lhs = self.calculate_energy_norm_squared(du)
+        rhs = (self.fudge/self.n_dofs) * self.calculate_energy_norm_squared(
+            self.galerkin_solution)
         converged = lhs <= rhs
 
         if converged:
             converged_exception = ConvergedException(
                 last_iterate=current_iterate,
-                n_iterations_done=self.n_iterations_done,
-                energy_history=self.energy_history)
+                n_iterations_done=self.n_iterations_done)
             raise converged_exception
