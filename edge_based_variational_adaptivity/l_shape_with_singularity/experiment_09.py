@@ -9,7 +9,7 @@ from scipy.sparse import csr_matrix
 from variational_adaptivity.markers import doerfler_marking
 import argparse
 from scipy.sparse.linalg import cg
-from custom_callback import ConvergedException, AriolisCustomCallback
+from custom_callback import ConvergedException, ArioliSanityCheckCustomCallback
 from ismember import is_row_in
 from variational_adaptivity.edge_based_variational_adaptivity import \
     get_energy_gains
@@ -32,13 +32,9 @@ def main() -> None:
                         "in Ariolis stopping criterion")
     parser.add_argument("--miniter", type=int, required=True,
                         help="minimum number of iterations on each mesh")
-    parser.add_argument("--delay", type=int, required=True,
-                        help="delay parameter in the "
-                        "Hestenes-Stiefel Estimator")
     args = parser.parse_args()
 
     MINITER = args.miniter
-    DELAY = args.delay
     THETA = args.theta
     FUDGE = args.fudge
 
@@ -55,10 +51,10 @@ def main() -> None:
     path_to_dirichlet = base_path / Path('dirichlet.dat')
 
     base_results_path = (
-        Path('results/experiment_08') /
+        Path('results/experiment_09') /
         Path(
             f'theta-{THETA}_fudge-{FUDGE}_'
-            f'miniter-{MINITER}delay-{DELAY}'))
+            f'miniter-{MINITER}'))
 
     coordinates, elements = io_helpers.read_mesh(
         path_to_coordinates=path_to_coordinates,
@@ -200,7 +196,7 @@ def main() -> None:
             break
 
         # compute exact galerkin solution on current mesh
-        solution, _ = solvers.solve_laplace(
+        galerkin_solution, _ = solvers.solve_laplace(
             coordinates=coordinates,
             elements=elements,
             dirichlet=boundaries[0],
@@ -225,13 +221,13 @@ def main() -> None:
         # Perform CG on the current mesh
         # ------------------------------
         # assembly of right hand side
-        custom_callback = AriolisCustomCallback(
+        custom_callback = ArioliSanityCheckCustomCallback(
             batch_size=1,
             min_n_iterations_per_mesh=MINITER,
             elements=elements,
             coordinates=coordinates,
             boundaries=boundaries,
-            delay=DELAY,
+            galerkin_solution=galerkin_solution,
             fudge=FUDGE,
             cubature_rule=CubatureRuleEnum.DAYTAYLOR)
 
@@ -261,7 +257,7 @@ def main() -> None:
         dump_object(obj=n_iterations_done, path_to_file=base_results_path /
                     Path(f'{n_dofs}/n_iterations_done.pkl'))
         dump_object(
-            obj=solution, path_to_file=base_results_path /
+            obj=galerkin_solution, path_to_file=base_results_path /
             Path(f'{n_dofs}/galerkin_solution.pkl'))
         dump_object(obj=current_iterate, path_to_file=base_results_path /
                     Path(f'{n_dofs}/last_iterate.pkl'))
