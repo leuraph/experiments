@@ -45,7 +45,19 @@ $$
 E(u^n) - E(u^{n+d}) \leq \left(\frac{- \alpha}{n_{\text{Dof}}}\right) E(u^n),
 $$
 where $\alpha$ denotes an additional fudge parameter, not mentioned in [1].
-Then, EVA is performed using the last iterate $u^{n+d}$.
+Then, EVA is performed using the last iterate $u^{n+d}$,
+where $d$ denotes the delay.
+
+## Experiment 09
+This experiment is a sanity check for Ariolis [1] stopping criterion.
+Namely, this experiment performs global CG iterations until an exact implementation
+of Ariolis [1] stopping criterion without any approximations is met, i.e.
+$$
+\|u_h - u_h^{n^\star}\|_a^2 \leq \frac{\alpha}{n_{\text{Dof}}} \|u_h\|_a^2,
+$$
+where $\alpha$ denotes an additional fudge parameter, not mentioned in [1].
+Then, EVA is performed using the last iterate $u^{n+d}$,
+where $d$ denotes the delay.
 
 # References
 - [1] Arioli, M.
