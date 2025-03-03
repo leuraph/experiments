@@ -664,6 +664,7 @@ class AriolisCustomCallback(CustomCallBack):
     delay: int
     n_callback_called: int
     energy_history: list[float]
+    iterate_history: list[np.ndarray]
     fudge: float
 
     def __init__(
@@ -687,6 +688,7 @@ class AriolisCustomCallback(CustomCallBack):
         self.fudge = fudge
         self.n_callback_called = 0
         self.energy_history = []
+        self.iterate_history = []
 
         # calculate number of degrees of freedom
         n_vertices = coordinates.shape[0]
@@ -710,20 +712,25 @@ class AriolisCustomCallback(CustomCallBack):
         current_energy = self.calculate_energy(
             current_iterate=current_iterate)
         self.energy_history.append(current_energy)
+        self.iterate_history.append(current_iterate)
 
         delay_reached = self.n_callback_called >= self.delay + 1
         if not delay_reached:
             return
 
         energy_before_delay = self.energy_history[-(self.delay+1)]
+        iterate_before_delay = self.iterate_history[-(self.delay+1)]
 
-        lhs = energy_before_delay - current_energy
-        rhs = -(self.fudge/self.n_dofs) * energy_before_delay
+        lhs = ((1.+self.n_dofs)/self.n_dofs) * energy_before_delay
+        rhs = current_energy
+        print(f'E(u_n) = {energy_before_delay}')
+        print(f'nDOF = {self.n_dofs}')
+        print(f'{lhs} <= {rhs} ?')
         converged = lhs <= rhs
 
         if converged:
             converged_exception = ConvergedException(
-                last_iterate=current_iterate,
+                last_iterate=iterate_before_delay,
                 n_iterations_done=self.n_iterations_done,
                 energy_history=self.energy_history)
             raise converged_exception
