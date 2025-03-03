@@ -9,7 +9,7 @@ from scipy.sparse import csr_matrix
 from variational_adaptivity.markers import doerfler_marking
 import argparse
 from scipy.sparse.linalg import cg
-from custom_callback import ConvergedException, ArioliSanityCheckCustomCallback
+from custom_callback import ConvergedException, ArioliHeuristicCustomCallback
 from ismember import is_row_in
 from variational_adaptivity.edge_based_variational_adaptivity import \
     get_energy_gains
@@ -51,7 +51,7 @@ def main() -> None:
     path_to_dirichlet = base_path / Path('dirichlet.dat')
 
     base_results_path = (
-        Path('results/experiment_09') /
+        Path('results/experiment_10') /
         Path(
             f'theta-{THETA}_fudge-{FUDGE}_'
             f'miniter-{MINITER}'))
@@ -221,7 +221,7 @@ def main() -> None:
         # Perform CG on the current mesh
         # ------------------------------
         # assembly of right hand side
-        custom_callback = ArioliSanityCheckCustomCallback(
+        custom_callback = ArioliHeuristicCustomCallback(
             batch_size=1,
             min_n_iterations_per_mesh=MINITER,
             elements=elements,
@@ -295,7 +295,7 @@ def main() -> None:
             f=f,
             cubature_rule=CubatureRuleEnum.DAYTAYLOR,
             verbose=True,
-            parallel=False)
+            parallel=True)
 
         # dörfler based on EVA
         # --------------------
