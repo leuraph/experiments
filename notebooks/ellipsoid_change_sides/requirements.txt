@@ -1,0 +1,4 @@
+jupyter
+numpy
+scipy
+p1afempy
