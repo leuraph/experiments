@@ -9,7 +9,7 @@ from scipy.sparse import csr_matrix
 from variational_adaptivity.markers import doerfler_marking
 import argparse
 from scipy.sparse.linalg import cg
-from custom_callback import ConvergedException, ArioliSanityCheckCustomCallback
+from custom_callback import ConvergedException, ArioliEllipsoidCustomCallback
 from ismember import is_row_in
 from variational_adaptivity.edge_based_variational_adaptivity import \
     get_energy_gains
@@ -27,16 +27,16 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--theta", type=float, required=True,
                         help="value of theta used in the Dörfler marking")
-    parser.add_argument("--fudge", type=float, required=True,
-                        help="additional fudge parameter "
-                        "in Ariolis stopping criterion")
-    parser.add_argument("--miniter", type=int, required=True,
-                        help="minimum number of iterations on each mesh")
+    parser.add_argument("--batchsize", type=int, required=True,
+                        help="number of CG iterations "
+                        "between convergence checks")
+    parser.add_argument("--delay", type=int, required=True,
+                        help="number of bounces in ellispoid")
     args = parser.parse_args()
 
-    MINITER = args.miniter
     THETA = args.theta
-    FUDGE = args.fudge
+    BATCHSIZE = args.batchsize
+    DELAY = args.delay
 
     n_max_dofs = 1e6
     n_initial_refinements = 5
@@ -51,10 +51,10 @@ def main() -> None:
     path_to_dirichlet = base_path / Path('dirichlet.dat')
 
     base_results_path = (
-        Path('results/experiment_09') /
+        Path('results/experiment_11') /
         Path(
-            f'theta-{THETA}_fudge-{FUDGE}_'
-            f'miniter-{MINITER}'))
+            f'theta-{THETA}_batchsize-{BATCHSIZE}_'
+            f'delay-{DELAY}'))
 
     coordinates, elements = io_helpers.read_mesh(
         path_to_coordinates=path_to_coordinates,
@@ -221,15 +221,14 @@ def main() -> None:
         # Perform CG on the current mesh
         # ------------------------------
         # assembly of right hand side
-        custom_callback = ArioliSanityCheckCustomCallback(
-            batch_size=1,
-            min_n_iterations_per_mesh=MINITER,
+        custom_callback = ArioliEllipsoidCustomCallback(
+            batch_size=BATCHSIZE,
+            min_n_iterations_per_mesh=1,
             elements=elements,
             coordinates=coordinates,
             boundaries=boundaries,
-            galerkin_solution=galerkin_solution,
-            fudge=FUDGE,
-            cubature_rule=CubatureRuleEnum.DAYTAYLOR)
+            cubature_rule=CubatureRuleEnum.DAYTAYLOR,
+            delay=DELAY)
 
         try:
             current_iterate[free_nodes], _ = cg(
@@ -240,7 +239,6 @@ def main() -> None:
                 callback=custom_callback)
         except ConvergedException as conv:
             current_iterate = conv.last_iterate
-            energy_history = np.array(conv.energy_history)
             n_iterations_done = conv.n_iterations_done
             print(f"CG stopped after {conv.n_iterations_done} iterations!")
 
@@ -252,8 +250,6 @@ def main() -> None:
                     Path(f'{n_dofs}/coordinates.pkl'))
         dump_object(obj=boundaries, path_to_file=base_results_path /
                     Path(f'{n_dofs}/boundaries.pkl'))
-        dump_object(obj=energy_history, path_to_file=base_results_path /
-                    Path(f'{n_dofs}/energy_history.pkl'))
         dump_object(obj=n_iterations_done, path_to_file=base_results_path /
                     Path(f'{n_dofs}/n_iterations_done.pkl'))
         dump_object(
@@ -295,7 +291,7 @@ def main() -> None:
             f=f,
             cubature_rule=CubatureRuleEnum.DAYTAYLOR,
             verbose=True,
-            parallel=False)
+            parallel=True)
 
         # dörfler based on EVA
         # --------------------
