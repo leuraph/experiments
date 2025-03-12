@@ -967,16 +967,16 @@ class ArioliEllipsoidCustomCallback(CustomCallBack):
                 - stiffness_matrix_on_free_nodes.dot(
                     current_iterate_ellipsoid))
 
+        def get_energy_norm_squared(
+                current_iterate_ellipsoid: np.ndarray) -> float:
+            return current_iterate_ellipsoid.dot(
+                stiffness_matrix_on_free_nodes.dot(current_iterate_ellipsoid))
+
         def get_step_size(current_residual, current_direction) -> np.ndarray:
             """returns the step size in order to stay on the level set"""
             numerator = 2. * current_residual.dot(current_direction)
             denominator = current_direction.dot(current_direction)
             return numerator / denominator
-
-        def get_energy_norm_squared(
-                current_iterate_ellipsoid: np.ndarray) -> float:
-            return current_iterate_ellipsoid.dot(
-                stiffness_matrix_on_free_nodes.dot(current_iterate_ellipsoid))
 
         current_iterate_on_free_nodes = np.copy(
             current_iterate[self.free_nodes])
