@@ -1011,7 +1011,7 @@ class ArioliEllipsoidCustomCallback(CustomCallBack):
         current_energy = self.calculate_energy(current_iterate=current_iterate)
 
         potential_upper_bounds = self.get_potential_upper_bounds(
-            current_iterate=current_energy)
+            current_iterate=current_iterate)
 
         potential_upper_bound = np.max(potential_upper_bounds)
 
