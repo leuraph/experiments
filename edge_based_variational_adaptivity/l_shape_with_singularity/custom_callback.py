@@ -974,7 +974,7 @@ class ArioliEllipsoidCustomCallback(CustomCallBack):
             return numerator / denominator
 
         def get_energy_norm_squared(
-                current_iterate_ellipsoid: np.ndarra) -> float:
+                current_iterate_ellipsoid: np.ndarray) -> float:
             return current_iterate_ellipsoid.dot(
                 stiffness_matrix_on_free_nodes.dot(current_iterate_ellipsoid))
 
