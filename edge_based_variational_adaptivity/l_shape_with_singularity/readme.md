@@ -59,6 +59,30 @@ where $\alpha$ denotes an additional fudge parameter, not mentioned in [1].
 Then, EVA is performed using the last iterate $u^{n+d}$,
 where $d$ denotes the delay.
 
+## Experiment 10
+
+## Experiment 11
+Based on sole numerical experiments (for now), it is observed
+that the following iteration can produce upper bounds on the Galerkin
+solution's energy norm.
+Namely, let $u^n$ be the current approximation of $u_h$ obtained after $n$ CG steps.
+then, we perform the following updates
+$$
+\begin{aligned}
+    w_0 &= u_n, \\
+    d_0 &= r_0, \\
+    w_{j+1} &= w_j + \alpha(w_j, d_j) d_j, \\
+    d_{j+1} &= H(r_{j+1}) d_{j},
+\end{aligned}
+$$
+where $H(v)$ is the Householder reflector associated to $v$,
+$\alpha(w_j, d_d) := \frac{r_j^\top d_j}{\|d_j\|_2^2}$
+ensuring that we always stay on the level set $\mathcal{M}_{w_0}$.
+The hypothesis is that, after "enough" iterations, we visit
+points for which we have $\|u_h\|_a \leq \|w_n\|_a$, i.e.
+an upper bound for the Galerkin solution's energy norm.
+
+
 # References
 - [1] Arioli, M.
     A Stopping Criterion for the Conjugate Gradient Algorithm
