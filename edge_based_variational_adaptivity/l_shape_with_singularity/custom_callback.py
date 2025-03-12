@@ -975,7 +975,7 @@ class ArioliEllipsoidCustomCallback(CustomCallBack):
         def get_step_size(current_residual, current_direction) -> np.ndarray:
             """returns the step size in order to stay on the level set"""
             numerator = 2. * current_residual.dot(current_direction)
-            denominator = current_direction.dot(current_direction)
+            denominator = get_energy_norm_squared(current_direction)
             return numerator / denominator
 
         current_iterate_on_free_nodes = np.copy(
