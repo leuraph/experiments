@@ -990,7 +990,9 @@ class ArioliEllipsoidCustomCallback(CustomCallBack):
         for _ in range(self.delay):
             current_iterate_ellipsoid = (
                 current_iterate_ellipsoid
-                + get_step_size(current_iterate_ellipsoid, current_direction)
+                + get_step_size(
+                    current_residual=current_residual,
+                    current_direction=current_direction)
                 * current_direction)
             current_residual = get_residual(
                 current_iterate_ellipsoid=current_iterate_ellipsoid)
