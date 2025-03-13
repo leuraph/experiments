@@ -908,7 +908,7 @@ class ArioliEllipsoidMaxCustomCallback(CustomCallBack):
             coordinates,
             boundaries,
             cubature_rule,
-            delay: int):
+            delay: int = None):
         super().__init__(
             batch_size,
             min_n_iterations_per_mesh,
@@ -916,8 +916,6 @@ class ArioliEllipsoidMaxCustomCallback(CustomCallBack):
             coordinates,
             boundaries,
             cubature_rule)
-
-        self.delay = delay
 
         # calculate number of degrees of freedom
         n_vertices = coordinates.shape[0]
@@ -927,6 +925,11 @@ class ArioliEllipsoidMaxCustomCallback(CustomCallBack):
         free_nodes = np.zeros(n_vertices, dtype=bool)
         free_nodes[indices_of_free_nodes] = 1
         self.n_dofs = np.sum(free_nodes)
+
+        if delay is None:
+            self.delay = self.n_dofs
+            return
+        self.delay = delay
 
     def calculate_energy(self, current_iterate) -> float:
         return (
@@ -1041,7 +1044,7 @@ class ArioliEllipsoidAvgCustomCallback(CustomCallBack):
             coordinates,
             boundaries,
             cubature_rule,
-            delay: int):
+            delay: int = None):
         super().__init__(
             batch_size,
             min_n_iterations_per_mesh,
@@ -1049,8 +1052,6 @@ class ArioliEllipsoidAvgCustomCallback(CustomCallBack):
             coordinates,
             boundaries,
             cubature_rule)
-
-        self.delay = delay
 
         # calculate number of degrees of freedom
         n_vertices = coordinates.shape[0]
@@ -1060,6 +1061,11 @@ class ArioliEllipsoidAvgCustomCallback(CustomCallBack):
         free_nodes = np.zeros(n_vertices, dtype=bool)
         free_nodes[indices_of_free_nodes] = 1
         self.n_dofs = np.sum(free_nodes)
+
+        if delay is None:
+            self.delay = self.n_dofs
+            return
+        self.delay = delay
 
     def calculate_energy(self, current_iterate) -> float:
         return (
