@@ -1027,3 +1027,136 @@ class ArioliEllipsoidMaxCustomCallback(CustomCallBack):
                 last_iterate=current_iterate,
                 n_iterations_done=self.n_iterations_done)
             raise converged_exception
+
+
+class ArioliEllipsoidAvgCustomCallback(CustomCallBack):
+    delay: int  # how many times we bounce inside the ellipsoid
+    n_dofs: int  # number of degrees of freedom on mesh at hand
+
+    def __init__(
+            self,
+            batch_size,
+            min_n_iterations_per_mesh,
+            elements,
+            coordinates,
+            boundaries,
+            cubature_rule,
+            delay: int):
+        super().__init__(
+            batch_size,
+            min_n_iterations_per_mesh,
+            elements,
+            coordinates,
+            boundaries,
+            cubature_rule)
+
+        self.delay = delay
+
+        # calculate number of degrees of freedom
+        n_vertices = coordinates.shape[0]
+        indices_of_free_nodes = np.setdiff1d(
+            ar1=np.arange(n_vertices),
+            ar2=np.unique(boundaries[0].flatten()))
+        free_nodes = np.zeros(n_vertices, dtype=bool)
+        free_nodes[indices_of_free_nodes] = 1
+        self.n_dofs = np.sum(free_nodes)
+
+    def calculate_energy(self, current_iterate) -> float:
+        return (
+            0.5*current_iterate.dot(self.lhs_matrix.dot(current_iterate))
+            - self.rhs_vector.dot(current_iterate))
+
+    @staticmethod
+    def apply_householder(v: np.ndarray, w: np.ndarray) -> np.ndarray:
+        """returns H(v)w"""
+        return w - 2 * (v.dot(w))/(v.dot(v)) * v
+
+    def get_potential_upper_bounds(
+            self, current_iterate: np.ndarray) -> np.ndarray:
+        """
+        bounces inside the current level set
+        and produes potential upper bounds at the same time
+
+        parameters
+        ----------
+        current_iterate: np.ndarray
+            bouncing inside ellipsoid is
+            initiated with current iterate
+
+        returns
+        -------
+        potential_upper_bounds: np.ndarray
+            array containing the values
+            |w_n|^2_a, n=0, ..., delay
+        """
+
+        stiffness_matrix_on_free_nodes = self.lhs_matrix[
+            self.free_nodes, :][:, self.free_nodes]
+        load_vector_on_free_nodes = self.rhs_vector[self.free_nodes]
+
+        def get_residual(current_iterate_ellipsoid: np.ndarray) -> np.ndarray:
+            return (
+                load_vector_on_free_nodes
+                - stiffness_matrix_on_free_nodes.dot(
+                    current_iterate_ellipsoid))
+
+        def get_energy_norm_squared(
+                current_iterate_ellipsoid: np.ndarray) -> float:
+            return current_iterate_ellipsoid.dot(
+                stiffness_matrix_on_free_nodes.dot(current_iterate_ellipsoid))
+
+        def get_step_size(current_residual, current_direction) -> np.ndarray:
+            """returns the step size in order to stay on the level set"""
+            numerator = 2. * current_residual.dot(current_direction)
+            denominator = get_energy_norm_squared(current_direction)
+            return numerator / denominator
+
+        current_iterate_on_free_nodes = np.copy(
+            current_iterate[self.free_nodes])
+
+        current_iterate_ellipsoid = current_iterate_on_free_nodes
+        current_residual = get_residual(
+            current_iterate_ellipsoid=current_iterate_ellipsoid)
+        current_direction = current_residual
+
+        potential_upper_bounds = []
+        for _ in range(self.delay):
+            current_iterate_ellipsoid = (
+                current_iterate_ellipsoid
+                + get_step_size(
+                    current_residual=current_residual,
+                    current_direction=current_direction)
+                * current_direction)
+            current_residual = get_residual(
+                current_iterate_ellipsoid=current_iterate_ellipsoid)
+            current_direction = self.apply_householder(
+                current_residual, current_direction)
+
+            potential_upper_bounds.append(
+                get_energy_norm_squared(
+                    current_iterate_ellipsoid=current_iterate_ellipsoid))
+
+        return np.array(potential_upper_bounds)
+
+    def perform_callback(
+            self,
+            current_iterate: np.ndarray) -> None:
+
+        gamma_squared = 1./self.n_dofs
+        current_energy = self.calculate_energy(current_iterate=current_iterate)
+
+        potential_upper_bounds = self.get_potential_upper_bounds(
+            current_iterate=current_iterate)
+
+        potential_upper_bound = np.max(potential_upper_bounds)
+
+        lhs = (1-gamma_squared)*potential_upper_bound
+        rhs = -2*current_energy
+
+        converged = lhs <= rhs
+
+        if converged:
+            converged_exception = ConvergedException(
+                last_iterate=current_iterate,
+                n_iterations_done=self.n_iterations_done)
+            raise converged_exception
