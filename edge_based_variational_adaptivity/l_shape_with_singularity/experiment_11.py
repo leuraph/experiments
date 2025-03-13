@@ -9,7 +9,8 @@ from scipy.sparse import csr_matrix
 from variational_adaptivity.markers import doerfler_marking
 import argparse
 from scipy.sparse.linalg import cg
-from custom_callback import ConvergedException, ArioliEllipsoidCustomCallback
+from custom_callback import ConvergedException, \
+    ArioliEllipsoidMaxCustomCallback
 from ismember import is_row_in
 from variational_adaptivity.edge_based_variational_adaptivity import \
     get_energy_gains
@@ -221,7 +222,7 @@ def main() -> None:
         # Perform CG on the current mesh
         # ------------------------------
         # assembly of right hand side
-        custom_callback = ArioliEllipsoidCustomCallback(
+        custom_callback = ArioliEllipsoidMaxCustomCallback(
             batch_size=BATCHSIZE,
             min_n_iterations_per_mesh=1,
             elements=elements,

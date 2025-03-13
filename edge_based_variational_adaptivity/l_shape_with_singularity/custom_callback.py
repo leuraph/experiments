@@ -896,7 +896,7 @@ class ArioliHeuristicCustomCallback(CustomCallBack):
             raise converged_exception
 
 
-class ArioliEllipsoidCustomCallback(CustomCallBack):
+class ArioliEllipsoidMaxCustomCallback(CustomCallBack):
     delay: int  # how many times we bounce inside the ellipsoid
     n_dofs: int  # number of degrees of freedom on mesh at hand
 
