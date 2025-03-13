@@ -981,6 +981,14 @@ class ArioliEllipsoidMaxCustomCallback(CustomCallBack):
             denominator = get_energy_norm_squared(current_direction)
             return numerator / denominator
 
+        def calculate_energy_free_nodes(
+                current_iterate_ellipsoid: np.ndarray) -> float:
+            return (
+                0.5 * current_iterate_ellipsoid.dot(
+                    stiffness_matrix_on_free_nodes.dot(
+                        current_iterate_ellipsoid))
+                - load_vector_on_free_nodes.dot(current_iterate_ellipsoid))
+
         current_iterate_on_free_nodes = np.copy(
             current_iterate[self.free_nodes])
 
@@ -990,6 +998,8 @@ class ArioliEllipsoidMaxCustomCallback(CustomCallBack):
         current_direction = current_residual
 
         potential_upper_bounds = []
+        energy_history = [calculate_energy_free_nodes(
+            current_iterate_ellipsoid)]
         for _ in range(self.delay):
             current_iterate_ellipsoid = (
                 current_iterate_ellipsoid
@@ -1002,9 +1012,15 @@ class ArioliEllipsoidMaxCustomCallback(CustomCallBack):
             current_direction = self.apply_householder(
                 current_residual, current_direction)
 
+            energy_history.append(
+                calculate_energy_free_nodes(current_iterate_ellipsoid))
             potential_upper_bounds.append(
                 get_energy_norm_squared(
                     current_iterate_ellipsoid=current_iterate_ellipsoid))
+
+        # sanity check: are all points generated on the level set??
+        if not np.allclose(np.array(energy_history), energy_history[0]):
+            raise RuntimeError('not all points lie on the same level set')
 
         return np.array(potential_upper_bounds)
 
@@ -1117,6 +1133,14 @@ class ArioliEllipsoidAvgCustomCallback(CustomCallBack):
             denominator = get_energy_norm_squared(current_direction)
             return numerator / denominator
 
+        def calculate_energy_free_nodes(
+                current_iterate_ellipsoid: np.ndarray) -> float:
+            return (
+                0.5 * current_iterate_ellipsoid.dot(
+                    stiffness_matrix_on_free_nodes.dot(
+                        current_iterate_ellipsoid))
+                - load_vector_on_free_nodes.dot(current_iterate_ellipsoid))
+
         current_iterate_on_free_nodes = np.copy(
             current_iterate[self.free_nodes])
 
@@ -1125,6 +1149,8 @@ class ArioliEllipsoidAvgCustomCallback(CustomCallBack):
             current_iterate_ellipsoid=current_iterate_ellipsoid)
         current_direction = current_residual
 
+        energy_history = [calculate_energy_free_nodes(
+            current_iterate_ellipsoid)]
         average = np.zeros(self.n_dofs)
         for _ in range(self.delay):
             current_iterate_ellipsoid = (
@@ -1138,7 +1164,13 @@ class ArioliEllipsoidAvgCustomCallback(CustomCallBack):
             current_direction = self.apply_householder(
                 current_residual, current_direction)
 
+            energy_history.append(
+                calculate_energy_free_nodes(current_iterate_ellipsoid))
             average += (1./self.delay) * current_iterate_ellipsoid
+
+        # sanity check: are all points generated on the level set??
+        if not np.allclose(np.array(energy_history), energy_history[0]):
+            raise RuntimeError('not all points lie on the same level set')
 
         return get_energy_norm_squared(average)
 
