@@ -1143,10 +1143,8 @@ class ArioliEllipsoidAvgCustomCallback(CustomCallBack):
         gamma_squared = 1./self.n_dofs
         current_energy = self.calculate_energy(current_iterate=current_iterate)
 
-        potential_upper_bounds = self.get_potential_upper_bounds(
+        potential_upper_bound = self.get_potential_upper_bound(
             current_iterate=current_iterate)
-
-        potential_upper_bound = np.max(potential_upper_bounds)
 
         lhs = (1-gamma_squared)*potential_upper_bound
         rhs = -2*current_energy
