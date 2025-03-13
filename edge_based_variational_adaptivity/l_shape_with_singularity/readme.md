@@ -61,7 +61,7 @@ where $d$ denotes the delay.
 
 ## Experiment 10
 
-## Experiment 11
+# Combininng Arioli's stopping criterion [1] with a new potential upper bound or approximation
 Based on sole numerical experiments (for now), it is observed
 that the following iteration can produce upper bounds on the Galerkin
 solution's energy norm.
@@ -82,6 +82,42 @@ The hypothesis is that, after "enough" iterations, we visit
 points for which we have $\|u_h\|_a \leq \|w_n\|_a$, i.e.
 an upper bound for the Galerkin solution's energy norm.
 
+The following experiments are based on the update procedure
+as described above.
+Reqriting Arioli's stopping criterion yields
+$$
+(1-\gamma^2) \|u_h\|^2_a \leq -2 E(u_n)
+$$
+
+## Experiment 11
+Given some delay value $d \in \mathbb{N}$,
+we postulate
+$$
+\|u_h\|_a^2 \leq \max_{n \in \{0, \dots, d\}} \|w_n\|^2_a
+$$
+
+## Experiment 12
+Given some delay value $d \in \mathbb{N}$,
+we define
+$$
+\overline{w} := 1/d \sum_{n=1}^d w_n
+$$
+and postulate
+$$
+\|u_h\|_a^2 \approx \| \overline{w} \|^2_a
+$$
+
+## Experiment 13
+Same as experiment 11 but the delay value $d$ is
+dynamically set to the corresponding number of
+degrees of freedom, i.e.
+$d = n_{\text{DOF}}$.
+
+## Experiment 14
+Same as experiment 12 but the delay value $d$ is
+dynamically set to the corresponding number of
+degrees of freedom, i.e.
+$d = n_{\text{DOF}}$.
 
 # References
 - [1] Arioli, M.
