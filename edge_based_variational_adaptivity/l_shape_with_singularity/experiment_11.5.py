@@ -31,13 +31,11 @@ def main() -> None:
     parser.add_argument("--batchsize", type=int, required=True,
                         help="number of CG iterations "
                         "between convergence checks")
-    parser.add_argument("--delay", type=int, required=True,
-                        help="number of bounces in ellispoid")
     args = parser.parse_args()
 
     THETA = args.theta
     BATCHSIZE = args.batchsize
-    DELAY = args.delay
+    DELAY = None
 
     n_max_dofs = 1e6
     n_initial_refinements = 5
@@ -52,10 +50,9 @@ def main() -> None:
     path_to_dirichlet = base_path / Path('dirichlet.dat')
 
     base_results_path = (
-        Path('results/experiment_11') /
+        Path('results/experiment_13') /
         Path(
-            f'theta-{THETA}_batchsize-{BATCHSIZE}_'
-            f'delay-{DELAY}'))
+            f'theta-{THETA}_batchsize-{BATCHSIZE}'))
 
     coordinates, elements = io_helpers.read_mesh(
         path_to_coordinates=path_to_coordinates,
