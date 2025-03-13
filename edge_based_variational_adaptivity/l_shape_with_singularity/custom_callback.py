@@ -1071,11 +1071,11 @@ class ArioliEllipsoidAvgCustomCallback(CustomCallBack):
         """returns H(v)w"""
         return w - 2 * (v.dot(w))/(v.dot(v)) * v
 
-    def get_potential_upper_bounds(
+    def get_potential_upper_bound(
             self, current_iterate: np.ndarray) -> np.ndarray:
         """
         bounces inside the current level set
-        and produes potential upper bounds at the same time
+        and averages all points on the level set
 
         parameters
         ----------
@@ -1085,9 +1085,9 @@ class ArioliEllipsoidAvgCustomCallback(CustomCallBack):
 
         returns
         -------
-        potential_upper_bounds: np.ndarray
-            array containing the values
-            |w_n|^2_a, n=0, ..., delay
+        potential_upper_bound: float
+            energy norm squared of the averaged point cloud
+            |1/d * sum w_n|^2_a, n=1, ..., delay
         """
 
         stiffness_matrix_on_free_nodes = self.lhs_matrix[
@@ -1119,7 +1119,7 @@ class ArioliEllipsoidAvgCustomCallback(CustomCallBack):
             current_iterate_ellipsoid=current_iterate_ellipsoid)
         current_direction = current_residual
 
-        potential_upper_bounds = []
+        average = np.zeros(self.n_dofs)
         for _ in range(self.delay):
             current_iterate_ellipsoid = (
                 current_iterate_ellipsoid
@@ -1132,11 +1132,9 @@ class ArioliEllipsoidAvgCustomCallback(CustomCallBack):
             current_direction = self.apply_householder(
                 current_residual, current_direction)
 
-            potential_upper_bounds.append(
-                get_energy_norm_squared(
-                    current_iterate_ellipsoid=current_iterate_ellipsoid))
+            average += (1./self.delay) * current_iterate_ellipsoid
 
-        return np.array(potential_upper_bounds)
+        return get_energy_norm_squared(average)
 
     def perform_callback(
             self,
