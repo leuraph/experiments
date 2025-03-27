@@ -119,6 +119,26 @@ dynamically set to the corresponding number of
 degrees of freedom, i.e.
 $d = n_{\text{DOF}}$.
 
+## Experiment 15 (monitor relative changes in energy and energy norm)
+This experiment is done in order to produce some approximations
+$u_N^n$ used to plot and monitor the relative changes in
+(i) the energy norm squared and
+(ii) the energy itself, i.e.
+$$
+\begin{aligned}
+(i)~~M_1^n &:= \left| \frac{\|u_N^{n-1}\|_a^2 - \|u_N^n\|_a^2}{\|u_N^n\|_a^2} \right|, \\
+(ii)~~M_2^n &:= \left| \frac{E(u_N^{n-1}) - E(u_N^n)}{E(u_N^n)} \right|.
+\end{aligned}
+$$
+
+Note that the experiment itself only drops the approximations $u_N^n$,
+whereas the rest is performed in the post-processing.
+
+This is done in the following way.
+Start with a relatively fine mesh $\mathbb{V}_0$, solve exactly to get $u^h_0$, refine with EVA to get an initial mesh $\mathbb{V}_1$ and canonically embed (linear interpolation) $u^h_{0} \mapsto u^0_1 \in \mathbb{V}_1$.
+Then, on each mesh, perform a pre-defined number of CG iterations `n_cg_iterations`, use the last approximation to perform EVA.
+Repeat on each mesh until the number of DOFs reaches a pre-defined maximum.
+
 # References
 - [1] Arioli, M.
     A Stopping Criterion for the Conjugate Gradient Algorithm
