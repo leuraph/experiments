@@ -7,38 +7,21 @@ from configuration import f, uD
 from load_save_dumps import dump_object
 from scipy.sparse import csr_matrix
 from variational_adaptivity.markers import doerfler_marking
-import argparse
+from custom_callback import RecorderCustomCallback, MonitorException
 from scipy.sparse.linalg import cg
-from custom_callback import ConvergedException, \
-    ArioliEllipsoidAvgCustomCallback
 from ismember import is_row_in
 from variational_adaptivity.edge_based_variational_adaptivity import \
     get_energy_gains
 from triangle_cubature.cubature_rule import CubatureRuleEnum
 
 
-def calculate_energy(
-        u: np.ndarray,
-        lhs_matrix: np.ndarray,
-        rhs_vector: np.ndarray) -> float:
-    return 0.5 * u.dot(lhs_matrix.dot(u)) - rhs_vector.dot(u)
-
-
 def main() -> None:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--theta", type=float, required=True,
-                        help="value of theta used in the Dörfler marking")
-    parser.add_argument("--batchsize", type=int, required=True,
-                        help="number of CG iterations "
-                        "between convergence checks")
-    args = parser.parse_args()
 
-    THETA = args.theta
-    BATCHSIZE = args.batchsize
-    DELAY = None
-
-    n_max_dofs = 1e6
-    n_initial_refinements = 5
+    THETA = 0.5
+    N_MAX_DOF = 1e6
+    N_MAX_CG = 100
+    MINITER = 5
+    N_INITIAL_REFINEMENTS = 5
 
     # ------------------------------------------------
     # Setup
@@ -49,10 +32,7 @@ def main() -> None:
     path_to_coordinates = base_path / Path('coordinates.dat')
     path_to_dirichlet = base_path / Path('dirichlet.dat')
 
-    base_results_path = (
-        Path('results/experiment_14') /
-        Path(
-            f'theta-{THETA}_batchsize-{BATCHSIZE}'))
+    base_results_path = (Path('results/experiment_15'))
 
     coordinates, elements = io_helpers.read_mesh(
         path_to_coordinates=path_to_coordinates,
@@ -64,7 +44,7 @@ def main() -> None:
 
     # initial refinement
     # ------------------
-    for _ in range(n_initial_refinements):
+    for _ in range(N_INITIAL_REFINEMENTS):
         marked = np.arange(elements.shape[0])
         coordinates, elements, boundaries, _ = \
             refinement.refineNVB(coordinates=coordinates,
@@ -87,35 +67,6 @@ def main() -> None:
     # initializing the iteration with Galerkin
     # solution on first mesh
     current_iterate = np.copy(galerkin_solution)
-
-    # calculating free nodes on the initial mesh
-    # ------------------------------------------
-    n_vertices = coordinates.shape[0]
-    indices_of_free_nodes = np.setdiff1d(
-        ar1=np.arange(n_vertices),
-        ar2=np.unique(boundaries[0].flatten()))
-    free_nodes = np.zeros(n_vertices, dtype=bool)
-    free_nodes[indices_of_free_nodes] = 1
-    n_dofs = np.sum(free_nodes)
-
-    # dump initial mesh and initial Galerkin solution
-    # -----------------------------------------------
-    dump_object(obj=elements, path_to_file=base_results_path /
-                Path(f'{n_dofs}/elements.pkl'))
-    dump_object(obj=coordinates, path_to_file=base_results_path /
-                Path(f'{n_dofs}/coordinates.pkl'))
-    dump_object(obj=boundaries, path_to_file=base_results_path /
-                Path(f'{n_dofs}/boundaries.pkl'))
-    dump_object(
-        obj=galerkin_solution, path_to_file=base_results_path /
-        Path(f'{n_dofs}/galerkin_solution.pkl'))
-    dump_object(
-        obj=current_iterate, path_to_file=base_results_path /
-        Path(f'{n_dofs}/last_iterate.pkl'))
-    dump_object(
-        obj=int(0), path_to_file=base_results_path /
-        Path(f'{n_dofs}/n_iterations_done.pkl'))
-    # -----------------------------------------------------
 
     # perform first refinement by hand
     # --------------------------------
@@ -187,9 +138,9 @@ def main() -> None:
         n_dofs = np.sum(free_nodes)
 
         # stop iteration if maximum number of DOF is reached
-        if n_dofs >= n_max_dofs:
+        if n_dofs >= N_MAX_DOF:
             print(
-                f'Maximum number of DOFs ({n_max_dofs})'
+                f'Maximum number of DOFs ({N_MAX_DOF})'
                 'reached, stopping iteration.')
             break
 
@@ -218,15 +169,15 @@ def main() -> None:
         # ------------------------------
         # Perform CG on the current mesh
         # ------------------------------
-        # assembly of right hand side
-        custom_callback = ArioliEllipsoidAvgCustomCallback(
-            batch_size=BATCHSIZE,
-            min_n_iterations_per_mesh=1,
+
+        custom_callback = RecorderCustomCallback(
+            batch_size=1,
+            min_n_iterations_per_mesh=MINITER,
             elements=elements,
             coordinates=coordinates,
             boundaries=boundaries,
-            cubature_rule=CubatureRuleEnum.DAYTAYLOR,
-            delay=DELAY)
+            max_n_iterations=N_MAX_CG,
+            cubature_rule=CubatureRuleEnum.DAYTAYLOR)
 
         try:
             current_iterate[free_nodes], _ = cg(
@@ -235,10 +186,10 @@ def main() -> None:
                 x0=current_iterate[free_nodes],
                 rtol=1e-100,
                 callback=custom_callback)
-        except ConvergedException as conv:
-            current_iterate = conv.last_iterate
-            n_iterations_done = conv.n_iterations_done
-            print(f"CG stopped after {conv.n_iterations_done} iterations!")
+        except MonitorException as ex:
+            energy_history = ex.energy_history
+            energy_norm_squared_history = ex.energy_norm_squared_history
+            print(f"CG stopped after {N_MAX_CG} iterations!")
 
         # dump the current state
         # ----------------------
@@ -248,13 +199,15 @@ def main() -> None:
                     Path(f'{n_dofs}/coordinates.pkl'))
         dump_object(obj=boundaries, path_to_file=base_results_path /
                     Path(f'{n_dofs}/boundaries.pkl'))
-        dump_object(obj=n_iterations_done, path_to_file=base_results_path /
-                    Path(f'{n_dofs}/n_iterations_done.pkl'))
         dump_object(
             obj=galerkin_solution, path_to_file=base_results_path /
             Path(f'{n_dofs}/galerkin_solution.pkl'))
-        dump_object(obj=current_iterate, path_to_file=base_results_path /
-                    Path(f'{n_dofs}/last_iterate.pkl'))
+        dump_object(obj=energy_history, path_to_file=base_results_path /
+                    Path(f'{n_dofs}/energy_history.pkl'))
+        dump_object(
+            obj=energy_norm_squared_history,
+            path_to_file=base_results_path /
+            Path(f'{n_dofs}/energy_norm_squared_history.pkl'))
 
         _, edge_to_nodes, _ = \
             provide_geometric_data(
@@ -289,7 +242,7 @@ def main() -> None:
             f=f,
             cubature_rule=CubatureRuleEnum.DAYTAYLOR,
             verbose=True,
-            parallel=False)
+            parallel=True)
 
         # dörfler based on EVA
         # --------------------

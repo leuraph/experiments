@@ -11,6 +11,18 @@ from p1afempy.data_structures import ElementsType, CoordinatesType, \
 from triangle_cubature.cubature_rule import CubatureRuleEnum
 
 
+class MonitorException(Exception):
+    energy_history: np.ndarray
+    energy_norm_squared_history: np.ndarray
+
+    def __init__(
+            self,
+            energy_history: np.ndarray,
+            energy_norm_squared_history: np.ndarray):
+        self.energy_history = energy_history
+        self.energy_norm_squared_history = energy_norm_squared_history
+
+
 class ConvergedException(Exception):
     energy_gains: np.ndarray
     last_iterate: np.ndarray
@@ -1193,4 +1205,67 @@ class ArioliEllipsoidAvgCustomCallback(CustomCallBack):
             converged_exception = ConvergedException(
                 last_iterate=current_iterate,
                 n_iterations_done=self.n_iterations_done)
+            raise converged_exception
+
+
+class RecorderCustomCallback(CustomCallBack):
+    """
+    Keeps track of the energy and energy norm squared.
+    Raises an Exception when `max_n_iterations` is reached.
+    """
+    max_n_iterations: int
+    energy_history: list[float]
+    energy_norm_squared_history: list[float]
+
+    def __init__(
+            self,
+            batch_size: int,
+            min_n_iterations_per_mesh: int,
+            elements: ElementsType,
+            coordinates: CoordinatesType,
+            boundaries: list[BoundaryType],
+            max_n_iterations: int,
+            cubature_rule: CubatureRuleEnum = CubatureRuleEnum.MIDPOINT,):
+        super().__init__(
+            batch_size=batch_size,
+            min_n_iterations_per_mesh=min_n_iterations_per_mesh,
+            elements=elements,
+            coordinates=coordinates,
+            boundaries=boundaries,
+            cubature_rule=cubature_rule)
+        self.max_n_iterations = max_n_iterations
+        self.energy_history = []
+        self.energy_norm_squared_history = []
+
+    def calculate_energy_norm_squared(self, u) -> float:
+        return u.dot(self.lhs_matrix.dot(u))
+
+    def calculate_energy(self, current_iterate) -> float:
+        return (
+            0.5*current_iterate.dot(self.lhs_matrix.dot(current_iterate))
+            - self.rhs_vector.dot(current_iterate))
+
+    def perform_callback(self, current_iterate: np.ndarray) -> None:
+
+        # calculating the current energy and energy norm squared
+        current_energy = self.calculate_energy(
+            current_iterate=current_iterate)
+        current_energy_norm_squared = self.calculate_energy_norm_squared(
+            u=current_iterate)
+
+        # appending to history
+        self.energy_history.append(current_energy)
+        self.energy_norm_squared_history.append(current_energy_norm_squared)
+
+        if self.n_iterations_done >= self.max_n_iterations:
+
+            # changing lists to arrays
+            energy_history = np.array(self.energy_history)
+            energy_norm_squared_history = np.array(
+                self.energy_norm_squared_history)
+
+            # prparing the exception and raising it
+            converged_exception = MonitorException(
+                energy_history=energy_history,
+                energy_norm_squared_history=energy_norm_squared_history)
             raise converged_exception
