@@ -14,13 +14,16 @@ from triangle_cubature.cubature_rule import CubatureRuleEnum
 class MonitorException(Exception):
     energy_history: np.ndarray
     energy_norm_squared_history: np.ndarray
+    iterate_history: np.ndarray
 
     def __init__(
             self,
             energy_history: np.ndarray,
-            energy_norm_squared_history: np.ndarray):
+            energy_norm_squared_history: np.ndarray,
+            iterate_history: np.ndarray):
         self.energy_history = energy_history
         self.energy_norm_squared_history = energy_norm_squared_history
+        self.iterate_history = iterate_history
 
 
 class ConvergedException(Exception):
@@ -1216,6 +1219,7 @@ class RecorderCustomCallback(CustomCallBack):
     max_n_iterations: int
     energy_history: list[float]
     energy_norm_squared_history: list[float]
+    iterate_history: list[np.ndarray]
 
     def __init__(
             self,
@@ -1236,6 +1240,7 @@ class RecorderCustomCallback(CustomCallBack):
         self.max_n_iterations = max_n_iterations
         self.energy_history = []
         self.energy_norm_squared_history = []
+        self.iterate_history = []
 
     def calculate_energy_norm_squared(self, u) -> float:
         return u.dot(self.lhs_matrix.dot(u))
@@ -1256,6 +1261,7 @@ class RecorderCustomCallback(CustomCallBack):
         # appending to history
         self.energy_history.append(current_energy)
         self.energy_norm_squared_history.append(current_energy_norm_squared)
+        self.iterate_history.append(current_iterate)
 
         if self.n_iterations_done >= self.max_n_iterations:
 
@@ -1263,9 +1269,11 @@ class RecorderCustomCallback(CustomCallBack):
             energy_history = np.array(self.energy_history)
             energy_norm_squared_history = np.array(
                 self.energy_norm_squared_history)
+            iterate_history = np.array(self.iterate_history)
 
             # prparing the exception and raising it
-            converged_exception = MonitorException(
+            monitor_exception = MonitorException(
                 energy_history=energy_history,
-                energy_norm_squared_history=energy_norm_squared_history)
-            raise converged_exception
+                energy_norm_squared_history=energy_norm_squared_history,
+                iterate_history=iterate_history)
+            raise monitor_exception

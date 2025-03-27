@@ -189,6 +189,7 @@ def main() -> None:
         except MonitorException as ex:
             energy_history = ex.energy_history
             energy_norm_squared_history = ex.energy_norm_squared_history
+            iterate_history = ex.iterate_history
             print(f"CG stopped after {N_MAX_CG} iterations!")
 
         # dump the current state
@@ -208,6 +209,10 @@ def main() -> None:
             obj=energy_norm_squared_history,
             path_to_file=base_results_path /
             Path(f'{n_dofs}/energy_norm_squared_history.pkl'))
+        dump_object(
+            obj=iterate_history,
+            path_to_file=base_results_path /
+            Path(f'{n_dofs}/iterate_history.pkl'))
 
         _, edge_to_nodes, _ = \
             provide_geometric_data(
