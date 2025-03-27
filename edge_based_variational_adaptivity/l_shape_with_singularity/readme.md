@@ -126,13 +126,12 @@ $u_N^n$ used to plot and monitor the relative changes in
 (ii) the energy itself, i.e.
 $$
 \begin{aligned}
-(i)~~M_1^n &:= \left| \frac{\|u_N^{n-1}\|_a^2 - \|u_N^n\|_a^2}{\|u_N^n\|_a^2} \right|, \\
+(i)~~M_1^n &:= \left| \frac{\|u_N^{n-1} - u_N^n\|_a^2}{\|u_N^n\|_a^2} \right|, \\
 (ii)~~M_2^n &:= \left| \frac{E(u_N^{n-1}) - E(u_N^n)}{E(u_N^n)} \right|.
 \end{aligned}
 $$
 
-Note that the experiment itself only drops the approximations $u_N^n$,
-whereas the rest is performed in the post-processing.
+Note that the experiment itself drops the approximations $u_N^n$, their energies and energy norms squared.
 
 This is done in the following way.
 Start with a relatively fine mesh $\mathbb{V}_0$, solve exactly to get $u^h_0$, refine with EVA to get an initial mesh $\mathbb{V}_1$ and canonically embed (linear interpolation) $u^h_{0} \mapsto u^0_1 \in \mathbb{V}_1$.
