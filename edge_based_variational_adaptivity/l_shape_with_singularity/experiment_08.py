@@ -42,7 +42,7 @@ def main() -> None:
     THETA = args.theta
     FUDGE = args.fudge
 
-    n_max_dofs = 1e6
+    n_max_dofs = 1e7
     n_initial_refinements = 5
 
     # ------------------------------------------------
