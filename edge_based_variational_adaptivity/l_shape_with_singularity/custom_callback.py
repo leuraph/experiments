@@ -736,11 +736,8 @@ class AriolisCustomCallback(CustomCallBack):
         energy_before_delay = self.energy_history[-(self.delay+1)]
         iterate_before_delay = self.iterate_history[-(self.delay+1)]
 
-        lhs = ((1.+self.n_dofs)/self.n_dofs) * energy_before_delay
+        lhs = ((self.fudge+self.n_dofs)/self.n_dofs) * energy_before_delay
         rhs = current_energy
-        print(f'E(u_n) = {energy_before_delay}')
-        print(f'nDOF = {self.n_dofs}')
-        print(f'{lhs} <= {rhs} ?')
         converged = lhs <= rhs
 
         if converged:
