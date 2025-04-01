@@ -58,7 +58,7 @@ def main() -> None:
         Path('results/experiment_08') /
         Path(
             f'theta-{THETA}_fudge-{FUDGE}_'
-            f'miniter-{MINITER}delay-{DELAY}'))
+            f'miniter-{MINITER}_delay-{DELAY}'))
 
     coordinates, elements = io_helpers.read_mesh(
         path_to_coordinates=path_to_coordinates,
