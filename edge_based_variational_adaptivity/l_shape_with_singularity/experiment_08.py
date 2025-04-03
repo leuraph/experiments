@@ -228,6 +228,7 @@ def main() -> None:
             fudge=FUDGE,
             cubature_rule=CubatureRuleEnum.DAYTAYLOR)
 
+        cg_converged = False
         try:
             current_iterate[free_nodes], _ = cg(
                 A=stiffness_matrix[free_nodes, :][:, free_nodes],
@@ -236,10 +237,14 @@ def main() -> None:
                 rtol=1e-100,
                 callback=custom_callback)
         except ConvergedException as conv:
+            cg_converged = True
             current_iterate = conv.last_iterate
             energy_history = np.array(conv.energy_history)
             n_iterations_done = conv.n_iterations_done
             print(f"CG stopped after {conv.n_iterations_done} iterations!")
+
+        if not cg_converged:
+            raise RuntimeError('CG failed to converge. Stopping immediately.')
 
         # dump the current state
         # ----------------------
