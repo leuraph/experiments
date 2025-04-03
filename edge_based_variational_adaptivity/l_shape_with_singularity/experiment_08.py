@@ -288,8 +288,8 @@ def main() -> None:
             ar2=np.unique(boundaries[0].flatten()))
         free_nodes = np.zeros(n_vertices, dtype=bool)
         free_nodes[indices_of_free_nodes] = 1
-        free_edges = non_boundary
-        free_nodes = free_nodes
+        free_edges = non_boundary  # integer array (holding actual indices)
+        free_nodes = free_nodes  # boolean array
 
         energy_gains = get_energy_gains(
             coordinates=coordinates,
