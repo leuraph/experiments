@@ -138,6 +138,7 @@ def main() -> None:
         is_row_in(edge_to_nodes_flipped, boundaries[0])
     )
     non_boundary = np.logical_not(boundary)
+    edges = edge_to_nodes
     non_boundary_edges = edge_to_nodes[non_boundary]
 
     # free nodes / edges
@@ -277,6 +278,7 @@ def main() -> None:
             is_row_in(edge_to_nodes_flipped, boundaries[0])
         )
         non_boundary = np.logical_not(boundary)
+        edges = edge_to_nodes
         non_boundary_edges = edge_to_nodes[non_boundary]
 
         # free nodes / edges
