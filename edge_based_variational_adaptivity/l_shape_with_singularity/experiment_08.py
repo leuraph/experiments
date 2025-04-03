@@ -308,10 +308,10 @@ def main() -> None:
 
         # dörfler based on EVA
         # --------------------
-        marked_edges = np.zeros(custom_callback.edges.shape[0], dtype=int)
+        marked_edges = np.zeros(edges.shape[0], dtype=int)
         marked_non_boundary_egdes = doerfler_marking(
             input=energy_gains, theta=THETA)
-        marked_edges[custom_callback.free_edges] = marked_non_boundary_egdes
+        marked_edges[free_edges] = marked_non_boundary_egdes
 
         element_to_edges, edge_to_nodes, boundaries_to_edges =\
             provide_geometric_data(elements=elements, boundaries=boundaries)
