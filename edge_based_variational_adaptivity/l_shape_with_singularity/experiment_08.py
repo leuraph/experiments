@@ -42,7 +42,7 @@ def main() -> None:
     THETA = args.theta
     FUDGE = args.fudge
 
-    n_max_dofs = 1e7
+    n_max_dofs = 1e6
     n_initial_refinements = 5
 
     # ------------------------------------------------
@@ -192,13 +192,6 @@ def main() -> None:
         free_nodes[indices_of_free_nodes] = 1
         n_dofs = np.sum(free_nodes)
 
-        # stop iteration if maximum number of DOF is reached
-        if n_dofs >= n_max_dofs:
-            print(
-                f'Maximum number of DOFs ({n_max_dofs})'
-                'reached, stopping iteration.')
-            break
-
         # compute exact galerkin solution on current mesh
         solution, _ = solvers.solve_laplace(
             coordinates=coordinates,
@@ -265,6 +258,13 @@ def main() -> None:
             Path(f'{n_dofs}/galerkin_solution.pkl'))
         dump_object(obj=current_iterate, path_to_file=base_results_path /
                     Path(f'{n_dofs}/last_iterate.pkl'))
+
+        # stop right before refining if maximum number of DOFs is reached
+        if n_dofs >= n_max_dofs:
+            print(
+                f'Maximum number of DOFs ({n_max_dofs})'
+                'reached, stopping iteration.')
+            break
 
         _, edge_to_nodes, _ = \
             provide_geometric_data(
