@@ -2,7 +2,6 @@ from load_save_dumps import load_dump, dump_object
 from pathlib import Path
 from tqdm import tqdm
 import argparse
-from iterative_methods.energy_norm import calculate_energy_norm_error
 from triangle_cubature.cubature_rule import CubatureRuleEnum
 from p1afempy.solvers import get_stiffness_matrix, get_right_hand_side
 from scipy.sparse import csr_matrix
