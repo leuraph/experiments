@@ -193,7 +193,7 @@ def main() -> None:
         n_dofs = np.sum(free_nodes)
 
         # compute exact galerkin solution on current mesh
-        solution, _ = solvers.solve_laplace(
+        galerkin_solution, _ = solvers.solve_laplace(
             coordinates=coordinates,
             elements=elements,
             dirichlet=boundaries[0],
@@ -259,7 +259,7 @@ def main() -> None:
         dump_object(obj=n_iterations_done, path_to_file=base_results_path /
                     Path(f'{n_dofs}/n_iterations_done.pkl'))
         dump_object(
-            obj=solution, path_to_file=base_results_path /
+            obj=galerkin_solution, path_to_file=base_results_path /
             Path(f'{n_dofs}/galerkin_solution.pkl'))
         dump_object(obj=current_iterate, path_to_file=base_results_path /
                     Path(f'{n_dofs}/last_iterate.pkl'))
