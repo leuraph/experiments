@@ -61,7 +61,7 @@ where $d$ denotes the delay.
 
 ## Experiment 10
 
-# Combininng Arioli's stopping criterion [1] with a new potential upper bound or approximation
+# Combining Arioli's stopping criterion [1] with a new potential upper bound or approximation
 Based on sole numerical experiments (for now), it is observed
 that the following iteration can produce upper bounds on the Galerkin
 solution's energy norm.
@@ -137,6 +137,17 @@ This is done in the following way.
 Start with a relatively fine mesh $\mathbb{V}_0$, solve exactly to get $u^h_0$, refine with EVA to get an initial mesh $\mathbb{V}_1$ and canonically embed (linear interpolation) $u^h_{0} \mapsto u^0_1 \in \mathbb{V}_1$.
 Then, on each mesh, perform a pre-defined number of CG iterations `n_cg_iterations`, use the last approximation to perform EVA.
 Repeat on each mesh until the number of DOFs reaches a pre-defined maximum.
+
+## Experiment 16
+This experiment is a copy of experiment 08
+with the only adaption that we use a diagonal preconditioner
+$$
+M := \text{diag} A.
+$$
+In our handwritten notes, we have shown that,
+despite using the preconditioner $M$,
+the energy version Arioli's stopping criterion [1]
+does not need to be changed.
 
 # References
 - [1] Arioli, M.
