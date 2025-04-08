@@ -5,7 +5,7 @@ from p1afempy.mesh import provide_geometric_data
 from pathlib import Path
 from configuration import f, uD
 from load_save_dumps import dump_object
-from scipy.sparse import csr_matrix
+from scipy.sparse import csr_matrix, diags
 from variational_adaptivity.markers import doerfler_marking
 import argparse
 from scipy.sparse.linalg import cg
@@ -55,7 +55,7 @@ def main() -> None:
     path_to_dirichlet = base_path / Path('dirichlet.dat')
 
     base_results_path = (
-        Path('results/experiment_08') /
+        Path('results/experiment_16') /
         Path(
             f'theta-{THETA}_fudge-{FUDGE}_'
             f'miniter-{MINITER}_delay-{DELAY}'))
@@ -230,10 +230,14 @@ def main() -> None:
 
         cg_converged = False
         try:
+            A_reduced = stiffness_matrix[free_nodes, :][:, free_nodes]
+            diagonal = A_reduced.diagonal()
+            M = diags(diagonals=1./diagonal)
             current_iterate[free_nodes], _ = cg(
-                A=stiffness_matrix[free_nodes, :][:, free_nodes],
+                A=A_reduced,
                 b=right_hand_side[free_nodes],
                 x0=current_iterate[free_nodes],
+                M=M,
                 rtol=1e-100,
                 callback=custom_callback)
         except ConvergedException as conv:
