@@ -129,6 +129,9 @@ def main() -> None:
     dump_object(
         obj=int(0), path_to_file=base_results_path /
         Path(f'{n_dofs}/n_iterations_done.pkl'))
+    dump_object(
+        obj=int(0), path_to_file=base_results_path /
+        Path(f'{n_dofs}/delay_at_convergence.pkl'))
     # -----------------------------------------------------
 
     # perform first refinement by hand
@@ -251,6 +254,7 @@ def main() -> None:
             current_iterate = conv.last_iterate
             energy_history = np.array(conv.energy_history)
             n_iterations_done = conv.n_iterations_done
+            delay_at_convergence = conv.delay
             print(f"CG stopped after {conv.n_iterations_done} iterations!")
 
         if not cg_converged:
@@ -268,6 +272,8 @@ def main() -> None:
                     Path(f'{n_dofs}/energy_history.pkl'))
         dump_object(obj=n_iterations_done, path_to_file=base_results_path /
                     Path(f'{n_dofs}/n_iterations_done.pkl'))
+        dump_object(obj=delay_at_convergence, path_to_file=base_results_path /
+                    Path(f'{n_dofs}/delay_at_convergence.pkl'))
         dump_object(
             obj=galerkin_solution, path_to_file=base_results_path /
             Path(f'{n_dofs}/galerkin_solution.pkl'))
