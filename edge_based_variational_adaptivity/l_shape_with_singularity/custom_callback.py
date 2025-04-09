@@ -771,6 +771,8 @@ class AriolisAdaptiveDelayCustomCallback(CustomCallBack):
     """
     n_dofs: int
     delay: int
+    delay_increase: int
+    tau: float
     n_callback_called: int
     energy_history: list[float]
     iterate_history: list[np.ndarray]
@@ -784,6 +786,8 @@ class AriolisAdaptiveDelayCustomCallback(CustomCallBack):
             coordinates: CoordinatesType,
             boundaries: list[BoundaryType],
             initial_delay: int,
+            delay_increase: int,
+            tau: float,
             fudge: float,
             cubature_rule: CubatureRuleEnum = CubatureRuleEnum.MIDPOINT):
         super().__init__(
@@ -794,6 +798,8 @@ class AriolisAdaptiveDelayCustomCallback(CustomCallBack):
             boundaries=boundaries,
             cubature_rule=cubature_rule)
         self.delay = initial_delay
+        self.delay_increase = delay_increase
+        self.tau = tau
         self.fudge = fudge
         self.n_callback_called = 0
         self.energy_history = []
