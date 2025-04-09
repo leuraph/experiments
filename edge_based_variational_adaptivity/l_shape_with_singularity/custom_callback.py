@@ -783,7 +783,7 @@ class AriolisAdaptiveDelayCustomCallback(CustomCallBack):
             elements: ElementsType,
             coordinates: CoordinatesType,
             boundaries: list[BoundaryType],
-            delay: int,
+            initial_delay: int,
             fudge: float,
             cubature_rule: CubatureRuleEnum = CubatureRuleEnum.MIDPOINT):
         super().__init__(
@@ -793,7 +793,7 @@ class AriolisAdaptiveDelayCustomCallback(CustomCallBack):
             coordinates=coordinates,
             boundaries=boundaries,
             cubature_rule=cubature_rule)
-        self.delay = delay
+        self.delay = initial_delay
         self.fudge = fudge
         self.n_callback_called = 0
         self.energy_history = []
