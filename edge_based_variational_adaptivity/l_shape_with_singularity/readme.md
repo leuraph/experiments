@@ -149,6 +149,16 @@ despite using the preconditioner $M$,
 the energy version Arioli's stopping criterion [1]
 does not need to be changed.
 
+## Experiment 17
+CG iterations until we reach the stopping criterion from [1] in an energy fashion,
+where the delay parameter used in the HS-estimate is adaptvely calculated
+as described in [1].
+Note that the last iterate returned is not the last iterate used to calculate the
+HS-estimate. Much more, if $\xi^{(d)}_k$ denotes the HS-estimate of $\|u^k - u_h\|_a^2$,
+we return $u^k$ instead of $u^{k+d}$ (which would also be available).
+This is done for the sake of consistency, i.e. the very first iterate that fulfills the
+stopping criterion is returned instead of the last one available.
+
 # References
 - [1] Arioli, M.
     A Stopping Criterion for the Conjugate Gradient Algorithm
