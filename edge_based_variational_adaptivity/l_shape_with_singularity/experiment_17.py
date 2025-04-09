@@ -32,13 +32,19 @@ def main() -> None:
                         "in Ariolis stopping criterion")
     parser.add_argument("--miniter", type=int, required=True,
                         help="minimum number of iterations on each mesh")
-    parser.add_argument("--delay", type=int, required=True,
-                        help="delay parameter in the "
+    parser.add_argument("--initial_delay", type=int, required=True,
+                        help="initial delay parameter for the "
                         "Hestenes-Stiefel Estimator")
+    parser.add_argument("--delay_increase", type=int, required=True,
+                        help="increase delay by this amount if needed")
+    parser.add_argument("--tau", type=float, required=True,
+                        help="tau parameter in the adaptive delay choice")
     args = parser.parse_args()
 
     MINITER = args.miniter
-    DELAY = args.delay
+    DELAY = args.initial_delay
+    DELAY_INCREASE = args.delay_increase
+    TAU = args.tau
     THETA = args.theta
     FUDGE = args.fudge
 
@@ -55,10 +61,11 @@ def main() -> None:
     path_to_dirichlet = base_path / Path('dirichlet.dat')
 
     base_results_path = (
-        Path('results/experiment_08') /
+        Path('results/experiment_17') /
         Path(
             f'theta-{THETA}_fudge-{FUDGE}_'
-            f'miniter-{MINITER}_delay-{DELAY}'))
+            f'miniter-{MINITER}_initial_delay-{DELAY}_'
+            f'tau-{TAU}_delay_increase-{DELAY_INCREASE}'))
 
     coordinates, elements = io_helpers.read_mesh(
         path_to_coordinates=path_to_coordinates,
