@@ -31,17 +31,20 @@ class ConvergedException(Exception):
     last_iterate: np.ndarray
     n_iterations_done: int
     energy_history: list[float]
+    delay: int
 
     def __init__(
             self,
             energy_gains: np.ndarray = None,
             last_iterate: np.ndarray = None,
             n_iterations_done: int = None,
-            energy_history: list[float] = None):
+            energy_history: list[float] = None,
+            delay: int = None):
         self.energy_gains = energy_gains
         self.last_iterate = last_iterate
         self.n_iterations_done = n_iterations_done
         self.energy_history = energy_history
+        self.delay = delay
 
 
 class CustomCallBack():
@@ -773,7 +776,6 @@ class AriolisAdaptiveDelayCustomCallback(CustomCallBack):
     delay: int
     delay_increase: int
     tau: float
-    n_callback_called: int
     energy_history: list[float]
     iterate_history: list[np.ndarray]
     fudge: float
@@ -802,7 +804,6 @@ class AriolisAdaptiveDelayCustomCallback(CustomCallBack):
         self.delay_increase = delay_increase
         self.tau = tau
         self.fudge = fudge
-        self.n_callback_called = 0
         self.energy_history = []
         self.iterate_history = []
         self.k = 0
@@ -852,6 +853,7 @@ class AriolisAdaptiveDelayCustomCallback(CustomCallBack):
                 converged_exception = ConvergedException(
                     last_iterate=self.iterate_history[self.k],
                     n_iterations_done=self.n_iterations_done,
+                    delay=self.delay,
                     energy_history=self.energy_history)
                 raise converged_exception
 
