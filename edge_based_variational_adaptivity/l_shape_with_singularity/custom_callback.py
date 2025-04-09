@@ -884,7 +884,7 @@ class AriolisAdaptiveDelayCustomCallback(CustomCallBack):
         gamma_squared = 1./self.n_dofs
         return (
             hs_estimate <=
-            self.fudge * 2. * gamma_squared * self.energy_history[k])
+            - self.fudge * 2. * gamma_squared * self.energy_history[k])
 
 
 class ArioliSanityCheckCustomCallback(CustomCallBack):
