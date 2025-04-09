@@ -9,7 +9,8 @@ from scipy.sparse import csr_matrix
 from variational_adaptivity.markers import doerfler_marking
 import argparse
 from scipy.sparse.linalg import cg
-from custom_callback import ConvergedException, AriolisCustomCallback
+from custom_callback import ConvergedException, \
+    AriolisAdaptiveDelayCustomCallback
 from ismember import is_row_in
 from variational_adaptivity.edge_based_variational_adaptivity import \
     get_energy_gains
@@ -225,13 +226,15 @@ def main() -> None:
         # Perform CG on the current mesh
         # ------------------------------
         # assembly of right hand side
-        custom_callback = AriolisCustomCallback(
+        custom_callback = AriolisAdaptiveDelayCustomCallback(
             batch_size=1,
             min_n_iterations_per_mesh=MINITER,
             elements=elements,
             coordinates=coordinates,
             boundaries=boundaries,
-            delay=DELAY,
+            initial_delay=DELAY,
+            delay_increase=DELAY_INCREASE,
+            tau=TAU,
             fudge=FUDGE,
             cubature_rule=CubatureRuleEnum.DAYTAYLOR)
 
