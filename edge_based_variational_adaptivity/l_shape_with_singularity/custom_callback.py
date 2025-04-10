@@ -858,7 +858,7 @@ class AriolisAdaptiveDelayCustomCallback(CustomCallBack):
     def need_to_increase_delay(self) -> bool:
         """implements the criterion for increasing the delay from [1]"""
         hs_1, hs_2 = self.get_hs_estimates()
-        return hs_2 * self.tau > hs_1
+        return hs_2 > hs_1 * self.tau
 
     def can_calculate_hs_estimates(self) -> bool:
         """
