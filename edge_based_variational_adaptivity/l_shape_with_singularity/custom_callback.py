@@ -777,9 +777,8 @@ class AriolisAdaptiveDelayCustomCallback(CustomCallBack):
     delay_increase: int
     tau: float
     energy_history: list[float]
-    iterate_history: list[np.ndarray]
+    candidates: list[np.ndarray]
     fudge: float
-    k: int
 
     def __init__(
             self,
@@ -805,8 +804,7 @@ class AriolisAdaptiveDelayCustomCallback(CustomCallBack):
         self.tau = tau
         self.fudge = fudge
         self.energy_history = []
-        self.iterate_history = []
-        self.k = 0
+        self.candidates = []
 
         # calculate number of degrees of freedom
         n_vertices = coordinates.shape[0]
@@ -830,63 +828,71 @@ class AriolisAdaptiveDelayCustomCallback(CustomCallBack):
         current_energy = self.calculate_energy(
             current_iterate=current_iterate)
         self.energy_history.append(current_energy)
-        self.iterate_history.append(current_iterate)
+        self.candidates.append(current_iterate)
 
         while True:
 
             # keep on iterating until we can calculate both
             # relevant HS-estimates
-            if not self.can_calculate_hs_estimate(
-                    k=self.k + 1, d=self.delay):
+            if not self.can_calculate_hs_estimates():
                 break
 
             # check if the current HS-estimate is a "good" approximation
             # with the rule given in [1]
             # if not, increase delay and continue
-            if self.need_to_increase_delay(k=self.k, delay=self.delay):
+            if self.need_to_increase_delay():
                 self.delay += self.delay_increase
                 continue
 
-            converged = self.has_converged(k=self.k, d=self.delay)
-
-            if converged:
+            if self.has_converged():
                 converged_exception = ConvergedException(
-                    last_iterate=self.iterate_history[self.k],
+                    last_iterate=self.candidates[0],
                     n_iterations_done=self.n_iterations_done,
                     delay=self.delay,
                     energy_history=self.energy_history)
                 raise converged_exception
 
-            self.k += 1
+            # throw away the oldest iterate and continue
+            self.candidates = self.candidates[1:]
 
-    def need_to_increase_delay(self, k: int, delay: int) -> bool:
-        hs_1 = self.get_hs_estimate(k=k, d=delay)
-        hs_2 = self.get_hs_estimate(k=k+1, d=delay)
+    def need_to_increase_delay(self) -> bool:
+        """implements the criterion for increasing the delay from [1]"""
+        hs_1, hs_2 = self.get_hs_estimates()
         return hs_2 * self.tau > hs_1
 
-    def can_calculate_hs_estimate(self, k: int, d: int) -> bool:
+    def can_calculate_hs_estimates(self) -> bool:
         """
-        returns True if we have performed enough CG iterations
-        in order to calculate the HS estimate of u^k with delay `d`
+        returns True if we have enough candidates in memory
+        in order to calculate both HS estimates
         """
-        return (k+1) + d <= len(self.energy_history)
+        return self.delay + 2 <= len(self.candidates)
 
-    def get_hs_estimate(self, k: int, d: int) -> float:
-        """returns the HS estimate at step `k` with delay `d`"""
-        hs_estimate = 2. * (self.energy_history[k] - self.energy_history[k+d])
-        return hs_estimate
+    def get_hs_estimates(self) -> tuple[float, float]:
+        """
+        returns both HS estimates needed in the adaptive delay scheme
+        """
+        e_1 = self.calculate_energy(self.candidates[0])
+        e_2 = self.calculate_energy(self.candidates[1])
+        e_1_d = self.calculate_energy(self.candidates[self.delay])
+        e_2_d = self.calculate_energy(self.candidates[self.delay + 1])
 
-    def has_converged(self, k: int, d: int) -> float:
+        hs_1 = 2. * (e_1 - e_1_d)
+        hs_2 = 2. * (e_2 - e_2_d)
+
+        return hs_1, hs_2
+
+    def has_converged(self) -> float:
         """
         checks for the CG stopping criterion
         as given in [1] but formulated in an
         energy fashion
         """
-        hs_estimate = self.get_hs_estimate(k=k, d=d)
-        gamma_squared = 1./self.n_dofs
-        return (
-            hs_estimate <=
-            - self.fudge * 2. * gamma_squared * self.energy_history[k])
+        e_1 = self.calculate_energy(self.candidates[0])
+        e_1_d = self.calculate_energy(self.candidates[self.delay])
+
+        lhs = ((self.fudge+self.n_dofs)/self.n_dofs) * e_1
+        rhs = e_1_d
+        return lhs <= rhs
 
 
 class ArioliSanityCheckCustomCallback(CustomCallBack):
