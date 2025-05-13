@@ -1,0 +1,58 @@
+# Summary
+
+In this folder, we consider problems of the form
+$$
+\nabla(A(x) \nabla u(x)) + c u(x) = 1,
+$$
+where $A(x) \in \mathbb{R}^2$,
+$c \in \{0, 1\}$,
+$\Omega = (0, 1)^2$,
+and we impose homogeneous boundary conditions, i.e.
+$u(x) = 0$ for $x \in \partial \Omega$.
+Essentially, the problems differ only in the choice of
+the matrix $A(x)$.
+
+## Problem 1 (Anisotropic)
+
+$$
+A(x) =
+\begin{pmatrix}
+-1 & 0 \\ 0 & -10^{-2}
+\end{pmatrix}
+$$
+
+## Problem 2 (Singularly Perturbed)
+
+$$
+A(x) = - 10^{-1}
+\begin{pmatrix}
+1 & 0 \\ 0 & 1
+\end{pmatrix}
+$$
+
+---
+
+# Experiments / Scripts
+
+## Experiment 01
+Considers the solution of Problem 1 by using
+CG iterations on each mesh with an energy version of
+Ariolis stopping criterion [1] in combination with an adaptive
+choice of the delay parameter in the HS-estimate.
+After convergence, the mesh is refined using edge-based
+variational adaptivity with the last iterate, i.e.
+we only solve exactly for academic reference and not to refine the mesh.
+
+## Energy for experiment 01
+Generates a reference value of
+$\|u\|_a^2$, where $u$ is the exact solution of problem 1 by
+1. uniformly refine all elements using NVB,
+2. solve $Ax=b$ "exactly",
+3. and calculate $x^\top A x = \|x\|_a^2$.
+
+# References
+- [1] Arioli, M.
+    A Stopping Criterion for the Conjugate Gradient Algorithm
+    in a Finite Element Method Framework.
+    Numerische Mathematik 97, no. 1 (1 March 2004): 1-24.
+    https://doi.org/10.1007/s00211-003-0500-y.
