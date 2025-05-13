@@ -131,6 +131,11 @@ class CustomCallBack():
             # check if we must continue with iterations
             self.perform_callback(current_iterate=current_iterate)
 
+    def get_energy(self, current_iterate: np.ndarray) -> float:
+        return (
+            0.5 * current_iterate.dot(self.lhs_matrix.dot(current_iterate))
+            - self.rhs_vector.dot(current_iterate))
+
     @staticmethod
     def get_global_iterate_from_iterate_on_free_nodes(
             current_iterate_on_free_nodes: np.ndarray,
