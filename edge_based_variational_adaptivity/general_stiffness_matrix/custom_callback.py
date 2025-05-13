@@ -5,7 +5,6 @@ from scipy.sparse import csr_matrix
 from ismember import is_row_in
 from p1afempy.data_structures import ElementsType, CoordinatesType, \
     BoundaryType
-from triangle_cubature.cubature_rule import CubatureRuleEnum
 
 
 class ConvergedException(Exception):
@@ -56,7 +55,6 @@ class CustomCallBack():
     non_boundary_edges: np.ndarray
     free_edges: np.ndarray
     # ---
-    cubature_rule: CubatureRuleEnum
     lhs_matrix: csr_matrix
     rhs_vector: np.ndarray
 
@@ -68,12 +66,10 @@ class CustomCallBack():
             coordinates: CoordinatesType,
             boundaries: list[BoundaryType],
             lhs_matrix: csr_matrix,
-            rhs_vector: np.ndarray,
-            cubature_rule: CubatureRuleEnum) -> None:
+            rhs_vector: np.ndarray) -> None:
         self.n_iterations_done = 0
         self.batch_size = batch_size
         self.min_n_iterations_per_mesh = min_n_iterations_per_mesh
-        self.cubature_rule = cubature_rule
 
         # mesh specific setup
         # -------------------
@@ -185,15 +181,13 @@ class EnergyTailOffCustomCallback(CustomCallBack):
             coordinates: CoordinatesType,
             boundaries: list[BoundaryType],
             energy_of_initial_guess: float,
-            fudge: float,
-            cubature_rule: CubatureRuleEnum = CubatureRuleEnum.MIDPOINT):
+            fudge: float):
         super().__init__(
             batch_size=batch_size,
             min_n_iterations_per_mesh=min_n_iterations_per_mesh,
             elements=elements,
             coordinates=coordinates,
-            boundaries=boundaries,
-            cubature_rule=cubature_rule)
+            boundaries=boundaries)
         self.fudge = fudge
         self.accumulated_energy_gain = 0.
         self.energy_of_last_iterate = energy_of_initial_guess
@@ -262,15 +256,13 @@ class EnergyTailOffAveragedCustomCallback(CustomCallBack):
             coordinates: CoordinatesType,
             boundaries: list[BoundaryType],
             energy_of_initial_guess: float,
-            fudge: float,
-            cubature_rule: CubatureRuleEnum = CubatureRuleEnum.MIDPOINT):
+            fudge: float):
         super().__init__(
             batch_size=batch_size,
             min_n_iterations_per_mesh=min_n_iterations_per_mesh,
             elements=elements,
             coordinates=coordinates,
-            boundaries=boundaries,
-            cubature_rule=cubature_rule)
+            boundaries=boundaries)
         self.fudge = fudge
         self.accumulated_energy_gain = 0.
         self.energy_of_last_iterate = energy_of_initial_guess
@@ -341,15 +333,13 @@ class AriolisCustomCallback(CustomCallBack):
             coordinates: CoordinatesType,
             boundaries: list[BoundaryType],
             delay: int,
-            fudge: float,
-            cubature_rule: CubatureRuleEnum = CubatureRuleEnum.MIDPOINT):
+            fudge: float):
         super().__init__(
             batch_size=batch_size,
             min_n_iterations_per_mesh=min_n_iterations_per_mesh,
             elements=elements,
             coordinates=coordinates,
-            boundaries=boundaries,
-            cubature_rule=cubature_rule)
+            boundaries=boundaries)
         self.delay = delay
         self.fudge = fudge
         self.n_callback_called = 0
@@ -433,15 +423,13 @@ class AriolisAdaptiveDelayCustomCallback(CustomCallBack):
             initial_delay: int,
             delay_increase: int,
             tau: float,
-            fudge: float,
-            cubature_rule: CubatureRuleEnum = CubatureRuleEnum.MIDPOINT):
+            fudge: float):
         super().__init__(
             batch_size=batch_size,
             min_n_iterations_per_mesh=min_n_iterations_per_mesh,
             elements=elements,
             coordinates=coordinates,
-            boundaries=boundaries,
-            cubature_rule=cubature_rule)
+            boundaries=boundaries)
         self.delay = initial_delay
         self.delay_increase = delay_increase
         self.tau = tau
