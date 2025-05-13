@@ -181,13 +181,17 @@ class EnergyTailOffCustomCallback(CustomCallBack):
             coordinates: CoordinatesType,
             boundaries: list[BoundaryType],
             energy_of_initial_guess: float,
-            fudge: float):
+            fudge: float,
+            lhs_matrix: csr_matrix,
+            rhs_vector: np.ndarray):
         super().__init__(
             batch_size=batch_size,
             min_n_iterations_per_mesh=min_n_iterations_per_mesh,
             elements=elements,
             coordinates=coordinates,
-            boundaries=boundaries)
+            boundaries=boundaries,
+            lhs_matrix=lhs_matrix,
+            rhs_vector=rhs_vector)
         self.fudge = fudge
         self.accumulated_energy_gain = 0.
         self.energy_of_last_iterate = energy_of_initial_guess
@@ -256,13 +260,17 @@ class EnergyTailOffAveragedCustomCallback(CustomCallBack):
             coordinates: CoordinatesType,
             boundaries: list[BoundaryType],
             energy_of_initial_guess: float,
-            fudge: float):
+            fudge: float,
+            lhs_matrix: csr_matrix,
+            rhs_vector: np.ndarray):
         super().__init__(
             batch_size=batch_size,
             min_n_iterations_per_mesh=min_n_iterations_per_mesh,
             elements=elements,
             coordinates=coordinates,
-            boundaries=boundaries)
+            boundaries=boundaries,
+            lhs_matrix=lhs_matrix,
+            rhs_vector=rhs_vector)
         self.fudge = fudge
         self.accumulated_energy_gain = 0.
         self.energy_of_last_iterate = energy_of_initial_guess
@@ -333,13 +341,17 @@ class AriolisCustomCallback(CustomCallBack):
             coordinates: CoordinatesType,
             boundaries: list[BoundaryType],
             delay: int,
-            fudge: float):
+            fudge: float,
+            lhs_matrix: csr_matrix,
+            rhs_vector: np.ndarray):
         super().__init__(
             batch_size=batch_size,
             min_n_iterations_per_mesh=min_n_iterations_per_mesh,
             elements=elements,
             coordinates=coordinates,
-            boundaries=boundaries)
+            boundaries=boundaries,
+            lhs_matrix=lhs_matrix,
+            rhs_vector=rhs_vector)
         self.delay = delay
         self.fudge = fudge
         self.n_callback_called = 0
@@ -423,13 +435,17 @@ class AriolisAdaptiveDelayCustomCallback(CustomCallBack):
             initial_delay: int,
             delay_increase: int,
             tau: float,
-            fudge: float):
+            fudge: float,
+            lhs_matrix: csr_matrix,
+            rhs_vector: np.ndarray):
         super().__init__(
             batch_size=batch_size,
             min_n_iterations_per_mesh=min_n_iterations_per_mesh,
             elements=elements,
             coordinates=coordinates,
-            boundaries=boundaries)
+            boundaries=boundaries,
+            lhs_matrix=lhs_matrix,
+            rhs_vector=rhs_vector)
         self.delay = initial_delay
         self.delay_increase = delay_increase
         self.tau = tau
