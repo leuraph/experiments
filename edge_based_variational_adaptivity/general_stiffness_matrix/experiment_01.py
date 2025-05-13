@@ -146,7 +146,26 @@ def main() -> None:
     show_solution(coordinates=coordinates, solution=galerkin_solution)
 
     while True:
-        
+        # reset as the mesh has changed
+        # -----------------------------
+        # TODO
+
+        # compute the Galerkin solution on current mesh
+        # ---------------------------------------------
+        # TODO
+
+        # perform CG on the current mesh
+        # ------------------------------
+        # TODO
+
+        # dump the current state
+        # ----------------------
+        # TODO
+
+        # perform edge-based variational adaptivity
+        # -----------------------------------------
+        # TODO
+        pass
 
 
 if __name__ == '__main__':
