@@ -144,7 +144,7 @@ class CustomCallBack():
         current_iterate_on_free_nodes: np.ndarray
             iterate on free nodes only
         free_nodes: np.ndarray
-            boolean masak indicating free nods
+            boolean mask indicating free nods
         """
         global_iterate = np.zeros(free_nodes.shape[0])
         global_iterate[free_nodes] = current_iterate_on_free_nodes
