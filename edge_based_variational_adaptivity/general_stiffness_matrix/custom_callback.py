@@ -1,11 +1,8 @@
 import numpy as np
 from p1afempy.mesh import provide_geometric_data
-from p1afempy.solvers import get_stiffness_matrix, get_right_hand_side
-from configuration import f
+from p1afempy.solvers import get_general_stiffness_matrix, get_right_hand_side
 from scipy.sparse import csr_matrix
 from ismember import is_row_in
-from variational_adaptivity.edge_based_variational_adaptivity import \
-    get_energy_gains, get_energy_after_eva_and_local_energy_gains_eva
 from p1afempy.data_structures import ElementsType, CoordinatesType, \
     BoundaryType
 from triangle_cubature.cubature_rule import CubatureRuleEnum
