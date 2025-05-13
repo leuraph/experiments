@@ -70,6 +70,8 @@ class CustomCallBack():
             elements: ElementsType,
             coordinates: CoordinatesType,
             boundaries: list[BoundaryType],
+            lhs_matrix: csr_matrix,
+            rhs_vector: np.ndarray,
             cubature_rule: CubatureRuleEnum) -> None:
         self.n_iterations_done = 0
         self.batch_size = batch_size
@@ -109,11 +111,8 @@ class CustomCallBack():
         self.free_nodes = free_nodes
 
         # lhs-matrix / rhs-vector
-        self.lhs_matrix = csr_matrix(get_stiffness_matrix(
-            coordinates=coordinates, elements=elements))
-        self.rhs_vector = get_right_hand_side(
-            coordinates=coordinates, elements=elements, f=f,
-            cubature_rule=self.cubature_rule)
+        self.lhs_matrix = lhs_matrix
+        self.rhs_vector = rhs_vector
 
     def perform_callback(self, current_iterate) -> None:
         pass
