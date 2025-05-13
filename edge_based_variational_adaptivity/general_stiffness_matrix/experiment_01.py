@@ -287,6 +287,7 @@ def main() -> None:
             ar2=np.unique(boundaries[0].flatten()))
         free_nodes = np.zeros(n_vertices, dtype=bool)
         free_nodes[indices_of_free_nodes] = 1
+        n_dofs = np.sum(free_nodes)
 
         general_stiffness_matrix = get_general_stiffness_matrix(
             coordinates=coordinates,
