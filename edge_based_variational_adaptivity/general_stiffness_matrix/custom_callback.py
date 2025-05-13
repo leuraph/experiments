@@ -226,17 +226,8 @@ class EnergyTailOffCustomCallback(CustomCallBack):
         self.accumulated_energy_gain += energy_gain_iteration
 
         if energy_gain_iteration < self.fudge * self.accumulated_energy_gain:
-            energy_gains = get_energy_gains(
-                coordinates=self.coordinates,
-                elements=self.elements,
-                non_boundary_edges=self.non_boundary_edges,
-                current_iterate=current_iterate,
-                f=f,
-                cubature_rule=self.cubature_rule,
-                verbose=True)
 
             converged_exception = ConvergedException(
-                energy_gains=energy_gains,
                 last_iterate=current_iterate,
                 n_iterations_done=self.n_iterations_done,
                 energy_history=self.energy_history)
@@ -317,17 +308,8 @@ class EnergyTailOffAveragedCustomCallback(CustomCallBack):
         self.accumulated_energy_gain += energy_gain_iteration
 
         if energy_gain_iteration < self.fudge * self.accumulated_energy_gain/self.n_callback_called:
-            energy_gains = get_energy_gains(
-                coordinates=self.coordinates,
-                elements=self.elements,
-                non_boundary_edges=self.non_boundary_edges,
-                current_iterate=current_iterate,
-                f=f,
-                cubature_rule=self.cubature_rule,
-                verbose=True)
 
             converged_exception = ConvergedException(
-                energy_gains=energy_gains,
                 last_iterate=current_iterate,
                 n_iterations_done=self.n_iterations_done,
                 energy_history=self.energy_history)
