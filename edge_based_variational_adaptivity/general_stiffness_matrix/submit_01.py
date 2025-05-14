@@ -45,7 +45,7 @@ sbatch_template = """#!/bin/bash
 module purge
 module load Workspace_Home
 
-source ../.venv/bin/activate
+source .venv/bin/activate
 python experiment_01.py --theta {theta} --fudge {fudge} --initial_delay {delay} --miniter {miniter} --tau {tau} --delay_increase {delay_increase}
 """
 
