@@ -35,8 +35,8 @@ sbatch_template = """#!/bin/bash
 # number of cpus per task
 #SBATCH --cpus-per-task=8
 
-# (2 * 24(h) * 60(min) = 2880)
-#SBATCH --time=2880
+# (4 * 24(h) * 60(min) = 2880)
+#SBATCH --time=5760
 
 # Email when job is done or failed
 #SBATCH --mail-type=END,FAIL
