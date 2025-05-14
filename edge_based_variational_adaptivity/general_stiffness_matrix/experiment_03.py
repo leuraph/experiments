@@ -1,7 +1,7 @@
 """
 This experiment considers the Problem
 nabla (A(x) nabla u(x)) + u(x) = 1,
-a_11(x) = - 1e-2,
+a_11(x) = - 1,
 a_12(x) = 0,
 a_21(x) = 0,
 a_22(x) = - 1e-2,
@@ -43,7 +43,7 @@ def uD(r: CoordinatesType) -> np.ndarray:
 
 def a_11(r: CoordinatesType) -> np.ndarray:
     n_vertices = r.shape[0]
-    return - np.ones(n_vertices, dtype=float) * 1e-2
+    return - np.ones(n_vertices, dtype=float)
 
 
 def a_22(r: CoordinatesType) -> np.ndarray:
@@ -117,7 +117,7 @@ def main() -> None:
     np.random.seed(42)
 
     base_results_path = (
-        Path('results/experiment_04') /
+        Path('results/experiment_03') /
         Path(
             f'theta-{THETA}_fudge-{FUDGE}_'
             f'miniter-{MINITER}_batchsize-{BATCHSIZE}'))
