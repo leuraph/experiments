@@ -26,8 +26,6 @@ def main() -> None:
             results_path=results_path)
     n_iterations_on_each_mesh = get_n_iterations_on_each_mesh(
         results_path=results_path)
-    delay_at_convergence_on_each_mesh = \
-        get_delay_at_convergence_on_each_mesh(results_path=results_path)
 
     energy_norm_errors_galerkin_to_exact = np.sqrt(
         energy_norm_errors_squared_galerkin_to_exact)
@@ -139,14 +137,6 @@ def main() -> None:
         edgecolors=[(0.8, 0.1, 0.1)],  # Outline color (same as fill)
         s=20,  # Marker size (optional, adjust as needed)
         label=r'$n_{\text{iterations}}$'
-    )
-    ax_n_iterations.scatter(
-        n_dofs, delay_at_convergence_on_each_mesh,
-        marker='D',  # Diamond marker
-        c=[(0.8, 0.1, 0.1, 0.5)],  # Fill color (RGB tuple)
-        edgecolors=[(0.8, 0.1, 0.1)],  # Outline color (same as fill)
-        s=20,  # Marker size (optional, adjust as needed)
-        label=r'$d$'
     )
     ax_n_iterations.tick_params(axis='y')
     # ------------------------------------------
@@ -274,42 +264,6 @@ def get_n_iterations_on_each_mesh(
     n_iterations_on_each_mesh = n_iterations_on_each_mesh[sort_n_dof]
 
     return n_iterations_on_each_mesh
-
-
-def get_delay_at_convergence_on_each_mesh(
-        results_path: Path) -> np.ndarray:
-    """
-    reads and returns the delay at convergence on each mesh
-    """
-
-    delay_at_convergence_on_each_mesh = []
-    n_dofs = []
-
-    for n_dofs_dir in results_path.iterdir():
-        if not n_dofs_dir.is_dir():
-            continue
-
-        n_dof = int(n_dofs_dir.name)
-        path_to_delay_at_convergence = \
-            n_dofs_dir / Path(
-                'delay_at_convergence.pkl')
-
-        delay_at_convergence = \
-            load_dump(path_to_dump=path_to_delay_at_convergence)
-
-        n_dofs.append(n_dof)
-        delay_at_convergence_on_each_mesh.append(delay_at_convergence)
-
-    delay_at_convergence_on_each_mesh = \
-        np.array(delay_at_convergence_on_each_mesh)
-    n_dofs = np.array(n_dofs)
-
-    sort_n_dof = n_dofs.argsort()
-
-    delay_at_convergence_on_each_mesh = \
-        delay_at_convergence_on_each_mesh[sort_n_dof]
-
-    return delay_at_convergence_on_each_mesh
 
 
 def get_theta_value_from_path(path: Path) -> float:
