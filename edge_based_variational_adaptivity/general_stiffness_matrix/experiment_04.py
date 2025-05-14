@@ -16,7 +16,7 @@ from triangle_cubature.cubature_rule import CubatureRuleEnum
 from scipy.sparse.linalg import spsolve
 import matplotlib.pyplot as plt
 from matplotlib.pyplot import cm
-from custom_callback import AriolisAdaptiveDelayCustomCallback
+from custom_callback import EnergyTailOffAveragedCustomCallback
 import argparse
 from scipy.sparse.linalg import cg
 from pathlib import Path
@@ -94,23 +94,17 @@ def main() -> None:
     parser.add_argument("--theta", type=float, required=True,
                         help="value of theta used in the Dörfler marking")
     parser.add_argument("--fudge", type=float, required=True,
-                        help="additional fudge parameter "
-                        "in Ariolis stopping criterion")
+                        help="if current_ennergy_gain < fudge * "
+                        "accumulated_energy_gain / n_iterations, "
+                        "iteration is halted and refinement is started")
     parser.add_argument("--miniter", type=int, required=True,
                         help="minimum number of iterations on each mesh")
-    parser.add_argument("--initial_delay", type=int, required=True,
-                        help="initial delay parameter for the "
-                        "Hestenes-Stiefel Estimator")
-    parser.add_argument("--delay_increase", type=int, required=True,
-                        help="increase delay by this amount if needed")
-    parser.add_argument("--tau", type=float, required=True,
-                        help="tau parameter in the adaptive delay choice")
+    parser.add_argument("--batchsize", type=int, required=True,
+                        help="number of CG iterations per update step")
     args = parser.parse_args()
 
     MINITER = args.miniter
-    DELAY = args.initial_delay
-    DELAY_INCREASE = args.delay_increase
-    TAU = args.tau
+    BATCHSIZE = args.batchsize
     THETA = args.theta
     FUDGE = args.fudge
 
@@ -123,11 +117,10 @@ def main() -> None:
     np.random.seed(42)
 
     base_results_path = (
-        Path('results/experiment_02') /
+        Path('results/experiment_04') /
         Path(
             f'theta-{THETA}_fudge-{FUDGE}_'
-            f'miniter-{MINITER}_initial_delay-{DELAY}_'
-            f'tau-{TAU}_delay_increase-{DELAY_INCREASE}'))
+            f'miniter-{MINITER}_batchsize-{BATCHSIZE}'))
 
     # mesh
     # ----
@@ -215,9 +208,6 @@ def main() -> None:
     dump_object(
         obj=int(0), path_to_file=base_results_path /
         Path(f'{n_dofs}/n_iterations_done.pkl'))
-    dump_object(
-        obj=int(0), path_to_file=base_results_path /
-        Path(f'{n_dofs}/delay_at_convergence.pkl'))
     # -----------------------------------------------------
 
     # perform first refinement by hand
@@ -317,15 +307,12 @@ def main() -> None:
 
         # perform CG on the current mesh
         # ------------------------------
-        custom_callback = AriolisAdaptiveDelayCustomCallback(
-            batch_size=1,
+        custom_callback = EnergyTailOffAveragedCustomCallback(
+            batch_size=BATCHSIZE,
             min_n_iterations_per_mesh=MINITER,
             elements=elements,
             coordinates=coordinates,
             boundaries=boundaries,
-            initial_delay=DELAY,
-            delay_increase=DELAY_INCREASE,
-            tau=TAU,
             fudge=FUDGE,
             lhs_matrix=lhs_matrix,
             rhs_vector=rhs_vector)
@@ -344,7 +331,6 @@ def main() -> None:
             current_iterate = conv.last_iterate
             energy_history = np.array(conv.energy_history)
             n_iterations_done = conv.n_iterations_done
-            delay_at_convergence = conv.delay
             print(f"CG stopped after {conv.n_iterations_done} iterations!")
 
         if not cg_converged:
@@ -362,8 +348,6 @@ def main() -> None:
                     Path(f'{n_dofs}/energy_history.pkl'))
         dump_object(obj=n_iterations_done, path_to_file=base_results_path /
                     Path(f'{n_dofs}/n_iterations_done.pkl'))
-        dump_object(obj=delay_at_convergence, path_to_file=base_results_path /
-                    Path(f'{n_dofs}/delay_at_convergence.pkl'))
         dump_object(
             obj=galerkin_solution, path_to_file=base_results_path /
             Path(f'{n_dofs}/galerkin_solution.pkl'))
