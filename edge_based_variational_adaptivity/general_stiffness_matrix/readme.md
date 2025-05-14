@@ -47,8 +47,30 @@ we only solve exactly for academic reference and not to refine the mesh.
 Generates a reference value of
 $\|u\|_a^2$, where $u$ is the exact solution of problem 1 by
 1. uniformly refine all elements using NVB,
-2. solve $Ax=b$ "exactly",
+2. solve $Ax=b$ exactly,
 3. and calculate $x^\top A x = \|x\|_a^2$.
+
+We ran this script on the cluster, allocating 100G of memory.
+The highest n_DOF we reached was 7'562'721.
+The output of the experiment looks like this.
+```sh
+nDOF = 1776, Galerkin solution energy norm squared = 0.07016081941972444
+nDOF = 7246, Galerkin solution energy norm squared = 0.0709454930902812
+nDOF = 29271, Galerkin solution energy norm squared = 0.07115068182749656
+nDOF = 117661, Galerkin solution energy norm squared = 0.0712017943081311
+nDOF = 471801, Galerkin solution energy norm squared = 0.07121445506096426
+nDOF = 1889521, Galerkin solution energy norm squared = 0.07121759903501006
+nDOF = 7562721, Galerkin solution energy norm squared = 0.07121838188085848
+```
+
+Our reference value for problem 01 is therefore
+$$
+\|u\|^2_a \approx \|u^{7562721}_h\|^2_a
+=
+0.07121838188085848,
+$$
+which can be found in the file
+`energy_norm_squared_reference_value_problem_01.dat`
 
 # References
 - [1] Arioli, M.
