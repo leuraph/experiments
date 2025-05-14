@@ -3,11 +3,37 @@ from pathlib import Path
 from tqdm import tqdm
 import argparse
 from triangle_cubature.cubature_rule import CubatureRuleEnum
-from p1afempy.solvers import get_stiffness_matrix, get_right_hand_side
+from p1afempy.solvers import \
+    get_general_stiffness_matrix, get_right_hand_side, get_mass_matrix
 from scipy.sparse import csr_matrix
 import re
+from p1afempy.data_structures import CoordinatesType
+import numpy as np
 
 
+def f(r: CoordinatesType) -> float:
+    """returns ones only"""
+    return np.ones(r.shape[0], dtype=float)
+
+
+def a_11(r: CoordinatesType) -> np.ndarray:
+    n_vertices = r.shape[0]
+    return - np.ones(n_vertices, dtype=float)
+
+
+def a_22(r: CoordinatesType) -> np.ndarray:
+    n_vertices = r.shape[0]
+    return - np.ones(n_vertices, dtype=float) * 1e-2
+
+
+def a_12(r: CoordinatesType) -> np.ndarray:
+    n_vertices = r.shape[0]
+    return np.zeros(n_vertices, dtype=float)
+
+
+def a_21(r: CoordinatesType) -> np.ndarray:
+    n_vertices = r.shape[0]
+    return np.zeros(n_vertices, dtype=float)
 
 
 def main() -> None:
@@ -28,30 +54,17 @@ def main() -> None:
     match = re.search(pattern, str(base_result_path))
     experiment_number = int(match.group(1))
 
-    if experiment_number in [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16, 17]:
-        print(f'post-processing results from experiment {experiment_number}')
-        calculate_energy_norm_error_squared_last_iterate_to_galerkin(
-            base_result_path=base_result_path, verbose=True)
-        calculate_energy_norm_error_squared_galerkin_with_orthogonality(
-            base_result_path=base_result_path,
-            energy_norm_squared_exact=energy_norm_squared_exact,
-            verbose=True)
-        calculate_energy_norm_error_squared_last_iterate_to_exact(
-            base_result_path=base_result_path,
-            energy_norm_squared_exact=energy_norm_squared_exact,
-            verbose=True)
-
-    elif experiment_number in [1]:
-        print(f'post-processing results from experiment {experiment_number}')
-        calculate_energy_norm_error_squared_galerkin_with_orthogonality(
-            base_result_path=base_result_path,
-            energy_norm_squared_exact=energy_norm_squared_exact,
-            verbose=True)
-
-    else:
-        print(
-            f'experiment {experiment_number} not covered by this script, '
-            'doing nothinng...')
+    print(f'post-processing results from experiment {experiment_number}')
+    calculate_energy_norm_error_squared_last_iterate_to_galerkin(
+        base_result_path=base_result_path, verbose=True)
+    calculate_energy_norm_error_squared_galerkin_with_orthogonality(
+        base_result_path=base_result_path,
+        energy_norm_squared_exact=energy_norm_squared_exact,
+        verbose=True)
+    calculate_energy_norm_error_squared_last_iterate_to_exact(
+        base_result_path=base_result_path,
+        energy_norm_squared_exact=energy_norm_squared_exact,
+        verbose=True)
 
 
 def calculate_energy_norm_error_squared_last_iterate_to_exact(
@@ -81,18 +94,27 @@ def calculate_energy_norm_error_squared_last_iterate_to_exact(
 
         # calculating the energy norm errors
         # ----------------------------------
-
-        stiffness_matrix = csr_matrix(get_stiffness_matrix(
-            coordinates=coordinates, elements=elements))
-        right_hand_side = get_right_hand_side(
+        general_stiffness_matrix = csr_matrix(get_general_stiffness_matrix(
+            coordinates=coordinates,
+            elements=elements,
+            a_11=a_11,
+            a_12=a_12,
+            a_21=a_21,
+            a_22=a_22,
+            cubature_rule=CubatureRuleEnum.DAYTAYLOR))
+        mass_matrix = get_mass_matrix(
+            coordinates=coordinates,
+            elements=elements)
+        lhs_matrix = general_stiffness_matrix + mass_matrix
+        rhs_vector = get_right_hand_side(
             coordinates=coordinates,
             elements=elements,
             f=f,
             cubature_rule=CubatureRuleEnum.DAYTAYLOR)
 
         energy_last_iterate = (
-            0.5 * last_iterate.dot(stiffness_matrix.dot(last_iterate))
-            - right_hand_side.dot(last_iterate))
+            0.5 * last_iterate.dot(lhs_matrix.dot(last_iterate))
+            - rhs_vector.dot(last_iterate))
 
         energy_norm_error_squared_last_iterate_to_exact = (
             energy_norm_squared_exact
@@ -141,13 +163,22 @@ def calculate_energy_norm_error_squared_last_iterate_to_galerkin(
 
         # calculating the energy norm errors
         # ----------------------------------
-
-        stiffness_matrix = csr_matrix(get_stiffness_matrix(
-            coordinates=coordinates, elements=elements))
+        general_stiffness_matrix = csr_matrix(get_general_stiffness_matrix(
+            coordinates=coordinates,
+            elements=elements,
+            a_11=a_11,
+            a_12=a_12,
+            a_21=a_21,
+            a_22=a_22,
+            cubature_rule=CubatureRuleEnum.DAYTAYLOR))
+        mass_matrix = get_mass_matrix(
+            coordinates=coordinates,
+            elements=elements)
+        lhs_matrix = general_stiffness_matrix + mass_matrix
 
         du = galerkin_solution - last_iterate
         energy_norm_error_squared_last_iterate_to_galerkin =\
-            du.dot(stiffness_matrix.dot(du))
+            du.dot(lhs_matrix.dot(du))
 
         # saving the energy norm error to disk
         # ------------------------------------
@@ -190,11 +221,21 @@ def calculate_energy_norm_error_squared_galerkin_with_orthogonality(
 
         # |u - u_h|_a^2 with orthogonality, i.e.
         # |u - u_h|_a^2 = |u|_a^2 - |u_h|_a^2
-        stiffness_matrix = csr_matrix(get_stiffness_matrix(
-            coordinates=coordinates, elements=elements))
+        general_stiffness_matrix = csr_matrix(get_general_stiffness_matrix(
+            coordinates=coordinates,
+            elements=elements,
+            a_11=a_11,
+            a_12=a_12,
+            a_21=a_21,
+            a_22=a_22,
+            cubature_rule=CubatureRuleEnum.DAYTAYLOR))
+        mass_matrix = get_mass_matrix(
+            coordinates=coordinates,
+            elements=elements)
+        lhs_matrix = general_stiffness_matrix + mass_matrix
 
         energy_norm_squared_galerkin = galerkin_solution.dot(
-            stiffness_matrix.dot(galerkin_solution))
+            lhs_matrix.dot(galerkin_solution))
 
         energy_norm_error_squared_exact_with_orthogonality =\
             energy_norm_squared_exact - energy_norm_squared_galerkin
