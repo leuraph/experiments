@@ -5,7 +5,11 @@ kappa(x) = 1e2, x in Omega1,
 kappa(x) = 1e4, x in Omega2,
 kappa(x) = 1e6, x in Omega3,
 kappa(x) = 1, else,
-on (0,1)^2 with homogeneous boundary conditions.
+on (0,1)^2 with homogeneous boundary conditions
+and
+Omega1 = (0.1, 0.3) x (0.1, 0.2),
+Omega2 = (0.4, 0.7) x (0.1, 0.3),
+Omega3 = (0.4, 0.6) x (0.5, 0.8),
 """
 import numpy as np
 from p1afempy.data_structures import CoordinatesType
