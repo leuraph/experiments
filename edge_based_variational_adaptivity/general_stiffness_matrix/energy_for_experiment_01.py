@@ -17,7 +17,6 @@ from scipy.sparse.linalg import spsolve
 import matplotlib.pyplot as plt
 from matplotlib.pyplot import cm
 from p1afempy.refinement import refineNVB
-from pathlib import Path
 from scipy.sparse import csr_matrix
 
 
