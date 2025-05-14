@@ -259,7 +259,6 @@ class EnergyTailOffAveragedCustomCallback(CustomCallBack):
             elements: ElementsType,
             coordinates: CoordinatesType,
             boundaries: list[BoundaryType],
-            energy_of_initial_guess: float,
             fudge: float,
             lhs_matrix: csr_matrix,
             rhs_vector: np.ndarray):
@@ -273,7 +272,7 @@ class EnergyTailOffAveragedCustomCallback(CustomCallBack):
             rhs_vector=rhs_vector)
         self.fudge = fudge
         self.accumulated_energy_gain = 0.
-        self.energy_of_last_iterate = energy_of_initial_guess
+        self.energy_of_last_iterate = None
         self.energy_history = []
         self.n_callback_called = 0
 
