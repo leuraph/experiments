@@ -72,6 +72,35 @@ $$
 which can be found in the file
 `energy_norm_squared_reference_value_problem_01.dat`
 
+## Energy for experiment 02
+Generates a reference value of
+$\|u\|_a^2$, where $u$ is the exact solution of problem 2 by
+1. uniformly refine all elements using NVB,
+2. solve $Ax=b$ exactly,
+3. and calculate $x^\top A x = \|x\|_a^2$.
+
+We ran this script locally.
+The highest n_DOF we reached was 7'562'721.
+The output of the experiment looks like this.
+```sh
+nDOF = 1776, Galerkin solution energy norm squared = 0.6475603281380692
+nDOF = 7246, Galerkin solution energy norm squared = 0.6500986689462869
+nDOF = 29271, Galerkin solution energy norm squared = 0.6507348578623908
+nDOF = 117661, Galerkin solution energy norm squared = 0.6508929268198772
+nDOF = 471801, Galerkin solution energy norm squared = 0.650932254841056
+nDOF = 1889521, Galerkin solution energy norm squared = 0.65094205873772
+nDOF = 7562721, Galerkin solution energy norm squared = 0.6509445059014127
+```
+
+Our reference value for problem 02 is therefore
+$$
+\|u\|^2_a \approx \|u^{7562721}_h\|^2_a
+=
+0.6509445059014127
+$$
+which can be found in the file
+`energy_norm_squared_reference_value_problem_02.dat`
+
 # References
 - [1] Arioli, M.
     A Stopping Criterion for the Conjugate Gradient Algorithm
