@@ -1,7 +1,7 @@
 """
 This scripts approximates the energy for the solution of
 nabla (A(x) nabla u(x)) + u(x) = 1,
-a_11(x) = - 1,
+a_11(x) = - 1e-2,
 a_12(x) = 0,
 a_21(x) = 0,
 a_22(x) = - 1e-2,
@@ -17,7 +17,6 @@ from scipy.sparse.linalg import spsolve
 import matplotlib.pyplot as plt
 from matplotlib.pyplot import cm
 from p1afempy.refinement import refineNVB
-from pathlib import Path
 from scipy.sparse import csr_matrix
 
 
@@ -33,7 +32,7 @@ def uD(r: CoordinatesType) -> np.ndarray:
 
 def a_11(r: CoordinatesType) -> np.ndarray:
     n_vertices = r.shape[0]
-    return - np.ones(n_vertices, dtype=float)
+    return - np.ones(n_vertices, dtype=float) * 1e-2
 
 
 def a_22(r: CoordinatesType) -> np.ndarray:
