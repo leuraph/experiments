@@ -1,10 +1,10 @@
 """
 This scripts approximates the energy for the solution of
-nabla (A(x) nabla u(x)) + u(x) = 1,
-a_11(x) = - 1e-2,
-a_12(x) = 0,
-a_21(x) = 0,
-a_22(x) = - 1e-2,
+nabla (A(x) nabla u(x)) + u(x) = 1, A(x) = -kappa(x) Id,
+kappa(x) = 1e2, x in Omega1,
+kappa(x) = 1e4, x in Omega2,
+kappa(x) = 1e6, x in Omega3,
+kappa(x) = 1, else,
 on (0,1)^2 with homogeneous boundary conditions.
 """
 import numpy as np
