@@ -5,12 +5,16 @@ import argparse
 
 # Define parameter lists
 theta_values = [0.5]
-fudge_values = [1.0, 0.1, 0.01, 0.001, 0.0001, 0.00001, 0.000001]
-batchsize_values = [2]
-miniter_values = [5, 10, 20]
+fudge_values = [1.0, 0.1, 0.01]
+batchsize_values = [2, 10]
+miniter_values = [5, 10]
 
 # Generate all combinations of parameters
-combinations = list(itertools.product(theta_values, fudge_values, batchsize_values, miniter_values))
+combinations = list(itertools.product(
+    theta_values,
+    fudge_values,
+    batchsize_values,
+    miniter_values))
 
 # Directory for generated scripts
 output_dir = "sbatch_scripts"
@@ -38,7 +42,7 @@ module purge
 module load Workspace_Home
 
 source ../.venv/bin/activate
-python experiment_07.py --theta {theta} --fudge {fudge} --batchsize {batchsize} --miniter {miniter}
+python experiment_03.py --theta {theta} --fudge {fudge} --batchsize {batchsize} --miniter {miniter}
 """
 
 # Parse command-line arguments
@@ -49,8 +53,8 @@ args = parser.parse_args()
 # Generate and submit scripts
 for i, (theta, fudge, batchsize, miniter) in enumerate(combinations):
     # Create a unique job name
-    job_name = f"L_shape_exp-07_theta-{theta}_fudge-{fudge}_batchsize-{batchsize}_miniter-{miniter}"
-    
+    job_name = f"L_shape_exp-03_theta-{theta}_fudge-{fudge}_batchsize-{batchsize}_miniter-{miniter}"
+
     # Generate the script content
     sbatch_content = sbatch_template.format(
         job_name=job_name,
@@ -59,12 +63,12 @@ for i, (theta, fudge, batchsize, miniter) in enumerate(combinations):
         batchsize=batchsize,
         miniter=miniter
     )
-    
+
     # Save the script to a file
     script_path = os.path.join(output_dir, f"submit_{i}.sl")
     with open(script_path, "w") as f:
         f.write(sbatch_content)
-    
+
     # Submit the job if not in debug mode
     if not args.debug:
         subprocess.run(["sbatch", script_path])
