@@ -5,7 +5,7 @@ import argparse
 
 # Define parameter lists
 theta_values = [0.5]
-fudge_values = [1.0, 0.1, 0.01]
+fudge_values = [0.1, 0.01]
 batchsize_values = [2, 10]
 miniter_values = [5, 10]
 
