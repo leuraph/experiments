@@ -12,6 +12,10 @@ $u(x) = 0$ for $x \in \partial \Omega$.
 Essentially, the problems differ only in the choice of
 the matrix $A(x)$.
 
+---
+
+# Problems considered
+
 ## Problem 1 (Anisotropic)
 
 $$
@@ -34,8 +38,8 @@ $$
 
 # Experiments / Scripts
 
-## Experiment 01
-Considers the solution of Problem 1 by using
+## Experiment 01 (Problem 1 with adaptive Energy Arioli)
+Considers the solution of *Problem 1* by using
 CG iterations on each mesh with an energy version of
 Ariolis stopping criterion [1] in combination with an adaptive
 choice of the delay parameter in the HS-estimate.
@@ -43,7 +47,34 @@ After convergence, the mesh is refined using edge-based
 variational adaptivity with the last iterate, i.e.
 we only solve exactly for academic reference and not to refine the mesh.
 
-## Energy for experiment 01
+## Experiment 02 (Problem 2 with adaptive Energy Arioli)
+Considers the solution of *Problem 2* by using
+CG iterations on each mesh with an energy version of
+Ariolis stopping criterion [1] in combination with an adaptive
+choice of the delay parameter in the HS-estimate.
+After convergence, the mesh is refined using edge-based
+variational adaptivity with the last iterate, i.e.
+we only solve exactly for academic reference and not to refine the mesh.
+
+## Experiment 03 (Problem 1 with energy flattening-off)
+Considers the solution of *problem 1* by using
+CG iterations until
+$$
+E(u^{n-1}) - E(u^{n}) < \alpha \frac{E(u^{n_{\text{min}}}) - E(u^n)}{n - n_{\text{min}}}
+$$
+is met.
+Then, we perform edge-based variational adaptivity to refine the mesh.
+
+## Experiment 04 (Problem 2 with energy flattening-off)
+Considers the solution of *problem 2* by using
+CG iterations until
+$$
+E(u^{n-1}) - E(u^{n}) < \alpha \frac{E(u^{n_{\text{min}}}) - E(u^n)}{n - n_{\text{min}}}
+$$
+is met.
+Then, we perform edge-based variational adaptivity to refine the mesh.
+
+## Energy for problem 01
 Generates a reference value of
 $\|u\|_a^2$, where $u$ is the exact solution of problem 1 by
 1. uniformly refine all elements using NVB,
@@ -72,7 +103,7 @@ $$
 which can be found in the file
 `energy_norm_squared_reference_value_problem_01.dat`
 
-## Energy for experiment 02
+## Energy for problem 02
 Generates a reference value of
 $\|u\|_a^2$, where $u$ is the exact solution of problem 2 by
 1. uniformly refine all elements using NVB,
@@ -100,6 +131,11 @@ $$
 $$
 which can be found in the file
 `energy_norm_squared_reference_value_problem_02.dat`
+
+# Workflow
+1. Perform an experiment
+2. calculate errors for the results using the corresponding post-processing script
+3. plot the results using the corresponding post-processing script 
 
 # References
 - [1] Arioli, M.
