@@ -18,7 +18,7 @@ def f(r: CoordinatesType) -> float:
 
 def a_11(r: CoordinatesType) -> np.ndarray:
     n_vertices = r.shape[0]
-    return - np.ones(n_vertices, dtype=float)
+    return - np.ones(n_vertices, dtype=float) * 1e-2
 
 
 def a_22(r: CoordinatesType) -> np.ndarray:
