@@ -28,7 +28,7 @@ $$
 ## Problem 2 (Singularly Perturbed)
 
 $$
-A(x) = - 10^{-1}
+A(x) = - 10^{-2}
 \begin{pmatrix}
 1 & 0 \\ 0 & 1
 \end{pmatrix}
