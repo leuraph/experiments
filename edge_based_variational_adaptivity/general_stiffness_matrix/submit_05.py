@@ -35,7 +35,7 @@ sbatch_template = """#!/bin/bash
 # number of cpus per task
 #SBATCH --cpus-per-task=8
 
-# (4 * 24(h) * 60(min) = 2880)
+# (2 * 24(h) * 60(min) = 2880)
 #SBATCH --time=5760
 
 # Email when job is done or failed
@@ -46,7 +46,7 @@ module purge
 module load Workspace_Home
 
 source .venv/bin/activate
-python experiment_01.py --theta {theta} --fudge {fudge} --initial_delay {delay} --miniter {miniter} --tau {tau} --delay_increase {delay_increase}
+python experiment_05.py --theta {theta} --fudge {fudge} --initial_delay {delay} --miniter {miniter} --tau {tau} --delay_increase {delay_increase}
 """
 
 # Parse command-line arguments
@@ -57,8 +57,8 @@ args = parser.parse_args()
 # Generate and submit scripts
 for i, (theta, fudge, delay, miniter, delay_increase, tau) in enumerate(combinations):
     # Create a unique job name
-    job_name = f"L_shape_exp-01_theta-{theta}_fudge-{fudge}_delay-{delay}_miniter-{miniter}_delay_increase-{delay_increase}_tau-{tau}"
-    
+    job_name = f"exp-05_theta-{theta}_fudge-{fudge}_delay-{delay}_miniter-{miniter}_delay_increase-{delay_increase}_tau-{tau}"
+
     # Generate the script content
     sbatch_content = sbatch_template.format(
         job_name=job_name,
@@ -69,12 +69,12 @@ for i, (theta, fudge, delay, miniter, delay_increase, tau) in enumerate(combinat
         delay_increase=delay_increase,
         tau=tau
     )
-    
+
     # Save the script to a file
     script_path = os.path.join(output_dir, f"submit_{i}.sl")
     with open(script_path, "w") as f:
         f.write(sbatch_content)
-    
+
     # Submit the job if not in debug mode
     if not args.debug:
         subprocess.run(["sbatch", script_path])

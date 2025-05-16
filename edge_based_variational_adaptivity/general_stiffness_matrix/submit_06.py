@@ -31,7 +31,7 @@ sbatch_template = """#!/bin/bash
 # number of cpus per task
 #SBATCH --cpus-per-task=8
 
-# (4 * 24(h) * 60(min) = 2880)
+# (2 * 24(h) * 60(min) = 2880)
 #SBATCH --time=5760
 
 # Email when job is done or failed
@@ -42,7 +42,7 @@ module purge
 module load Workspace_Home
 
 source .venv/bin/activate
-python experiment_03.py --theta {theta} --fudge {fudge} --batchsize {batchsize} --miniter {miniter}
+python experiment_06.py --theta {theta} --fudge {fudge} --batchsize {batchsize} --miniter {miniter}
 """
 
 # Parse command-line arguments
@@ -53,7 +53,7 @@ args = parser.parse_args()
 # Generate and submit scripts
 for i, (theta, fudge, batchsize, miniter) in enumerate(combinations):
     # Create a unique job name
-    job_name = f"L_shape_exp-03_theta-{theta}_fudge-{fudge}_batchsize-{batchsize}_miniter-{miniter}"
+    job_name = f"exp-06_theta-{theta}_fudge-{fudge}_batchsize-{batchsize}_miniter-{miniter}"
 
     # Generate the script content
     sbatch_content = sbatch_template.format(
