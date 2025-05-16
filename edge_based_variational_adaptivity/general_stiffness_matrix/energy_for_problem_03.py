@@ -236,7 +236,7 @@ def main() -> None:
             A=lhs_matrix[free_nodes, :][:, free_nodes],
             b=rhs_vector[free_nodes])
 
-        show_solution(coordinates, galerkin_solution)
+        # show_solution(coordinates, galerkin_solution)
 
         energy_norm_squared = galerkin_solution.dot(
             lhs_matrix.dot(galerkin_solution))
