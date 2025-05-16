@@ -22,7 +22,9 @@ $$
 A(x) =
 \begin{pmatrix}
 -1 & 0 \\ 0 & -10^{-2}
-\end{pmatrix}
+\end{pmatrix},
+\quad
+c=1
 $$
 
 ## Problem 2 (Singularly Perturbed)
@@ -31,7 +33,35 @@ $$
 A(x) = - 10^{-2}
 \begin{pmatrix}
 1 & 0 \\ 0 & 1
-\end{pmatrix}
+\end{pmatrix},
+\quad
+c=1
+$$
+
+## Problem 3 (Piecewise constant)
+
+$$
+A(x) = -\kappa (x) \text{Id}_{2\times 2},
+\quad
+c=1,
+\quad
+\kappa(x) =
+\begin{cases}
+1, & x\in \Omega \setminus (\Omega_1 \cup \Omega_2 \cup \Omega_3)
+\\
+10^2, & x \in \Omega_1 \\
+10^4, & x \in \Omega_2 \\
+10^6, & x \in \Omega_3 \\
+\end{cases},
+$$
+where
+$$
+\begin{align*}
+\Omega &= (0, 1)^2 \\
+\Omega_1 &= (0.1, 0.3) \times (0.1, 0.2) \\
+\Omega_2 &= (0.4, 0.7) \times (0.1, 0.3) \\
+\Omega_3 &= (0.4, 0.6) \times (0.5, 0.8)
+\end{align*}
 $$
 
 ---
@@ -67,6 +97,24 @@ Then, we perform edge-based variational adaptivity to refine the mesh.
 
 ## Experiment 04 (Problem 2 with energy flattening-off)
 Considers the solution of *problem 2* by using
+CG iterations until
+$$
+E(u^{n-1}) - E(u^{n}) < \alpha \frac{E(u^{n_{\text{min}}}) - E(u^n)}{n - n_{\text{min}}}
+$$
+is met.
+Then, we perform edge-based variational adaptivity to refine the mesh.
+
+## Experiment 05 (Problem 3 with Energy-Arioli)
+Considers the solution of *Problem 3* by using
+CG iterations on each mesh with an energy version of
+Ariolis stopping criterion [1] in combination with an adaptive
+choice of the delay parameter in the HS-estimate.
+After convergence, the mesh is refined using edge-based
+variational adaptivity with the last iterate, i.e.
+we only solve exactly for academic reference and not to refine the mesh.
+
+## Experiment 06 (Problem 3 with energy flattening-off)
+Considers the solution of *problem 3* by using
 CG iterations until
 $$
 E(u^{n-1}) - E(u^{n}) < \alpha \frac{E(u^{n_{\text{min}}}) - E(u^n)}{n - n_{\text{min}}}
