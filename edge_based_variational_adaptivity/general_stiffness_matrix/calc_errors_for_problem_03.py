@@ -11,19 +11,58 @@ from p1afempy.data_structures import CoordinatesType
 import numpy as np
 
 
+class Square:
+    x_min: float
+    x_max: float
+    y_min: float
+    y_max: float
+
+    def __init__(self, x_min: float, x_max: float, y_min: float, y_max: float):
+        self.x_min = x_min
+        self.x_max = x_max
+        self.y_min = y_min
+        self.y_max = y_max
+
+    def has_coordinates(self, coordinates: CoordinatesType) -> list[bool]:
+        x, y = coordinates[:, 0], coordinates[:, 1]
+        return (
+            (self.x_min < x) &
+            (x < self.x_max) &
+            (self.y_min < y) &
+            (y < self.y_max))
+
+
+def kappa(coordinates: CoordinatesType):
+    omega_1 = Square(0.1, 0.3, 0.1, 0.2)
+    omega_2 = Square(0.4, 0.7, 0.1, 0.3)
+    omega_3 = Square(0.4, 0.6, 0.5, 0.8)
+
+    in_omega_1 = omega_1.has_coordinates(coordinates)
+    in_omega_2 = omega_2.has_coordinates(coordinates)
+    in_omega_3 = omega_3.has_coordinates(coordinates)
+
+    # Values for each region
+    values = [1e2, 1e4, 1e6]
+
+    # Default value (like `else`)
+    default_value = 1.0
+
+    return np.select(
+        [in_omega_1, in_omega_2, in_omega_3],
+        values, default=default_value)
+
+
 def f(r: CoordinatesType) -> float:
     """returns ones only"""
     return np.ones(r.shape[0], dtype=float)
 
 
 def a_11(r: CoordinatesType) -> np.ndarray:
-    n_vertices = r.shape[0]
-    return - np.ones(n_vertices, dtype=float) * 1e-2
+    return - kappa(coordinates=r)
 
 
 def a_22(r: CoordinatesType) -> np.ndarray:
-    n_vertices = r.shape[0]
-    return - np.ones(n_vertices, dtype=float) * 1e-2
+    return - kappa(coordinates=r)
 
 
 def a_12(r: CoordinatesType) -> np.ndarray:
