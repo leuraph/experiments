@@ -33,7 +33,7 @@ from variational_adaptivity.edge_based_variational_adaptivity import \
 from variational_adaptivity.markers import doerfler_marking
 from p1afempy.refinement import refineNVB_edge_based
 from custom_callback import ConvergedException
-from scipy.sparse import csr_matrix
+from scipy.sparse import csr_matrix, diags
 
 
 class Square:
@@ -364,10 +364,14 @@ def main() -> None:
         cg_converged = False
 
         try:
+            lhs_reduced = lhs_matrix[free_nodes, :][:, free_nodes]
+            diagonal = lhs_reduced.diagonal()
+            M = diags(diagonals=1./diagonal)
             current_iterate[free_nodes], _ = cg(
                 A=lhs_matrix[free_nodes, :][:, free_nodes],
                 b=rhs_vector[free_nodes],
                 x0=current_iterate[free_nodes],
+                M=M,
                 rtol=1e-100,
                 callback=custom_callback)
         except ConvergedException as conv:
