@@ -122,6 +122,24 @@ $$
 is met.
 Then, we perform edge-based variational adaptivity to refine the mesh.
 
+## Experiment 07 (Problem 3 with Energy-Arioli and precinditioner $P=\text{diag}(\text{lhs})^{-1}$)
+Considers the solution of *Problem 3* by using
+CG iterations with a diagonal prconditioner on each mesh with an energy version of
+Ariolis stopping criterion [1] in combination with an adaptive
+choice of the delay parameter in the HS-estimate.
+After convergence, the mesh is refined using edge-based
+variational adaptivity with the last iterate, i.e.
+we only solve exactly for academic reference and not to refine the mesh.
+
+## Experiment 08 (Problem 3 with energy flattening-off and precinditioner $P=\text{diag}(\text{lhs})^{-1}$)
+Considers the solution of *problem 3* by using
+CG iterations with a diagonal prconditioner until
+$$
+E(u^{n-1}) - E(u^{n}) < \alpha \frac{E(u^{n_{\text{min}}}) - E(u^n)}{n - n_{\text{min}}}
+$$
+is met.
+Then, we perform edge-based variational adaptivity to refine the mesh.
+
 ## Energy for problem 01
 Generates a reference value of
 $\|u\|_a^2$, where $u$ is the exact solution of problem 1 by
