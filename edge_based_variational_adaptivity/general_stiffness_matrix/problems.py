@@ -32,6 +32,30 @@ class Problem:
         self.c = c
 
 
+class Square:
+    x_min: float
+    x_max: float
+    y_min: float
+    y_max: float
+
+    def __init__(
+            self,
+            x_min: float, x_max: float,
+            y_min: float, y_max: float):
+        self.x_min = x_min
+        self.x_max = x_max
+        self.y_min = y_min
+        self.y_max = y_max
+
+    def has_coordinates(self, coordinates: CoordinatesType) -> list[bool]:
+        x, y = coordinates[:, 0], coordinates[:, 1]
+        return (
+            (self.x_min < x) &
+            (x < self.x_max) &
+            (self.y_min < y) &
+            (y < self.y_max))
+
+
 def get_problem_1() -> Problem:
     def f(r: CoordinatesType) -> float:
         """returns ones only"""
@@ -89,28 +113,6 @@ def get_problem_2() -> Problem:
 
 
 def get_problem_3() -> Problem:
-    class Square:
-        x_min: float
-        x_max: float
-        y_min: float
-        y_max: float
-
-        def __init__(
-                self,
-                x_min: float, x_max: float,
-                y_min: float, y_max: float):
-            self.x_min = x_min
-            self.x_max = x_max
-            self.y_min = y_min
-            self.y_max = y_max
-
-        def has_coordinates(self, coordinates: CoordinatesType) -> list[bool]:
-            x, y = coordinates[:, 0], coordinates[:, 1]
-            return (
-                (self.x_min < x) &
-                (x < self.x_max) &
-                (self.y_min < y) &
-                (y < self.y_max))
 
     def kappa(coordinates: CoordinatesType):
         omega_1 = Square(0.1, 0.3, 0.1, 0.2)
