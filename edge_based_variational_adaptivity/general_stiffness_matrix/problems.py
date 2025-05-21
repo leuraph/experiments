@@ -32,7 +32,7 @@ class Problem:
         self.c = c
 
 
-class Square:
+class Rectangle:
     x_min: float
     x_max: float
     y_min: float
@@ -115,9 +115,9 @@ def get_problem_2() -> Problem:
 def get_problem_3() -> Problem:
 
     def kappa(coordinates: CoordinatesType):
-        omega_1 = Square(0.1, 0.3, 0.1, 0.2)
-        omega_2 = Square(0.4, 0.7, 0.1, 0.3)
-        omega_3 = Square(0.4, 0.6, 0.5, 0.8)
+        omega_1 = Rectangle(0.1, 0.3, 0.1, 0.2)
+        omega_2 = Rectangle(0.4, 0.7, 0.1, 0.3)
+        omega_3 = Rectangle(0.4, 0.6, 0.5, 0.8)
 
         in_omega_1 = omega_1.has_coordinates(coordinates)
         in_omega_2 = omega_2.has_coordinates(coordinates)
