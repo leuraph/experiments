@@ -202,3 +202,15 @@ def get_problem_4() -> Problem:
     return Problem(
         f=f, a_11=a_11, a_12=a_12,
         a_21=a_21, a_22=a_22, c=c)
+
+
+def get_problem(number: int) -> Problem:
+    if number == 1:
+        return get_problem_1()
+    if number == 2:
+        return get_problem_2()
+    if number == 3:
+        return get_problem_3()
+    if number == 4:
+        return get_problem_4()
+    raise RuntimeError(f'unknown problem number: {number}')
