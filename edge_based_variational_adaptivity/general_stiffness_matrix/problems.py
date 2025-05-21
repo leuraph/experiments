@@ -3,6 +3,12 @@ import numpy as np
 
 
 class Problem:
+    """
+    This class resembles the
+    homogeneous BVP problem
+    nabla (A(x) nabla u(x)) + cu(x) = f(x),
+    where A(x)_ij = a_ij(x) is a 2x2 Matrix
+    """
     f: BoundaryConditionType
     a_11: BoundaryConditionType
     a_12: BoundaryConditionType
