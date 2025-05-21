@@ -7,7 +7,7 @@ from p1afempy.solvers import \
     get_general_stiffness_matrix, get_right_hand_side, get_mass_matrix
 from scipy.sparse import csr_matrix
 import re
-from problems import get_problem_1
+from problems import get_problem, Problem
 
 
 def main() -> None:
@@ -16,7 +16,14 @@ def main() -> None:
     parser.add_argument("--energy-path", type=str, required=True,
                         help="path to the file holding the numerical value of "
                         "the solution's energy norm squared")
+    parser.add_argument("--number", type=int, required=True,
+                        help="number of the problem to be "
+                        "considered, see readme for detailed description "
+                        "of problems")
     args = parser.parse_args()
+
+    problem_number = int(args.number)
+    problem = get_problem(number=problem_number)
 
     base_result_path = Path(args.path)
 
@@ -30,20 +37,22 @@ def main() -> None:
 
     print(f'post-processing results from experiment {experiment_number}')
     calculate_energy_norm_error_squared_last_iterate_to_galerkin(
-        base_result_path=base_result_path, verbose=True)
+        base_result_path=base_result_path,
+        problem=problem, verbose=True)
     calculate_energy_norm_error_squared_galerkin_with_orthogonality(
         base_result_path=base_result_path,
         energy_norm_squared_exact=energy_norm_squared_exact,
-        verbose=True)
+        problem=problem, verbose=True)
     calculate_energy_norm_error_squared_last_iterate_to_exact(
         base_result_path=base_result_path,
         energy_norm_squared_exact=energy_norm_squared_exact,
-        verbose=True)
+        problem=problem, verbose=True)
 
 
 def calculate_energy_norm_error_squared_last_iterate_to_exact(
         base_result_path: Path,
         energy_norm_squared_exact: float,
+        problem: Problem,
         verbose: bool = True) -> None:
     if verbose:
         print(
@@ -71,10 +80,10 @@ def calculate_energy_norm_error_squared_last_iterate_to_exact(
         general_stiffness_matrix = csr_matrix(get_general_stiffness_matrix(
             coordinates=coordinates,
             elements=elements,
-            a_11=get_problem_1().a_11,
-            a_12=get_problem_1().a_12,
-            a_21=get_problem_1().a_21,
-            a_22=get_problem_1().a_22,
+            a_11=problem.a_11,
+            a_12=problem.a_12,
+            a_21=problem.a_21,
+            a_22=problem.a_22,
             cubature_rule=CubatureRuleEnum.DAYTAYLOR))
         mass_matrix = get_mass_matrix(
             coordinates=coordinates,
@@ -83,7 +92,7 @@ def calculate_energy_norm_error_squared_last_iterate_to_exact(
         rhs_vector = get_right_hand_side(
             coordinates=coordinates,
             elements=elements,
-            f=get_problem_1().f,
+            f=problem.f,
             cubature_rule=CubatureRuleEnum.DAYTAYLOR)
 
         energy_last_iterate = (
@@ -109,6 +118,7 @@ def calculate_energy_norm_error_squared_last_iterate_to_exact(
 
 def calculate_energy_norm_error_squared_last_iterate_to_galerkin(
         base_result_path: Path,
+        problem: Problem,
         verbose: bool = True) -> None:
     if verbose:
         print(
@@ -140,10 +150,10 @@ def calculate_energy_norm_error_squared_last_iterate_to_galerkin(
         general_stiffness_matrix = csr_matrix(get_general_stiffness_matrix(
             coordinates=coordinates,
             elements=elements,
-            a_11=get_problem_1().a_11,
-            a_12=get_problem_1().a_12,
-            a_21=get_problem_1().a_21,
-            a_22=get_problem_1().a_22,
+            a_11=problem.a_11,
+            a_12=problem.a_12,
+            a_21=problem.a_21,
+            a_22=problem.a_22,
             cubature_rule=CubatureRuleEnum.DAYTAYLOR))
         mass_matrix = get_mass_matrix(
             coordinates=coordinates,
@@ -167,6 +177,7 @@ def calculate_energy_norm_error_squared_last_iterate_to_galerkin(
 def calculate_energy_norm_error_squared_galerkin_with_orthogonality(
         base_result_path: Path,
         energy_norm_squared_exact: float,
+        problem: Problem,
         verbose: bool = True) -> None:
     if verbose:
         print(
@@ -198,10 +209,10 @@ def calculate_energy_norm_error_squared_galerkin_with_orthogonality(
         general_stiffness_matrix = csr_matrix(get_general_stiffness_matrix(
             coordinates=coordinates,
             elements=elements,
-            a_11=get_problem_1().a_11,
-            a_12=get_problem_1().a_12,
-            a_21=get_problem_1().a_21,
-            a_22=get_problem_1().a_22,
+            a_11=problem.a_11,
+            a_12=problem.a_12,
+            a_21=problem.a_21,
+            a_22=problem.a_22,
             cubature_rule=CubatureRuleEnum.DAYTAYLOR))
         mass_matrix = get_mass_matrix(
             coordinates=coordinates,
