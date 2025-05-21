@@ -163,14 +163,14 @@ def get_problem_4() -> Problem:
     def kappa(coordinates: CoordinatesType):
         omega_1 = Rectangle(0.1, 0.3, 0.1, 0.2)
         omega_2 = Rectangle(0.4, 0.7, 0.1, 0.3)
-        omega_3 = Rectangle(0.4, 0.6, 0.5, 0.8)
+        omega_3 = Rectangle(0.8, 1.0, 0.7, 1.0)
 
         in_omega_1 = omega_1.has_coordinates(coordinates)
         in_omega_2 = omega_2.has_coordinates(coordinates)
         in_omega_3 = omega_3.has_coordinates(coordinates)
 
         # Values for each region
-        values = [1e2, 1e4, 1e6]
+        values = [10., 0.1, 0.05]
 
         # Default value (like `else`)
         default_value = 1.0
