@@ -13,7 +13,6 @@ Omega3 = (0.4, 0.6) x (0.5, 0.8),
 on (0,1)^2 with homogeneous boundary conditions.
 """
 import numpy as np
-from p1afempy.data_structures import CoordinatesType
 from p1afempy import refinement
 from p1afempy.solvers import \
     get_general_stiffness_matrix, get_mass_matrix, get_right_hand_side
@@ -34,75 +33,7 @@ from variational_adaptivity.markers import doerfler_marking
 from p1afempy.refinement import refineNVB_edge_based
 from custom_callback import ConvergedException
 from scipy.sparse import csr_matrix, diags
-
-
-class Square:
-    x_min: float
-    x_max: float
-    y_min: float
-    y_max: float
-
-    def __init__(self, x_min: float, x_max: float, y_min: float, y_max: float):
-        self.x_min = x_min
-        self.x_max = x_max
-        self.y_min = y_min
-        self.y_max = y_max
-
-    def has_coordinates(self, coordinates: CoordinatesType) -> list[bool]:
-        x, y = coordinates[:, 0], coordinates[:, 1]
-        return (
-            (self.x_min < x) &
-            (x < self.x_max) &
-            (self.y_min < y) &
-            (y < self.y_max))
-
-
-def kappa(coordinates: CoordinatesType):
-    omega_1 = Square(0.1, 0.3, 0.1, 0.2)
-    omega_2 = Square(0.4, 0.7, 0.1, 0.3)
-    omega_3 = Square(0.4, 0.6, 0.5, 0.8)
-
-    in_omega_1 = omega_1.has_coordinates(coordinates)
-    in_omega_2 = omega_2.has_coordinates(coordinates)
-    in_omega_3 = omega_3.has_coordinates(coordinates)
-
-    # Values for each region
-    values = [1e2, 1e4, 1e6]
-
-    # Default value (like `else`)
-    default_value = 1.0
-
-    return np.select(
-        [in_omega_1, in_omega_2, in_omega_3],
-        values, default=default_value)
-
-
-def f(r: CoordinatesType) -> float:
-    """returns ones only"""
-    return np.ones(r.shape[0], dtype=float)
-
-
-def uD(r: CoordinatesType) -> np.ndarray:
-    """returns homogeneous boundary conditions"""
-    return np.zeros(r.shape[0], dtype=float)
-
-
-def a_11(r: CoordinatesType) -> np.ndarray:
-    return - kappa(coordinates=r)
-
-
-def a_22(r: CoordinatesType) -> np.ndarray:
-    return - kappa(coordinates=r)
-
-
-def a_12(r: CoordinatesType) -> np.ndarray:
-    n_vertices = r.shape[0]
-    return np.zeros(n_vertices, dtype=float)
-
-
-def a_21(r: CoordinatesType) -> np.ndarray:
-    n_vertices = r.shape[0]
-    return np.zeros(n_vertices, dtype=float)
+from problems import get_problem_3
 
 
 def show_solution(coordinates, solution):
@@ -211,15 +142,15 @@ def main() -> None:
     rhs_vector = get_right_hand_side(
         coordinates=coordinates,
         elements=elements,
-        f=f,
+        f=get_problem_3().f,
         cubature_rule=CubatureRuleEnum.DAYTAYLOR)
     stiffness_matrix = get_general_stiffness_matrix(
         coordinates=coordinates,
         elements=elements,
-        a_11=a_11,
-        a_12=a_12,
-        a_21=a_21,
-        a_22=a_22,
+        a_11=get_problem_3().a_11,
+        a_12=get_problem_3().a_12,
+        a_21=get_problem_3().a_21,
+        a_22=get_problem_3().a_22,
         cubature_rule=CubatureRuleEnum.DAYTAYLOR)
     mass_matrix = get_mass_matrix(
         coordinates=coordinates,
@@ -287,7 +218,7 @@ def main() -> None:
         elements=elements,
         non_boundary_edges=non_boundary_edges,
         current_iterate=current_iterate,
-        f=f,
+        f=get_problem_3().f,
         cubature_rule=CubatureRuleEnum.DAYTAYLOR,
         verbose=False)
 
@@ -326,10 +257,10 @@ def main() -> None:
         general_stiffness_matrix = get_general_stiffness_matrix(
             coordinates=coordinates,
             elements=elements,
-            a_11=a_11,
-            a_12=a_12,
-            a_21=a_21,
-            a_22=a_22,
+            a_11=get_problem_3().a_11,
+            a_12=get_problem_3().a_12,
+            a_21=get_problem_3().a_21,
+            a_22=get_problem_3().a_22,
             cubature_rule=CubatureRuleEnum.DAYTAYLOR)
         mass_matrix = get_mass_matrix(
             coordinates=coordinates,
@@ -339,7 +270,7 @@ def main() -> None:
         rhs_vector = get_right_hand_side(
             coordinates=coordinates,
             elements=elements,
-            f=f,
+            f=get_problem_3().f,
             cubature_rule=CubatureRuleEnum.DAYTAYLOR)
 
         # compute the Galerkin solution on current mesh
@@ -441,7 +372,7 @@ def main() -> None:
             elements=elements,
             non_boundary_edges=non_boundary_edges,
             current_iterate=current_iterate,
-            f=f,
+            f=get_problem_3().f,
             cubature_rule=CubatureRuleEnum.DAYTAYLOR,
             verbose=True,
             parallel=False)
