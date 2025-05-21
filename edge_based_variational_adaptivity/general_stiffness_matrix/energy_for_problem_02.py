@@ -8,7 +8,6 @@ a_22(x) = - 1e-2,
 on (0,1)^2 with homogeneous boundary conditions.
 """
 import numpy as np
-from p1afempy.data_structures import CoordinatesType
 from p1afempy import refinement
 from p1afempy.solvers import \
     get_general_stiffness_matrix, get_mass_matrix, get_right_hand_side
@@ -18,36 +17,7 @@ import matplotlib.pyplot as plt
 from matplotlib.pyplot import cm
 from p1afempy.refinement import refineNVB
 from scipy.sparse import csr_matrix
-
-
-def f(r: CoordinatesType) -> float:
-    """returns ones only"""
-    return np.ones(r.shape[0], dtype=float)
-
-
-def uD(r: CoordinatesType) -> np.ndarray:
-    """returns homogeneous boundary conditions"""
-    return np.zeros(r.shape[0], dtype=float)
-
-
-def a_11(r: CoordinatesType) -> np.ndarray:
-    n_vertices = r.shape[0]
-    return - np.ones(n_vertices, dtype=float) * 1e-2
-
-
-def a_22(r: CoordinatesType) -> np.ndarray:
-    n_vertices = r.shape[0]
-    return - np.ones(n_vertices, dtype=float) * 1e-2
-
-
-def a_12(r: CoordinatesType) -> np.ndarray:
-    n_vertices = r.shape[0]
-    return np.zeros(n_vertices, dtype=float)
-
-
-def a_21(r: CoordinatesType) -> np.ndarray:
-    n_vertices = r.shape[0]
-    return np.zeros(n_vertices, dtype=float)
+from problems import get_problem_2
 
 
 def show_solution(coordinates, solution):
@@ -128,15 +98,15 @@ def main() -> None:
     rhs_vector = get_right_hand_side(
         coordinates=coordinates,
         elements=elements,
-        f=f,
+        f=get_problem_2().f,
         cubature_rule=CubatureRuleEnum.DAYTAYLOR)
     stiffness_matrix = get_general_stiffness_matrix(
         coordinates=coordinates,
         elements=elements,
-        a_11=a_11,
-        a_12=a_12,
-        a_21=a_21,
-        a_22=a_22,
+        a_11=get_problem_2().a_11,
+        a_12=get_problem_2().a_12,
+        a_21=get_problem_2().a_21,
+        a_22=get_problem_2().a_22,
         cubature_rule=CubatureRuleEnum.DAYTAYLOR)
     mass_matrix = get_mass_matrix(
         coordinates=coordinates,
@@ -170,10 +140,10 @@ def main() -> None:
         general_stiffness_matrix = get_general_stiffness_matrix(
             coordinates=coordinates,
             elements=elements,
-            a_11=a_11,
-            a_12=a_12,
-            a_21=a_21,
-            a_22=a_22,
+            a_11=get_problem_2().a_11,
+            a_12=get_problem_2().a_12,
+            a_21=get_problem_2().a_21,
+            a_22=get_problem_2().a_22,
             cubature_rule=CubatureRuleEnum.DAYTAYLOR)
         mass_matrix = get_mass_matrix(
             coordinates=coordinates,
@@ -183,7 +153,7 @@ def main() -> None:
         rhs_vector = get_right_hand_side(
             coordinates=coordinates,
             elements=elements,
-            f=f,
+            f=get_problem_2().f,
             cubature_rule=CubatureRuleEnum.DAYTAYLOR)
 
         # compute the Galerkin solution on current mesh
