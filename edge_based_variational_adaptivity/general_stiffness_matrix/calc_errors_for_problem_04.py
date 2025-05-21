@@ -7,7 +7,7 @@ from p1afempy.solvers import \
     get_general_stiffness_matrix, get_right_hand_side, get_mass_matrix
 from scipy.sparse import csr_matrix
 import re
-from problems import get_problem_3
+from problems import get_problem_4
 
 
 def main() -> None:
@@ -71,10 +71,10 @@ def calculate_energy_norm_error_squared_last_iterate_to_exact(
         general_stiffness_matrix = csr_matrix(get_general_stiffness_matrix(
             coordinates=coordinates,
             elements=elements,
-            a_11=get_problem_3().a_11,
-            a_12=get_problem_3().a_12,
-            a_21=get_problem_3().a_21,
-            a_22=get_problem_3().a_22,
+            a_11=get_problem_4().a_11,
+            a_12=get_problem_4().a_12,
+            a_21=get_problem_4().a_21,
+            a_22=get_problem_4().a_22,
             cubature_rule=CubatureRuleEnum.DAYTAYLOR))
         mass_matrix = get_mass_matrix(
             coordinates=coordinates,
@@ -83,7 +83,7 @@ def calculate_energy_norm_error_squared_last_iterate_to_exact(
         rhs_vector = get_right_hand_side(
             coordinates=coordinates,
             elements=elements,
-            f=get_problem_3().f,
+            f=get_problem_4().f,
             cubature_rule=CubatureRuleEnum.DAYTAYLOR)
 
         energy_last_iterate = (
@@ -140,10 +140,10 @@ def calculate_energy_norm_error_squared_last_iterate_to_galerkin(
         general_stiffness_matrix = csr_matrix(get_general_stiffness_matrix(
             coordinates=coordinates,
             elements=elements,
-            a_11=get_problem_3().a_11,
-            a_12=get_problem_3().a_12,
-            a_21=get_problem_3().a_21,
-            a_22=get_problem_3().a_22,
+            a_11=get_problem_4().a_11,
+            a_12=get_problem_4().a_12,
+            a_21=get_problem_4().a_21,
+            a_22=get_problem_4().a_22,
             cubature_rule=CubatureRuleEnum.DAYTAYLOR))
         mass_matrix = get_mass_matrix(
             coordinates=coordinates,
@@ -198,10 +198,10 @@ def calculate_energy_norm_error_squared_galerkin_with_orthogonality(
         general_stiffness_matrix = csr_matrix(get_general_stiffness_matrix(
             coordinates=coordinates,
             elements=elements,
-            a_11=get_problem_3().a_11,
-            a_12=get_problem_3().a_12,
-            a_21=get_problem_3().a_21,
-            a_22=get_problem_3().a_22,
+            a_11=get_problem_4().a_11,
+            a_12=get_problem_4().a_12,
+            a_21=get_problem_4().a_21,
+            a_22=get_problem_4().a_22,
             cubature_rule=CubatureRuleEnum.DAYTAYLOR))
         mass_matrix = get_mass_matrix(
             coordinates=coordinates,
