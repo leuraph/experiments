@@ -64,6 +64,32 @@ $$
 \end{align*}
 $$
 
+## Problem 4 (Piecewise constant)
+
+$$
+A(x) = -\kappa (x) \text{Id}_{2\times 2},
+\quad
+c=1,
+\quad
+\kappa(x) =
+\begin{cases}
+1, & x\in \Omega \setminus (\Omega_1 \cup \Omega_2 \cup \Omega_3)
+\\
+10, & x \in \Omega_1 \\
+0.1, & x \in \Omega_2 \\
+0.05, & x \in \Omega_3 \\
+\end{cases},
+$$
+where
+$$
+\begin{align*}
+\Omega &= (0, 1)^2 \\
+\Omega_1 &= (0.1, 0.3) \times (0.1, 0.2) \\
+\Omega_2 &= (0.4, 0.7) \times (0.1, 0.3) \\
+\Omega_3 &= (0.8, 1.0) \times (0.7, 1.0)
+\end{align*}
+$$
+
 ---
 
 # Experiments / Scripts
