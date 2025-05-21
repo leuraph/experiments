@@ -1,15 +1,15 @@
 """
 This scripts approximates the energy for the solution of
 nabla (A(x) nabla u(x)) + u(x) = 1, A(x) = -kappa(x) Id,
-kappa(x) = 1e2, x in Omega1,
-kappa(x) = 1e4, x in Omega2,
-kappa(x) = 1e6, x in Omega3,
+kappa(x) = 1e1, x in Omega1,
+kappa(x) = 1e-1, x in Omega2,
+kappa(x) = 0.5e-1, x in Omega3,
 kappa(x) = 1, else,
 on (0,1)^2 with homogeneous boundary conditions
 and
 Omega1 = (0.1, 0.3) x (0.1, 0.2),
 Omega2 = (0.4, 0.7) x (0.1, 0.3),
-Omega3 = (0.4, 0.6) x (0.5, 0.8),
+Omega3 = (0.8, 1.0) x (0.7, 1.0),
 """
 import numpy as np
 from p1afempy import refinement
@@ -21,7 +21,7 @@ import matplotlib.pyplot as plt
 from matplotlib.pyplot import cm
 from p1afempy.refinement import refineNVB
 from scipy.sparse import csr_matrix
-from problems import get_problem_3
+from problems import get_problem_4
 
 
 def show_solution(coordinates, solution):
@@ -102,15 +102,15 @@ def main() -> None:
     rhs_vector = get_right_hand_side(
         coordinates=coordinates,
         elements=elements,
-        f=get_problem_3().f,
+        f=get_problem_4().f,
         cubature_rule=CubatureRuleEnum.DAYTAYLOR)
     stiffness_matrix = get_general_stiffness_matrix(
         coordinates=coordinates,
         elements=elements,
-        a_11=get_problem_3().a_11,
-        a_12=get_problem_3().a_12,
-        a_21=get_problem_3().a_21,
-        a_22=get_problem_3().a_22,
+        a_11=get_problem_4().a_11,
+        a_12=get_problem_4().a_12,
+        a_21=get_problem_4().a_21,
+        a_22=get_problem_4().a_22,
         cubature_rule=CubatureRuleEnum.DAYTAYLOR)
     mass_matrix = get_mass_matrix(
         coordinates=coordinates,
@@ -144,10 +144,10 @@ def main() -> None:
         general_stiffness_matrix = get_general_stiffness_matrix(
             coordinates=coordinates,
             elements=elements,
-            a_11=get_problem_3().a_11,
-            a_12=get_problem_3().a_12,
-            a_21=get_problem_3().a_21,
-            a_22=get_problem_3().a_22,
+            a_11=get_problem_4().a_11,
+            a_12=get_problem_4().a_12,
+            a_21=get_problem_4().a_21,
+            a_22=get_problem_4().a_22,
             cubature_rule=CubatureRuleEnum.DAYTAYLOR)
         mass_matrix = get_mass_matrix(
             coordinates=coordinates,
@@ -157,7 +157,7 @@ def main() -> None:
         rhs_vector = get_right_hand_side(
             coordinates=coordinates,
             elements=elements,
-            f=get_problem_3().f,
+            f=get_problem_4().f,
             cubature_rule=CubatureRuleEnum.DAYTAYLOR)
 
         # compute the Galerkin solution on current mesh
