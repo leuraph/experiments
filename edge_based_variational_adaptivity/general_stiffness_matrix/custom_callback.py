@@ -556,6 +556,8 @@ class CombinedCustomCallback(CustomCallBack):
     delay: int
     delay_increase: int
     energy_history_arioli: list[float]
+    n_dofs: int
+    additional_arioli_steps: int
 
     energy_history: list[float]
     n_callback_called: int
@@ -594,9 +596,19 @@ class CombinedCustomCallback(CustomCallBack):
         self.delay = initial_delay
         self.delay_increase = delay_increase
         self.energy_history_arioli = []
+        self.additional_arioli_steps = 0
 
         self.energy_history = []
         self.n_callback_called = 0
+
+        # calculate number of degrees of freedom
+        n_vertices = coordinates.shape[0]
+        indices_of_free_nodes = np.setdiff1d(
+            ar1=np.arange(n_vertices),
+            ar2=np.unique(boundaries[0].flatten()))
+        free_nodes = np.zeros(n_vertices, dtype=bool)
+        free_nodes[indices_of_free_nodes] = 1
+        self.n_dofs = np.sum(free_nodes)
 
     def perform_callback(self, current_iterate) -> None:
         self.n_callback_called += 1
@@ -625,7 +637,7 @@ class CombinedCustomCallback(CustomCallBack):
         energy_gain_iteration = self.energy_of_last_iterate - current_energy
         self.accumulated_energy_gain += energy_gain_iteration
 
-        if energy_gain_iteration < self.fudge * self.accumulated_energy_gain/self.n_callback_called:
+        if energy_gain_iteration < self.fudge_tail_off * self.accumulated_energy_gain/self.n_callback_called:
 
             self.energy_flattening_off_converged = True
             self.energy_of_last_iterate = None
@@ -637,6 +649,8 @@ class CombinedCustomCallback(CustomCallBack):
     def perform_callback_adaptive_energy_arioli(
             self,
             current_iterate) -> None:
+
+        self.additional_arioli_steps += 1
 
         # calculate and save energy of current iterate
         current_energy = self.get_energy(
@@ -658,6 +672,9 @@ class CombinedCustomCallback(CustomCallBack):
                 continue
 
             if self.has_converged():
+                # print(
+                #     'additional arioli steps = '
+                #     f'{self.additional_arioli_steps - self.delay}')
                 converged_exception = ConvergedException(
                     last_iterate=current_iterate,
                     n_iterations_done=self.n_iterations_done,
@@ -700,9 +717,9 @@ class CombinedCustomCallback(CustomCallBack):
         as given in [1] but formulated in an
         energy fashion
         """
-        e_1 = self.energy_history_ariolicandidates[0]
+        e_1 = self.energy_history_arioli[0]
         e_1_d = self.energy_history_arioli[self.delay]
 
-        lhs = ((self.fudge+self.n_dofs)/self.n_dofs) * e_1
+        lhs = ((self.fudge_energy_arioli+self.n_dofs)/self.n_dofs) * e_1
         rhs = e_1_d
         return lhs <= rhs
