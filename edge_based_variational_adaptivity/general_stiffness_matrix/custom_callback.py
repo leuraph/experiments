@@ -534,3 +534,175 @@ class AriolisAdaptiveDelayCustomCallback(CustomCallBack):
         lhs = ((self.fudge+self.n_dofs)/self.n_dofs) * e_1
         rhs = e_1_d
         return lhs <= rhs
+
+
+class CombinedCustomCallback(CustomCallBack):
+    """
+    After each batch of iterations,
+    compares the accumulated energy gain with
+    the energy gain associated to another batch of iterations.
+    If converged, uses Adaptive Energy-Arioli
+    to verify convergence once more.
+    """
+    # parameters corresponding to Energy tail-off criterion
+    energy_of_last_iterate: float
+    accumulated_energy_gain: float
+    fudge_tail_off: float
+    energy_flattening_off_converged: bool
+
+    # parameters corresponding to Adaptive Energy Arioli criterion
+    fudge_energy_arioli: float
+    tau: float
+    delay: int
+    delay_increase: int
+    energy_history_arioli: list[float]
+
+    energy_history: list[float]
+    n_callback_called: int
+
+    def __init__(
+            self,
+            batch_size: int,
+            min_n_iterations_per_mesh: int,
+            elements: ElementsType,
+            coordinates: CoordinatesType,
+            boundaries: list[BoundaryType],
+            fudge_tail_off: float,
+            fudge_energy_arioli: float,
+            tau: float,
+            initial_delay: int,
+            delay_increase: int,
+            lhs_matrix: csr_matrix,
+            rhs_vector: np.ndarray):
+        super().__init__(
+            batch_size=batch_size,
+            min_n_iterations_per_mesh=min_n_iterations_per_mesh,
+            elements=elements,
+            coordinates=coordinates,
+            boundaries=boundaries,
+            lhs_matrix=lhs_matrix,
+            rhs_vector=rhs_vector)
+        # parameters corresponding to Energy tail-off criterion
+        self.energy_of_last_iterate = None
+        self.accumulated_energy_gain = 0.
+        self.fudge_tail_off = fudge_tail_off
+        self.energy_flattening_off_converged = False
+
+        # parameters corresponding to Adaptive Energy Arioli criterion
+        self.fudge_energy_arioli = fudge_energy_arioli
+        self.tau = tau
+        self.delay = initial_delay
+        self.delay_increase = delay_increase
+        self.energy_history_arioli = []
+
+        self.energy_history = []
+        self.n_callback_called = 0
+
+    def perform_callback(self, current_iterate) -> None:
+        self.n_callback_called += 1
+
+        if not self.energy_flattening_off_converged:
+            self.perform_callback_energy_flattening_off(
+                current_iterate=current_iterate)
+            return
+
+        self.perform_callback_adaptive_energy_arioli(
+            current_iterate=current_iterate)
+
+    def perform_callback_energy_flattening_off(
+            self,
+            current_iterate) -> None:
+
+        current_energy = self.get_energy(
+            current_iterate=current_iterate)
+        self.energy_history.append(current_energy)
+
+        # reset the accumulated energy drop to zero
+        # after min_n_iterationns is reached
+        if self.n_callback_called == 1:
+            self.energy_of_last_iterate = current_energy
+
+        energy_gain_iteration = self.energy_of_last_iterate - current_energy
+        self.accumulated_energy_gain += energy_gain_iteration
+
+        if energy_gain_iteration < self.fudge * self.accumulated_energy_gain/self.n_callback_called:
+
+            self.energy_flattening_off_converged = True
+            self.energy_of_last_iterate = None
+            return
+
+        # keep energy considerations in memory
+        self.energy_of_last_iterate = current_energy
+
+    def perform_callback_adaptive_energy_arioli(
+            self,
+            current_iterate) -> None:
+
+        # calculate and save energy of current iterate
+        current_energy = self.get_energy(
+            current_iterate=current_iterate)
+        self.energy_history_arioli.append(current_energy)
+
+        while True:
+
+            # keep on iterating until we can calculate both
+            # relevant HS-estimates
+            if not self.can_calculate_hs_estimates():
+                break
+
+            # check if the current HS-estimate is a "good" approximation
+            # with the rule given in [1]
+            # if not, increase delay and continue
+            if self.need_to_increase_delay():
+                self.delay += self.delay_increase
+                continue
+
+            if self.has_converged():
+                converged_exception = ConvergedException(
+                    last_iterate=current_iterate,
+                    n_iterations_done=self.n_iterations_done,
+                    delay=self.delay,
+                    energy_history=self.energy_history)
+                raise converged_exception
+
+            # throw away the oldest iterate and continue
+            self.energy_history_arioli = self.energy_history_arioli[1:]
+
+    def need_to_increase_delay(self) -> bool:
+        """implements the criterion for increasing the delay from [1]"""
+        hs_1, hs_2 = self.get_hs_estimates()
+        return hs_2 > hs_1 * self.tau
+
+    def can_calculate_hs_estimates(self) -> bool:
+        """
+        returns True if we have enough candidates in memory
+        in order to calculate both HS estimates
+        """
+        return self.delay + 2 <= len(self.energy_history_arioli)
+
+    def get_hs_estimates(self) -> tuple[float, float]:
+        """
+        returns both HS estimates needed in the adaptive delay scheme
+        """
+        e_1 = self.energy_history_arioli[0]
+        e_2 = self.energy_history_arioli[1]
+        e_1_d = self.energy_history_arioli[self.delay]
+        e_2_d = self.energy_history_arioli[self.delay + 1]
+
+        hs_1 = 2. * (e_1 - e_1_d)
+        hs_2 = 2. * (e_2 - e_2_d)
+
+        return hs_1, hs_2
+
+    def has_converged(self) -> float:
+        """
+        checks for the CG stopping criterion
+        as given in [1] but formulated in an
+        energy fashion
+        """
+        e_1 = self.energy_history_ariolicandidates[0]
+        e_1_d = self.energy_history_arioli[self.delay]
+
+        lhs = ((self.fudge+self.n_dofs)/self.n_dofs) * e_1
+        rhs = e_1_d
+        return lhs <= rhs
