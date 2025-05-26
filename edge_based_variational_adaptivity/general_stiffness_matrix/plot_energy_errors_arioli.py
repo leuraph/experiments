@@ -53,14 +53,6 @@ def main() -> None:
 
     # plotting |u_h - u_N^{n^\star}|_a
     # --------------------------------
-    def model(x, m):
-        return -0.5*x + m
-    popt, pcov = curve_fit(
-        model,
-        np.log(n_dofs[1:]),
-        np.log(energy_norm_errors_last_iterate_to_galerkin[1:]))
-    m_optimized = popt[0]
-
     color = plt.cm.tab10(1)
     ax.loglog(
             n_dofs[1:],
@@ -73,20 +65,10 @@ def main() -> None:
             alpha=0.5,       # Transparency for markers
             label=r'$\|u_h - u_N^{n^\star}\|_a$',
             markersize=5, linewidth=1.0)
-    ax.loglog(n_dofs[1:], np.exp(model(np.log(n_dofs[1:]), m_optimized)),
-              'k--', linewidth=0.8)
     # -------------------------------------
 
     # plotting |u - u_h|_a
     # ----------------------
-    def model(x, m):
-        return -0.5*x + m
-    popt, pcov = curve_fit(
-        model,
-        np.log(n_dofs),
-        np.log(energy_norm_errors_galerkin_to_exact))
-    m_optimized = popt[0]
-
     color = plt.cm.tab10(2)
     ax.loglog(
             n_dofs, energy_norm_errors_galerkin_to_exact,
@@ -98,8 +80,6 @@ def main() -> None:
             alpha=0.5,       # Transparency for markers
             label=r'$\|u - u_h\|_a$',
             markersize=5, linewidth=1.0)
-    ax.loglog(n_dofs, np.exp(model(np.log(n_dofs), m_optimized)),
-              'k--', linewidth=0.8)
     # --------------------------------------
 
     # plotting |u - u_N^{n^\star}|_a
