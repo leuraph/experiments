@@ -184,6 +184,13 @@ $$
 is met.
 Then, we perform edge-based variational adaptivity to refine the mesh.
 
+## Experiment 11 (Problem 4 with combined stopping criterion and preconditioner $P=\text{diag}(\text{lhs})^{-1}$)
+Considers the solution of *problem 4* by using
+CG iterations with a diagonal prconditioner until both
+1. Energy Flattening-off indicates convergence
+2. Adaptive Energy Arioli indicates convergence
+Then, we perform edge-based variational adaptivity to refine the mesh.
+
 ## Energy for problem 01
 Generates a reference value of
 $\|u\|_a^2$, where $u$ is the exact solution of problem 1 by

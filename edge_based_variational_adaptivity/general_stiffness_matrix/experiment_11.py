@@ -15,7 +15,7 @@ from triangle_cubature.cubature_rule import CubatureRuleEnum
 from scipy.sparse.linalg import spsolve
 import matplotlib.pyplot as plt
 from matplotlib.pyplot import cm
-from custom_callback import AriolisAdaptiveDelayCustomCallback
+from custom_callback import CombinedCustomCallback
 import argparse
 from scipy.sparse.linalg import cg
 from pathlib import Path
@@ -27,8 +27,8 @@ from variational_adaptivity.edge_based_variational_adaptivity import \
 from variational_adaptivity.markers import doerfler_marking
 from p1afempy.refinement import refineNVB_edge_based
 from custom_callback import ConvergedException
-from scipy.sparse import csr_matrix
-from problems import get_problem_1
+from scipy.sparse import csr_matrix, diags
+from problems import get_problem_4
 
 
 def show_solution(coordinates, solution):
@@ -63,9 +63,12 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--theta", type=float, required=True,
                         help="value of theta used in the Dörfler marking")
-    parser.add_argument("--fudge", type=float, required=True,
+    parser.add_argument("--fudge_arioli", type=float, required=True,
                         help="additional fudge parameter "
                         "in Ariolis stopping criterion")
+    parser.add_argument("--fudge_tail", type=float, required=True,
+                        help="additional fudge parameter "
+                        "in the energy flattening-off stopping criterion")
     parser.add_argument("--miniter", type=int, required=True,
                         help="minimum number of iterations on each mesh")
     parser.add_argument("--initial_delay", type=int, required=True,
@@ -82,7 +85,8 @@ def main() -> None:
     DELAY_INCREASE = args.delay_increase
     TAU = args.tau
     THETA = args.theta
-    FUDGE = args.fudge
+    FUDGE_ARIOLI = args.fudge_arioli
+    FUDGE_TAIL = args.fudge_tail
 
     n_max_dofs = 1e6
     n_initial_refinements = 5
@@ -93,9 +97,11 @@ def main() -> None:
     np.random.seed(42)
 
     base_results_path = (
-        Path('results/experiment_01') /
+        Path('results/experiment_11') /
         Path(
-            f'theta-{THETA}_fudge-{FUDGE}_'
+            f'theta-{THETA}_'
+            f'fudge_tail-{FUDGE_TAIL}_'
+            f'fudge_arioli-{FUDGE_ARIOLI}_'
             f'miniter-{MINITER}_initial_delay-{DELAY}_'
             f'tau-{TAU}_delay_increase-{DELAY_INCREASE}'))
 
@@ -144,15 +150,15 @@ def main() -> None:
     rhs_vector = get_right_hand_side(
         coordinates=coordinates,
         elements=elements,
-        f=get_problem_1().f,
+        f=get_problem_4().f,
         cubature_rule=CubatureRuleEnum.DAYTAYLOR)
     stiffness_matrix = get_general_stiffness_matrix(
         coordinates=coordinates,
         elements=elements,
-        a_11=get_problem_1().a_11,
-        a_12=get_problem_1().a_12,
-        a_21=get_problem_1().a_21,
-        a_22=get_problem_1().a_22,
+        a_11=get_problem_4().a_11,
+        a_12=get_problem_4().a_12,
+        a_21=get_problem_4().a_21,
+        a_22=get_problem_4().a_22,
         cubature_rule=CubatureRuleEnum.DAYTAYLOR)
     mass_matrix = get_mass_matrix(
         coordinates=coordinates,
@@ -223,12 +229,12 @@ def main() -> None:
         elements=elements,
         non_boundary_edges=non_boundary_edges,
         current_iterate=current_iterate,
-        f=get_problem_1().f,
-        a_11=get_problem_1().a_11,
-        a_12=get_problem_1().a_12,
-        a_21=get_problem_1().a_21,
-        a_22=get_problem_1().a_22,
-        c=get_problem_1().c,
+        f=get_problem_4().f,
+        a_11=get_problem_4().a_11,
+        a_12=get_problem_4().a_12,
+        a_21=get_problem_4().a_21,
+        a_22=get_problem_4().a_22,
+        c=get_problem_4().c,
         cubature_rule=CubatureRuleEnum.DAYTAYLOR,
         verbose=False)
 
@@ -267,10 +273,10 @@ def main() -> None:
         general_stiffness_matrix = get_general_stiffness_matrix(
             coordinates=coordinates,
             elements=elements,
-            a_11=get_problem_1().a_11,
-            a_12=get_problem_1().a_12,
-            a_21=get_problem_1().a_21,
-            a_22=get_problem_1().a_22,
+            a_11=get_problem_4().a_11,
+            a_12=get_problem_4().a_12,
+            a_21=get_problem_4().a_21,
+            a_22=get_problem_4().a_22,
             cubature_rule=CubatureRuleEnum.DAYTAYLOR)
         mass_matrix = get_mass_matrix(
             coordinates=coordinates,
@@ -280,7 +286,7 @@ def main() -> None:
         rhs_vector = get_right_hand_side(
             coordinates=coordinates,
             elements=elements,
-            f=get_problem_1().f,
+            f=get_problem_4().f,
             cubature_rule=CubatureRuleEnum.DAYTAYLOR)
 
         # compute the Galerkin solution on current mesh
@@ -292,27 +298,32 @@ def main() -> None:
 
         # perform CG on the current mesh
         # ------------------------------
-        custom_callback = AriolisAdaptiveDelayCustomCallback(
+        custom_callback = CombinedCustomCallback(
             batch_size=1,
             min_n_iterations_per_mesh=MINITER,
             elements=elements,
             coordinates=coordinates,
             boundaries=boundaries,
+            fudge_energy_arioli=FUDGE_ARIOLI,
+            fudge_tail_off=FUDGE_TAIL,
+            tau=TAU,
             initial_delay=DELAY,
             delay_increase=DELAY_INCREASE,
-            tau=TAU,
-            fudge=FUDGE,
             lhs_matrix=lhs_matrix,
             rhs_vector=rhs_vector)
 
         cg_converged = False
 
         try:
+            lhs_reduced = lhs_matrix[free_nodes, :][:, free_nodes]
+            diagonal = lhs_reduced.diagonal()
+            M = diags(diagonals=1./diagonal)
             current_iterate[free_nodes], _ = cg(
                 A=lhs_matrix[free_nodes, :][:, free_nodes],
                 b=rhs_vector[free_nodes],
                 x0=current_iterate[free_nodes],
                 rtol=1e-100,
+                M=M,
                 callback=custom_callback)
         except ConvergedException as conv:
             cg_converged = True
@@ -384,12 +395,12 @@ def main() -> None:
             elements=elements,
             non_boundary_edges=non_boundary_edges,
             current_iterate=current_iterate,
-            f=get_problem_1().f,
-            a_11=get_problem_1().a_11,
-            a_12=get_problem_1().a_12,
-            a_21=get_problem_1().a_21,
-            a_22=get_problem_1().a_22,
-            c=get_problem_1().c,
+            f=get_problem_4().f,
+            a_11=get_problem_4().a_11,
+            a_12=get_problem_4().a_12,
+            a_21=get_problem_4().a_21,
+            a_22=get_problem_4().a_22,
+            c=get_problem_4().c,
             cubature_rule=CubatureRuleEnum.DAYTAYLOR,
             verbose=True,
             parallel=False)
