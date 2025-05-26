@@ -53,7 +53,7 @@ args = parser.parse_args()
 # Generate and submit scripts
 for i, (theta, fudge, batchsize, miniter) in enumerate(combinations):
     # Create a unique job name
-    job_name = f"L_shape_exp-03_theta-{theta}_fudge-{fudge}_batchsize-{batchsize}_miniter-{miniter}"
+    job_name = f"exp-03_theta-{theta}_fudge-{fudge}_batchsize-{batchsize}_miniter-{miniter}"
 
     # Generate the script content
     sbatch_content = sbatch_template.format(
