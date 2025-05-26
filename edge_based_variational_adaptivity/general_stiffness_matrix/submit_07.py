@@ -9,7 +9,7 @@ fudge_values = [1.0, 0.1, 0.01]
 delay_values = [10]
 miniter_values = [5, 10]
 delay_increase_values = [10]
-tau_values = [1.01, 1.01]
+tau_values = [1.01]
 
 # Generate all combinations of parameters
 combinations = list(itertools.product(
