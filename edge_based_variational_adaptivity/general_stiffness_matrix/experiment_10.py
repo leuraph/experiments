@@ -78,7 +78,7 @@ def main() -> None:
     np.random.seed(42)
 
     base_results_path = (
-        Path('results/experiment_08') /
+        Path('results/experiment_10') /
         Path(
             f'theta-{THETA}_fudge-{FUDGE}_'
             f'miniter-{MINITER}_batchsize-{BATCHSIZE}'))

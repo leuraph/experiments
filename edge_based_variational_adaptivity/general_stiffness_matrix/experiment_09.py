@@ -84,7 +84,7 @@ def main() -> None:
     np.random.seed(42)
 
     base_results_path = (
-        Path('results/experiment_07') /
+        Path('results/experiment_09') /
         Path(
             f'theta-{THETA}_fudge-{FUDGE}_'
             f'miniter-{MINITER}_initial_delay-{DELAY}_'
