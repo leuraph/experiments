@@ -229,6 +229,11 @@ def main() -> None:
         non_boundary_edges=non_boundary_edges,
         current_iterate=current_iterate,
         f=get_problem_3().f,
+        a_11=get_problem_3().a_11,
+        a_12=get_problem_3().a_12,
+        a_21=get_problem_3().a_21,
+        a_22=get_problem_3().a_22,
+        c=get_problem_3().c,
         cubature_rule=CubatureRuleEnum.DAYTAYLOR,
         verbose=False)
 
@@ -389,9 +394,13 @@ def main() -> None:
             non_boundary_edges=non_boundary_edges,
             current_iterate=current_iterate,
             f=get_problem_3().f,
+            a_11=get_problem_3().a_11,
+            a_12=get_problem_3().a_12,
+            a_21=get_problem_3().a_21,
+            a_22=get_problem_3().a_22,
+            c=get_problem_3().c,
             cubature_rule=CubatureRuleEnum.DAYTAYLOR,
-            verbose=True,
-            parallel=False)
+            verbose=False)
 
         # dörfler based on EVA
         # --------------------
