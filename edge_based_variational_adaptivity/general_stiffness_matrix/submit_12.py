@@ -46,7 +46,7 @@ module purge
 module load Workspace_Home
 
 source .venv/bin/activate
-python experiment_01.py --theta {theta} --fudge {fudge} --initial_delay {delay} --miniter {miniter} --tau {tau} --delay_increase {delay_increase}
+python experiment_12.py --theta {theta} --fudge {fudge} --initial_delay {delay} --miniter {miniter} --tau {tau} --delay_increase {delay_increase}
 """
 
 # Parse command-line arguments
@@ -57,7 +57,7 @@ args = parser.parse_args()
 # Generate and submit scripts
 for i, (theta, fudge, delay, miniter, delay_increase, tau) in enumerate(combinations):
     # Create a unique job name
-    job_name = f"exp-01_theta-{theta}_fudge-{fudge}_delay-{delay}_miniter-{miniter}_delay_increase-{delay_increase}_tau-{tau}"
+    job_name = f"exp-12_theta-{theta}_fudge-{fudge}_delay-{delay}_miniter-{miniter}_delay_increase-{delay_increase}_tau-{tau}"
     
     # Generate the script content
     sbatch_content = sbatch_template.format(
