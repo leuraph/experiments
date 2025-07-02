@@ -1,11 +1,7 @@
 """
 This experiment considers the Problem
-nabla (A(x) nabla u(x)) + u(x) = 1,
-a_11(x) = - 1,
-a_12(x) = 0,
-a_21(x) = 0,
-a_22(x) = - 1e-2,
-on (0,1)^2 with homogeneous boundary conditions.
+-\Delta u(x) = 1,
+on L-shape with homogeneous boundary conditions.
 """
 import numpy as np
 from p1afempy import refinement
@@ -13,8 +9,6 @@ from p1afempy.solvers import \
     get_general_stiffness_matrix, get_mass_matrix, get_right_hand_side
 from triangle_cubature.cubature_rule import CubatureRuleEnum
 from scipy.sparse.linalg import spsolve
-import matplotlib.pyplot as plt
-from matplotlib.pyplot import cm
 from custom_callback import AriolisAdaptiveDelayCustomCallback
 import argparse
 from scipy.sparse.linalg import cg
@@ -28,35 +22,7 @@ from variational_adaptivity.markers import doerfler_marking
 from p1afempy.refinement import refineNVB_edge_based
 from custom_callback import ConvergedException
 from scipy.sparse import csr_matrix
-from problems import get_problem_1
-
-
-def show_solution(coordinates, solution):
-    plt.rcParams["mathtext.fontset"] = "cm"
-    plt.rcParams['xtick.labelsize'] = 12
-    plt.rcParams['ytick.labelsize'] = 12
-    plt.rcParams['axes.labelsize'] = 20
-    plt.rcParams['axes.titlesize'] = 12
-    plt.rcParams['legend.fontsize'] = 12
-
-    x_coords, y_coords = zip(*coordinates)
-
-    # Create a 3D scatter plot
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-
-    # Plot the points with scalar values as colors (adjust colormap as needed)
-    _ = ax.plot_trisurf(x_coords, y_coords, solution, linewidth=0.2,
-                        antialiased=True, cmap=cm.viridis)
-    # Add labels to the axes
-    ax.set_xlabel(r'$x$')
-    ax.set_ylabel(r'$y$')
-    ax.set_zlabel(r'$z$')
-
-    ax.set_xticks([0, 1])
-    ax.set_yticks([0, 1])
-
-    plt.show()
+from problems import get_problem_5
 
 
 def main() -> None:
@@ -93,7 +59,7 @@ def main() -> None:
     np.random.seed(42)
 
     base_results_path = (
-        Path('results/experiment_01') /
+        Path('results/experiment_12') /
         Path(
             f'theta-{THETA}_fudge-{FUDGE}_'
             f'miniter-{MINITER}_initial_delay-{DELAY}_'
@@ -144,20 +110,21 @@ def main() -> None:
     rhs_vector = get_right_hand_side(
         coordinates=coordinates,
         elements=elements,
-        f=get_problem_1().f,
+        f=get_problem_5().f,
         cubature_rule=CubatureRuleEnum.DAYTAYLOR)
     stiffness_matrix = get_general_stiffness_matrix(
         coordinates=coordinates,
         elements=elements,
-        a_11=get_problem_1().a_11,
-        a_12=get_problem_1().a_12,
-        a_21=get_problem_1().a_21,
-        a_22=get_problem_1().a_22,
+        a_11=get_problem_5().a_11,
+        a_12=get_problem_5().a_12,
+        a_21=get_problem_5().a_21,
+        a_22=get_problem_5().a_22,
         cubature_rule=CubatureRuleEnum.DAYTAYLOR)
     mass_matrix = get_mass_matrix(
         coordinates=coordinates,
         elements=elements)
-    lhs_matrix = csr_matrix(mass_matrix + stiffness_matrix)
+    c: float = get_problem_5().c
+    lhs_matrix = csr_matrix(c*mass_matrix + stiffness_matrix)
 
     galerkin_solution = np.zeros(n_vertices)
     galerkin_solution[free_nodes] = spsolve(
@@ -223,12 +190,12 @@ def main() -> None:
         elements=elements,
         non_boundary_edges=non_boundary_edges,
         current_iterate=current_iterate,
-        f=get_problem_1().f,
-        a_11=get_problem_1().a_11,
-        a_12=get_problem_1().a_12,
-        a_21=get_problem_1().a_21,
-        a_22=get_problem_1().a_22,
-        c=get_problem_1().c,
+        f=get_problem_5().f,
+        a_11=get_problem_5().a_11,
+        a_12=get_problem_5().a_12,
+        a_21=get_problem_5().a_21,
+        a_22=get_problem_5().a_22,
+        c=get_problem_5().c,
         cubature_rule=CubatureRuleEnum.DAYTAYLOR,
         verbose=False)
 
@@ -267,20 +234,20 @@ def main() -> None:
         general_stiffness_matrix = get_general_stiffness_matrix(
             coordinates=coordinates,
             elements=elements,
-            a_11=get_problem_1().a_11,
-            a_12=get_problem_1().a_12,
-            a_21=get_problem_1().a_21,
-            a_22=get_problem_1().a_22,
+            a_11=get_problem_5().a_11,
+            a_12=get_problem_5().a_12,
+            a_21=get_problem_5().a_21,
+            a_22=get_problem_5().a_22,
             cubature_rule=CubatureRuleEnum.DAYTAYLOR)
         mass_matrix = get_mass_matrix(
             coordinates=coordinates,
             elements=elements)
-
-        lhs_matrix = csr_matrix(general_stiffness_matrix + mass_matrix)
+        c: float = get_problem_5().c
+        lhs_matrix = csr_matrix(general_stiffness_matrix + c*mass_matrix)
         rhs_vector = get_right_hand_side(
             coordinates=coordinates,
             elements=elements,
-            f=get_problem_1().f,
+            f=get_problem_5().f,
             cubature_rule=CubatureRuleEnum.DAYTAYLOR)
 
         # compute the Galerkin solution on current mesh
@@ -384,12 +351,12 @@ def main() -> None:
             elements=elements,
             non_boundary_edges=non_boundary_edges,
             current_iterate=current_iterate,
-            f=get_problem_1().f,
-            a_11=get_problem_1().a_11,
-            a_12=get_problem_1().a_12,
-            a_21=get_problem_1().a_21,
-            a_22=get_problem_1().a_22,
-            c=get_problem_1().c,
+            f=get_problem_5().f,
+            a_11=get_problem_5().a_11,
+            a_12=get_problem_5().a_12,
+            a_21=get_problem_5().a_21,
+            a_22=get_problem_5().a_22,
+            c=get_problem_5().c,
             cubature_rule=CubatureRuleEnum.DAYTAYLOR,
             verbose=True,
             parallel=False)
