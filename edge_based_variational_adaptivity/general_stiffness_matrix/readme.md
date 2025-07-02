@@ -90,6 +90,23 @@ $$
 \end{align*}
 $$
 
+## Problem 5 (Poisson Equation on L-shape)
+This last problem does not _really_ fit into the "general stiffness" matrix setting.
+However, as we wish to put this experiment in the very same paper as the experiments above (eva2025), for the sake of convenience and congruency,
+we put this experiment in this folder, too.
+
+This problem is given by the BVP
+$$
+\begin{align*}
+- \Delta u(x) &= 1, \quad x \in \Omega, \\
+u(x) &= 0, \quad x \in \partial \Omega,
+\end{align*}
+$$
+where $\Omega := (-1, 1)^2 \setminus [0,1] \times [-1, 0]$,
+i.e., an L-shaped domain obtained by removing the fourth
+quadrant from the square of side length $2$ and centered at the origin.
+
+
 ---
 
 # Experiments / Scripts
@@ -301,12 +318,22 @@ nDOF = 7562721, Galerkin solution energy norm squared = 0.04074476586361528
 ```
 Our reference value for problem 04 is therefore
 $$
-\|u\|^2_a \approx \|u^{7562721}_h\|^2_a
+\|u\|^2_a \approx \|u^h_{7562721}\|^2_a
 =
 0.04074476586361528
 $$
 which can be found in the file
 `energy_norm_squared_reference_value_problem_04.dat`
+
+## Energy for Problem 5
+Note that the analytical solution of this problem remains unknown.
+However, we do have an estimate of the value $\| u \|_a^2$ at hand,
+i.e. we received, via mail (Patrick Bammer), the value
+$$
+\| u \|_a^2 \approx 0.214075802220546
+$$
+which can be found in the file
+`energy_norm_squared_reference_value_problem_05.dat`.
 
 # Workflow
 1. Perform an experiment
