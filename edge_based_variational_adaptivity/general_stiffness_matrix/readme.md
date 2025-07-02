@@ -208,6 +208,24 @@ CG iterations with a diagonal prconditioner until both
 2. Adaptive Energy Arioli indicates convergence
 Then, we perform edge-based variational adaptivity to refine the mesh.
 
+## Experiment 12 (Problem 5 with adaptive Energy Arioli)
+Considers the solution of *Problem 5* by using
+CG iterations on each mesh with an energy version of
+Ariolis stopping criterion [1] in combination with an adaptive
+choice of the delay parameter in the HS-estimate.
+After convergence, the mesh is refined using edge-based
+variational adaptivity with the last iterate, i.e.
+we only solve exactly for academic reference and not to refine the mesh.
+
+## Experiment 13 (Problem 5 with energy flattening-off)
+Considers the solution of *problem 5* by using
+CG iterations until
+$$
+E(u^{n-1}) - E(u^{n}) < \alpha \frac{E(u^{n_{\text{min}}}) - E(u^n)}{n - n_{\text{min}}}
+$$
+is met.
+Then, we perform edge-based variational adaptivity to refine the mesh.
+
 ## Energy for problem 01
 Generates a reference value of
 $\|u\|_a^2$, where $u$ is the exact solution of problem 1 by
