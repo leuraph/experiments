@@ -204,6 +204,34 @@ def get_problem_4() -> Problem:
         a_21=a_21, a_22=a_22, c=c)
 
 
+def get_problem_5() -> Problem:
+    def f(r: CoordinatesType) -> float:
+        """returns ones only"""
+        return np.ones(r.shape[0], dtype=float)
+
+    def a_11(r: CoordinatesType) -> np.ndarray:
+        n_vertices = r.shape[0]
+        return - np.ones(n_vertices, dtype=float)
+
+    def a_22(r: CoordinatesType) -> np.ndarray:
+        n_vertices = r.shape[0]
+        return - np.ones(n_vertices, dtype=float)
+
+    def a_12(r: CoordinatesType) -> np.ndarray:
+        n_vertices = r.shape[0]
+        return np.zeros(n_vertices, dtype=float)
+
+    def a_21(r: CoordinatesType) -> np.ndarray:
+        n_vertices = r.shape[0]
+        return np.zeros(n_vertices, dtype=float)
+
+    c = 0.0
+
+    return Problem(
+        f=f, a_11=a_11, a_12=a_12,
+        a_21=a_21, a_22=a_22, c=c)
+
+
 def get_problem(number: int) -> Problem:
     if number == 1:
         return get_problem_1()
@@ -213,4 +241,6 @@ def get_problem(number: int) -> Problem:
         return get_problem_3()
     if number == 4:
         return get_problem_4()
+    if number == 5:
+        return get_problem_5()
     raise RuntimeError(f'unknown problem number: {number}')
