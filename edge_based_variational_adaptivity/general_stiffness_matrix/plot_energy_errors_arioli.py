@@ -39,6 +39,8 @@ def main() -> None:
     # settinng plot params
     # --------------------
 
+    alpha_for_error_plots = 0.8
+
     plt.rcParams["mathtext.fontset"] = "cm"
     plt.rcParams['xtick.labelsize'] = 16
     plt.rcParams['ytick.labelsize'] = 16
@@ -52,52 +54,6 @@ def main() -> None:
     # ax.set_ylabel('$\| u_h - u_N^{n^\star} \|_a^2$')
     ax.grid(True)
 
-    # plotting |u_h - u_N^{n^\star}|_a
-    # --------------------------------
-    color = plt.cm.tab10(1)
-    ax.loglog(
-            n_dofs[1:],
-            energy_norm_errors_last_iterate_to_galerkin[1:],
-            linestyle='--',  # Dotted line
-            marker='s',     # Square markers
-            color=color,    # Line and marker color
-            markerfacecolor=color,  # Marker fill color
-            markeredgecolor=color,  # Marker outline color
-            alpha=0.5,       # Transparency for markers
-            label='$\|u_h - u_N^{n^\star}\|_a$',
-            markersize=5, linewidth=1.0)
-    # -------------------------------------
-
-    # plotting |u - u_h|_a
-    # ----------------------
-    # color = plt.cm.tab10(2)
-    # ax.loglog(
-    #         n_dofs, energy_norm_errors_galerkin_to_exact,
-    #         linestyle='--',  # Dotted line
-    #         marker='s',     # Square markers
-    #         color=color,    # Line and marker color
-    #         markerfacecolor=color,  # Marker fill color
-    #         markeredgecolor=color,  # Marker outline color
-    #         alpha=0.5,       # Transparency for markers
-    #         label='$\|u - u_h\|_a$',
-    #         markersize=5, linewidth=1.0)
-    # --------------------------------------
-
-    # plotting |u - u_N^{n^\star}|_a
-    # ----------------------
-    color = plt.cm.tab10(3)
-    ax.loglog(
-            n_dofs, energy_norm_errors_last_iterate_to_exact,
-            linestyle='--',  # Dotted line
-            marker='s',     # Square markers
-            color=color,    # Line and marker color
-            markerfacecolor=color,  # Marker fill color
-            markeredgecolor=color,  # Marker outline color
-            alpha=0.5,       # Transparency for markers
-            label='$\|u - u_N^{n^\star}\|_a$',
-            markersize=5, linewidth=1.0)
-    # --------------------------------------
-
     # plotting ideal convergence order
     # --------------------------------
     def model(x, m):
@@ -108,8 +64,54 @@ def main() -> None:
         np.log(energy_norm_errors_last_iterate_to_exact))
     m_optimized = popt[0]
     ax.loglog(n_dofs, np.exp(model(np.log(n_dofs), m_optimized)),
-              color='black', linewidth=1.5)
+              color='black', linestyle='--', linewidth=1.5)
     # --------------------------------
+
+    # plotting |u_h - u_N^{n^\star}|_a
+    # --------------------------------
+    color = plt.cm.tab10(1)
+    ax.loglog(
+            n_dofs[1:],
+            energy_norm_errors_last_iterate_to_galerkin[1:],
+            linestyle='-',  # continuous line
+            marker='s',     # Square markers
+            color=color,    # Line and marker color
+            markerfacecolor=color,  # Marker fill color
+            markeredgecolor=color,  # Marker outline color
+            alpha=alpha_for_error_plots,       # Transparency for markers
+            label='$\|u_h - u_N^{n^\star}\|_a$',
+            markersize=5, linewidth=2.0)
+    # -------------------------------------
+
+    # plotting |u - u_h|_a
+    # ----------------------
+    # color = plt.cm.tab10(2)
+    # ax.loglog(
+    #         n_dofs, energy_norm_errors_galerkin_to_exact,
+    #         linestyle='-',  # continuous line
+    #         marker='s',     # Square markers
+    #         color=color,    # Line and marker color
+    #         markerfacecolor=color,  # Marker fill color
+    #         markeredgecolor=color,  # Marker outline color
+    #         alpha=alpha_for_error_plots,       # Transparency for markers
+    #         label='$\|u - u_h\|_a$',
+    #         markersize=5, linewidth=1.0)
+    # --------------------------------------
+
+    # plotting |u - u_N^{n^\star}|_a
+    # ----------------------
+    color = plt.cm.tab10(3)
+    ax.loglog(
+            n_dofs, energy_norm_errors_last_iterate_to_exact,
+            linestyle='-',  # continuous line
+            marker='s',     # Square markers
+            color=color,    # Line and marker color
+            markerfacecolor=color,  # Marker fill color
+            markeredgecolor=color,  # Marker outline color
+            alpha=alpha_for_error_plots,       # Transparency for markers
+            label='$\|u - u_N^{n^\star}\|_a$',
+            markersize=5, linewidth=2.0)
+    # --------------------------------------
 
     # plotting number of iterations and final delay on each mesh
     # ----------------------------------------------------------
