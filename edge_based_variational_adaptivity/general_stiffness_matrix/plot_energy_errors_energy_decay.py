@@ -82,15 +82,7 @@ def main() -> None:
     # --------------------------------------
 
     # plotting |u - u_N^{n^\star}|_a
-    # ----------------------
-    def model(x, m):
-        return -0.5*x + m
-    popt, pcov = curve_fit(
-        model,
-        np.log(n_dofs),
-        np.log(energy_norm_errors_last_iterate_to_exact))
-    m_optimized = popt[0]
-
+    # ------------------------------
     color = plt.cm.tab10(3)
     ax.loglog(
             n_dofs, energy_norm_errors_last_iterate_to_exact,
@@ -102,9 +94,20 @@ def main() -> None:
             alpha=0.5,       # Transparency for markers
             label='$\|u - u_N^{n^\star}\|_a$',
             markersize=5, linewidth=1.0)
+    # ------------------------------
+
+    # plotting ideal convergence order
+    # --------------------------------
+    def model(x, m):
+        return -0.5*x + m
+    popt, pcov = curve_fit(
+        model,
+        np.log(n_dofs),
+        np.log(energy_norm_errors_last_iterate_to_exact))
+    m_optimized = popt[0]
     ax.loglog(n_dofs, np.exp(model(np.log(n_dofs), m_optimized)),
               'k--', linewidth=0.8)
-    # --------------------------------------
+    # --------------------------------
 
     # plotting number of iterations on each mesh
     # ------------------------------------------
