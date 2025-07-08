@@ -70,17 +70,17 @@ def main() -> None:
 
     # plotting |u - u_h|_a
     # ----------------------
-    color = plt.cm.tab10(2)
-    ax.loglog(
-            n_dofs, energy_norm_errors_galerkin_to_exact,
-            linestyle='--',  # Dotted line
-            marker='s',     # Square markers
-            color=color,    # Line and marker color
-            markerfacecolor=color,  # Marker fill color
-            markeredgecolor=color,  # Marker outline color
-            alpha=0.5,       # Transparency for markers
-            label='$\|u - u_h\|_a$',
-            markersize=5, linewidth=1.0)
+    # color = plt.cm.tab10(2)
+    # ax.loglog(
+    #         n_dofs, energy_norm_errors_galerkin_to_exact,
+    #         linestyle='--',  # Dotted line
+    #         marker='s',     # Square markers
+    #         color=color,    # Line and marker color
+    #         markerfacecolor=color,  # Marker fill color
+    #         markeredgecolor=color,  # Marker outline color
+    #         alpha=0.5,       # Transparency for markers
+    #         label='$\|u - u_h\|_a$',
+    #         markersize=5, linewidth=1.0)
     # --------------------------------------
 
     # plotting |u - u_N^{n^\star}|_a
