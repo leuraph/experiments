@@ -76,11 +76,11 @@ def main() -> None:
             linestyle='-',  # continuous line
             marker='s',     # Square markers
             color=color,    # Line and marker color
-            markerfacecolor=color,  # Marker fill color
+            markerfacecolor='none',  # Marker fill color
             markeredgecolor=color,  # Marker outline color
             alpha=alpha_for_error_plots,       # Transparency for markers
             label='$\|u_h - u_N^{n^\star}\|_a$',
-            markersize=5, linewidth=2.0)
+            markersize=8, linewidth=2.0)
     # -------------------------------------
 
     # plotting |u - u_h|_a
@@ -89,13 +89,13 @@ def main() -> None:
     # ax.loglog(
     #         n_dofs, energy_norm_errors_galerkin_to_exact,
     #         linestyle='-',  # continuous line
-    #         marker='s',     # Square markers
+    #         marker='v',     # Triangle down markers
     #         color=color,    # Line and marker color
-    #         markerfacecolor=color,  # Marker fill color
+    #         markerfacecolor='none',  # Marker fill color
     #         markeredgecolor=color,  # Marker outline color
     #         alpha=alpha_for_error_plots,       # Transparency for markers
     #         label='$\|u - u_h\|_a$',
-    #         markersize=5, linewidth=1.0)
+    #         markersize=8, linewidth=1.0)
     # --------------------------------------
 
     # plotting |u - u_N^{n^\star}|_a
@@ -104,13 +104,13 @@ def main() -> None:
     ax.loglog(
             n_dofs, energy_norm_errors_last_iterate_to_exact,
             linestyle='-',  # continuous line
-            marker='s',     # Square markers
+            marker='o',     # Circle markers
             color=color,    # Line and marker color
-            markerfacecolor=color,  # Marker fill color
+            markerfacecolor='none',  # Marker fill color
             markeredgecolor=color,  # Marker outline color
             alpha=alpha_for_error_plots,       # Transparency for markers
             label='$\|u - u_N^{n^\star}\|_a$',
-            markersize=5, linewidth=2.0)
+            markersize=8, linewidth=2.0)
     # --------------------------------------
 
     # plotting number of iterations and final delay on each mesh
