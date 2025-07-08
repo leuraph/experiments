@@ -88,7 +88,7 @@ def calculate_energy_norm_error_squared_last_iterate_to_exact(
         mass_matrix = get_mass_matrix(
             coordinates=coordinates,
             elements=elements)
-        lhs_matrix = general_stiffness_matrix + mass_matrix
+        lhs_matrix = general_stiffness_matrix + problem.c*mass_matrix
         rhs_vector = get_right_hand_side(
             coordinates=coordinates,
             elements=elements,
@@ -158,7 +158,7 @@ def calculate_energy_norm_error_squared_last_iterate_to_galerkin(
         mass_matrix = get_mass_matrix(
             coordinates=coordinates,
             elements=elements)
-        lhs_matrix = general_stiffness_matrix + mass_matrix
+        lhs_matrix = general_stiffness_matrix + problem.c * mass_matrix
 
         du = galerkin_solution - last_iterate
         energy_norm_error_squared_last_iterate_to_galerkin =\
@@ -217,7 +217,7 @@ def calculate_energy_norm_error_squared_galerkin_with_orthogonality(
         mass_matrix = get_mass_matrix(
             coordinates=coordinates,
             elements=elements)
-        lhs_matrix = general_stiffness_matrix + mass_matrix
+        lhs_matrix = general_stiffness_matrix + problem.c * mass_matrix
 
         energy_norm_squared_galerkin = galerkin_solution.dot(
             lhs_matrix.dot(galerkin_solution))
