@@ -108,7 +108,7 @@ def main() -> None:
         np.log(energy_norm_errors_last_iterate_to_exact))
     m_optimized = popt[0]
     ax.loglog(n_dofs, np.exp(model(np.log(n_dofs), m_optimized)),
-              'k--', linewidth=0.8)
+              color='black', linewidth=1.5)
     # --------------------------------
 
     # plotting number of iterations and final delay on each mesh
