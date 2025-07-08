@@ -118,7 +118,7 @@ def main() -> None:
     # Create a second y-axis for the second array 'b'
     color = plt.cm.Set1(2)
     ax_n_iterations = ax.twinx()
-    ax_n_iterations.set_ylabel('$n_{\mathrm{iterations}}$')
+    ax_n_iterations.set_ylabel('$\mathrm{number}~\mathrm{of}~\mathrm{iterations}$')
     ax_n_iterations.plot(
         n_dofs, n_iterations_on_each_mesh,
         marker='D',  # Diamond marker
