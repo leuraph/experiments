@@ -65,7 +65,7 @@ def main() -> None:
               color='black', linestyle='--', linewidth=1.5)
     # --------------------------------
 
-    # plotting |u_h - u_N^{n^\star}|_a
+    # plotting |u_h - u_N^\star|_a
     # --------------------------------
     color = plt.cm.tab10(1)
     color = plt.cm.Set1(0)
@@ -78,7 +78,7 @@ def main() -> None:
             markerfacecolor='none',  # Marker fill color
             markeredgecolor=color,  # Marker outline color
             alpha=alpha_for_error_plots,       # Transparency for markers
-            label='$\|u_h - u_N^{n^\star}\|_a$',
+            label='$\|u_h - u_N^\star\|_a$',
             markersize=8, linewidth=2.0)
     # -------------------------------------
 
@@ -97,7 +97,7 @@ def main() -> None:
     #         markersize=5, linewidth=1.0)
     # --------------------------------------
 
-    # plotting |u - u_N^{n^\star}|_a
+    # plotting |u - u_N^\star|_a
     # ------------------------------
     color = plt.cm.tab10(3)
     color = plt.cm.Set1(1)
@@ -109,7 +109,7 @@ def main() -> None:
             markerfacecolor='none',  # Marker fill color
             markeredgecolor=color,  # Marker outline color
             alpha=alpha_for_error_plots,       # Transparency for markers
-            label='$\|u - u_N^{n^\star}\|_a$',
+            label='$\|u - u_N^\star\|_a$',
             markersize=8, linewidth=2.0)
     # ------------------------------
 
