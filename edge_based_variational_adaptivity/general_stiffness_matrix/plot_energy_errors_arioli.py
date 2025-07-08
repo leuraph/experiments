@@ -69,7 +69,7 @@ def main() -> None:
 
     # plotting |u_h - u_N^{n^\star}|_a
     # --------------------------------
-    color = plt.cm.tab10(1)
+    color = plt.cm.Set1(0)
     ax.loglog(
             n_dofs[1:],
             energy_norm_errors_last_iterate_to_galerkin[1:],
@@ -85,7 +85,7 @@ def main() -> None:
 
     # plotting |u - u_h|_a
     # ----------------------
-    # color = plt.cm.tab10(2)
+    # color = plt.cm.Set1(3)
     # ax.loglog(
     #         n_dofs, energy_norm_errors_galerkin_to_exact,
     #         linestyle='-',  # continuous line
@@ -100,7 +100,7 @@ def main() -> None:
 
     # plotting |u - u_N^{n^\star}|_a
     # ----------------------
-    color = plt.cm.tab10(3)
+    color = plt.cm.Set1(1)
     ax.loglog(
             n_dofs, energy_norm_errors_last_iterate_to_exact,
             linestyle='-',  # continuous line
@@ -116,7 +116,7 @@ def main() -> None:
     # plotting number of iterations and final delay on each mesh
     # ----------------------------------------------------------
     # Create a second y-axis for the second array 'b'
-    color = plt.cm.tab10(6)
+    color = plt.cm.Set1(2)
     ax_n_iterations = ax.twinx()
     ax_n_iterations.set_ylabel('$n_{\mathrm{iterations}}$')
     ax_n_iterations.plot(
