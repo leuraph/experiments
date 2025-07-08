@@ -50,8 +50,8 @@ def main() -> None:
     plt.rcParams['text.usetex'] = True
 
     fig, ax = plt.subplots()
-    ax.set_xlabel("$n_{\mathrm{DOF}}$")
-    # ax.set_ylabel('$\| u_h - u_N^{n^\star} \|_a^2$')
+    ax.set_xlabel("$\mathrm{number}~\mathrm{of}~\mathrm{degrees}~\mathrm{of}~\mathrm{freedom}$")
+    ax.set_ylabel("$\mathrm{energy}~\mathrm{norm}~\mathrm{error}$")
     ax.grid(True)
 
     # plotting ideal convergence order
