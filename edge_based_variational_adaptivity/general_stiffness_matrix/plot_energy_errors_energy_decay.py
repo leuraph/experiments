@@ -40,16 +40,16 @@ def main() -> None:
     alpha_for_error_plots = 0.8
 
     plt.rcParams["mathtext.fontset"] = "cm"
-    plt.rcParams['xtick.labelsize'] = 16
-    plt.rcParams['ytick.labelsize'] = 16
-    plt.rcParams['axes.labelsize'] = 20
-    plt.rcParams['axes.titlesize'] = 12
-    plt.rcParams['legend.fontsize'] = 16
+    plt.rcParams['xtick.labelsize'] = 14
+    plt.rcParams['ytick.labelsize'] = 14
+    plt.rcParams['axes.labelsize'] = 14
+    plt.rcParams['axes.titlesize'] = 14
+    plt.rcParams['legend.fontsize'] = 14
     plt.rcParams['text.usetex'] = True
 
     fig, ax = plt.subplots()
-    ax.set_xlabel('$n_{\mathrm{DOF}}$')
-    # ax.set_ylabel('$\| u_h - u_N^{n^\star} \|_a^2$')
+    ax.set_xlabel("$\mathrm{number}~\mathrm{of}~\mathrm{degrees}~\mathrm{of}~\mathrm{freedom}$")
+    ax.set_ylabel("$\mathrm{energy}~\mathrm{norm}~\mathrm{error}$")
     ax.grid(True)
 
     # plotting ideal convergence order
@@ -68,17 +68,18 @@ def main() -> None:
     # plotting |u_h - u_N^{n^\star}|_a
     # --------------------------------
     color = plt.cm.tab10(1)
+    color = plt.cm.Set1(0)
     ax.loglog(
             n_dofs[1:],
             energy_norm_errors_last_iterate_to_galerkin[1:],
             linestyle='-',  # continuous line
             marker='s',     # Square markers
             color=color,    # Line and marker color
-            markerfacecolor=color,  # Marker fill color
+            markerfacecolor='none',  # Marker fill color
             markeredgecolor=color,  # Marker outline color
             alpha=alpha_for_error_plots,       # Transparency for markers
             label='$\|u_h - u_N^{n^\star}\|_a$',
-            markersize=5, linewidth=2.0)
+            markersize=8, linewidth=2.0)
     # -------------------------------------
 
     # plotting |u - u_h|_a
@@ -99,35 +100,41 @@ def main() -> None:
     # plotting |u - u_N^{n^\star}|_a
     # ------------------------------
     color = plt.cm.tab10(3)
+    color = plt.cm.Set1(1)
     ax.loglog(
             n_dofs, energy_norm_errors_last_iterate_to_exact,
             linestyle='-',  # continuous line
-            marker='s',     # Square markers
+            marker='o',     # Circle markers
             color=color,    # Line and marker color
-            markerfacecolor=color,  # Marker fill color
+            markerfacecolor='none',  # Marker fill color
             markeredgecolor=color,  # Marker outline color
             alpha=alpha_for_error_plots,       # Transparency for markers
             label='$\|u - u_N^{n^\star}\|_a$',
-            markersize=5, linewidth=2.0)
+            markersize=8, linewidth=2.0)
     # ------------------------------
 
     # plotting number of iterations on each mesh
     # ------------------------------------------
     # Create a second y-axis for the second array 'b'
+    color = plt.cm.Set1(2)
     ax_n_iterations = ax.twinx()
-    ax_n_iterations.set_ylabel('$n_{\mathrm{iterations}}$')
-    ax_n_iterations.scatter(
+    ax_n_iterations.set_ylabel('$\mathrm{number}~\mathrm{of}~\mathrm{iterations}$')
+    ax_n_iterations.plot(
         n_dofs, n_iterations_on_each_mesh,
-        marker='D',  # Diamond marker
-        c=[(0.8, 0.1, 0.1, 0.5)],  # Fill color (RGB tuple)
-        edgecolors=[(0.8, 0.1, 0.1)],  # Outline color (same as fill)
-        s=20,  # Marker size (optional, adjust as needed)
+        marker='v',  # Triangle marker
+        linestyle=(0, (1, 5)),
+        color=color,  # Fill color (RGB tuple)
+        markerfacecolor='none',  # Marker fill color
+        markeredgecolor=color,  # Marker outline color
+        markersize=8, linewidth=2.0,
         label='$n_{\mathrm{iterations}}$'
     )
     ax_n_iterations.tick_params(axis='y')
     # ------------------------------------------
 
-    ax.legend(loc='best')
+    # Put a legend above current axis
+    ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.15),
+            fancybox=True, shadow=False, ncol=2)
 
     fig.savefig(output_path, dpi=300, bbox_inches="tight")
 
