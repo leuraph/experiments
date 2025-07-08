@@ -116,14 +116,17 @@ def main() -> None:
     # plotting number of iterations and final delay on each mesh
     # ----------------------------------------------------------
     # Create a second y-axis for the second array 'b'
+    color = plt.cm.tab10(6)
     ax_n_iterations = ax.twinx()
     ax_n_iterations.set_ylabel('$n_{\mathrm{iterations}}$')
-    ax_n_iterations.scatter(
+    ax_n_iterations.plot(
         n_dofs, n_iterations_on_each_mesh,
         marker='D',  # Diamond marker
-        c=[(0.8, 0.1, 0.1, 0.5)],  # Fill color (RGB tuple)
-        edgecolors=[(0.8, 0.1, 0.1)],  # Outline color (same as fill)
-        s=20,  # Marker size (optional, adjust as needed)
+        linestyle=(0, (1, 5)),
+        color=color,  # Fill color (RGB tuple)
+        markerfacecolor='none',  # Marker fill color
+        markeredgecolor=color,  # Marker outline color
+        markersize=8, linewidth=2.0,
         label='$n_{\mathrm{iterations}}$'
     )
     # ax_n_iterations.scatter(
