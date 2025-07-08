@@ -42,11 +42,11 @@ def main() -> None:
     alpha_for_error_plots = 0.8
 
     plt.rcParams["mathtext.fontset"] = "cm"
-    plt.rcParams['xtick.labelsize'] = 16
-    plt.rcParams['ytick.labelsize'] = 16
-    plt.rcParams['axes.labelsize'] = 20
-    plt.rcParams['axes.titlesize'] = 12
-    plt.rcParams['legend.fontsize'] = 16
+    plt.rcParams['xtick.labelsize'] = 14
+    plt.rcParams['ytick.labelsize'] = 14
+    plt.rcParams['axes.labelsize'] = 14
+    plt.rcParams['axes.titlesize'] = 14
+    plt.rcParams['legend.fontsize'] = 14
     plt.rcParams['text.usetex'] = True
 
     fig, ax = plt.subplots()
