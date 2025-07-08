@@ -140,7 +140,9 @@ def main() -> None:
     ax_n_iterations.tick_params(axis='y')
     # ------------------------------------------
 
-    ax.legend(loc='best')
+    # Put a legend below current axis
+    ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.15),
+            fancybox=True, shadow=False, ncol=2)
 
     fig.savefig(output_path, dpi=300, bbox_inches="tight")
 
