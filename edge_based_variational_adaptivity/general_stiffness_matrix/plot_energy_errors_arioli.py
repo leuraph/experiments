@@ -45,10 +45,11 @@ def main() -> None:
     plt.rcParams['axes.labelsize'] = 20
     plt.rcParams['axes.titlesize'] = 12
     plt.rcParams['legend.fontsize'] = 16
+    plt.rcParams['text.usetex'] = True
 
     fig, ax = plt.subplots()
-    ax.set_xlabel(r'$n_{\text{DOF}}$')
-    # ax.set_ylabel(r'$\| u_h - u_N^{n^\star} \|_a^2$')
+    ax.set_xlabel("$n_{\mathrm{DOF}}$")
+    # ax.set_ylabel('$\| u_h - u_N^{n^\star} \|_a^2$')
     ax.grid(True)
 
     # plotting |u_h - u_N^{n^\star}|_a
@@ -63,7 +64,7 @@ def main() -> None:
             markerfacecolor=color,  # Marker fill color
             markeredgecolor=color,  # Marker outline color
             alpha=0.5,       # Transparency for markers
-            label=r'$\|u_h - u_N^{n^\star}\|_a$',
+            label='$\|u_h - u_N^{n^\star}\|_a$',
             markersize=5, linewidth=1.0)
     # -------------------------------------
 
@@ -78,7 +79,7 @@ def main() -> None:
             markerfacecolor=color,  # Marker fill color
             markeredgecolor=color,  # Marker outline color
             alpha=0.5,       # Transparency for markers
-            label=r'$\|u - u_h\|_a$',
+            label='$\|u - u_h\|_a$',
             markersize=5, linewidth=1.0)
     # --------------------------------------
 
@@ -101,7 +102,7 @@ def main() -> None:
             markerfacecolor=color,  # Marker fill color
             markeredgecolor=color,  # Marker outline color
             alpha=0.5,       # Transparency for markers
-            label=r'$\|u - u_N^{n^\star}\|_a$',
+            label='$\|u - u_N^{n^\star}\|_a$',
             markersize=5, linewidth=1.0)
     ax.loglog(n_dofs, np.exp(model(np.log(n_dofs), m_optimized)),
               'k--', linewidth=0.8)
@@ -111,14 +112,14 @@ def main() -> None:
     # ----------------------------------------------------------
     # Create a second y-axis for the second array 'b'
     ax_n_iterations = ax.twinx()
-    ax_n_iterations.set_ylabel(r'$n_{\text{iterations}}$')
+    ax_n_iterations.set_ylabel('$n_{\mathrm{iterations}}$')
     ax_n_iterations.scatter(
         n_dofs, n_iterations_on_each_mesh,
         marker='D',  # Diamond marker
         c=[(0.8, 0.1, 0.1, 0.5)],  # Fill color (RGB tuple)
         edgecolors=[(0.8, 0.1, 0.1)],  # Outline color (same as fill)
         s=20,  # Marker size (optional, adjust as needed)
-        label=r'$n_{\text{iterations}}$'
+        label='$n_{\mathrm{iterations}}$'
     )
     ax_n_iterations.scatter(
         n_dofs, delay_at_convergence_on_each_mesh,
@@ -126,7 +127,7 @@ def main() -> None:
         c=[(0.4, 0.7, 0.3, 0.5)],  # Fill color (RGB tuple)
         edgecolors=[(0.4, 0.7, 0.3)],  # Outline color (same as fill)
         s=20,  # Marker size (optional, adjust as needed)
-        label=r'$d$'
+        label='$d$'
     )
     ax_n_iterations.tick_params(axis='y')
     # ------------------------------------------
