@@ -126,14 +126,14 @@ def main() -> None:
         s=20,  # Marker size (optional, adjust as needed)
         label='$n_{\mathrm{iterations}}$'
     )
-    ax_n_iterations.scatter(
-        n_dofs, delay_at_convergence_on_each_mesh,
-        marker='D',  # Diamond marker
-        c=[(0.4, 0.7, 0.3, 0.5)],  # Fill color (RGB tuple)
-        edgecolors=[(0.4, 0.7, 0.3)],  # Outline color (same as fill)
-        s=20,  # Marker size (optional, adjust as needed)
-        label='$d$'
-    )
+    # ax_n_iterations.scatter(
+    #     n_dofs, delay_at_convergence_on_each_mesh,
+    #     marker='D',  # Diamond marker
+    #     c=[(0.4, 0.7, 0.3, 0.5)],  # Fill color (RGB tuple)
+    #     edgecolors=[(0.4, 0.7, 0.3)],  # Outline color (same as fill)
+    #     s=20,  # Marker size (optional, adjust as needed)
+    #     label='$d$'
+    # )
     ax_n_iterations.tick_params(axis='y')
     # ------------------------------------------
 
