@@ -121,7 +121,7 @@ def main() -> None:
     ax_n_iterations.set_ylabel('$\mathrm{number}~\mathrm{of}~\mathrm{iterations}$')
     ax_n_iterations.plot(
         n_dofs, n_iterations_on_each_mesh,
-        marker='D',  # Diamond marker
+        marker='v',  # Triangle marker
         linestyle=(0, (1, 5)),
         color=color,  # Fill color (RGB tuple)
         markerfacecolor='none',  # Marker fill color
