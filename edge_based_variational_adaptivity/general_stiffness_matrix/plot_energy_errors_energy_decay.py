@@ -37,14 +37,22 @@ def main() -> None:
     # settinng plot params
     # --------------------
 
+    # in the paper, we show two figures side by side
+    # including a graphic of (possibly) smaller witdth than 1.0\textwidth
+    # inside a minipage of (possibly) smaller width than 0.5\textwidth,
+    # hence, the scaling factor:
+    graphic_scaing = 1.0
+    minipage_scaling = 0.45
+    paper_scaling = 1/(graphic_scaing * minipage_scaling)
     alpha_for_error_plots = 0.8
+    font_size = 14 * paper_scaling
 
     plt.rcParams["mathtext.fontset"] = "cm"
-    plt.rcParams['xtick.labelsize'] = 14
-    plt.rcParams['ytick.labelsize'] = 14
-    plt.rcParams['axes.labelsize'] = 14
-    plt.rcParams['axes.titlesize'] = 14
-    plt.rcParams['legend.fontsize'] = 14
+    plt.rcParams['xtick.labelsize'] = font_size
+    plt.rcParams['ytick.labelsize'] = font_size
+    plt.rcParams['axes.labelsize'] = font_size
+    plt.rcParams['axes.titlesize'] = font_size
+    plt.rcParams['legend.fontsize'] = font_size
     plt.rcParams['text.usetex'] = True
 
     fig, ax = plt.subplots()
@@ -62,7 +70,8 @@ def main() -> None:
         np.log(energy_norm_errors_last_iterate_to_exact))
     m_optimized = popt[0]
     ax.loglog(n_dofs, np.exp(model(np.log(n_dofs), m_optimized)),
-              color='black', linestyle='--', linewidth=1.5)
+              color='black', linestyle='--',
+              linewidth=1.5*paper_scaling)
     # --------------------------------
 
     # plotting |u_h - u_N^\star|_a
@@ -79,7 +88,8 @@ def main() -> None:
             markeredgecolor=color,  # Marker outline color
             alpha=alpha_for_error_plots,       # Transparency for markers
             label='$\|u_h - u_N^\star\|_a$',
-            markersize=8, linewidth=2.0)
+            markersize=8*paper_scaling,
+            linewidth=2.0*paper_scaling)
     # -------------------------------------
 
     # plotting |u - u_h|_a
@@ -110,7 +120,8 @@ def main() -> None:
             markeredgecolor=color,  # Marker outline color
             alpha=alpha_for_error_plots,       # Transparency for markers
             label='$\|u - u_N^\star\|_a$',
-            markersize=8, linewidth=2.0)
+            markersize=8*paper_scaling,
+            linewidth=2.0*paper_scaling)
     # ------------------------------
 
     # plotting number of iterations on each mesh
@@ -126,14 +137,15 @@ def main() -> None:
         color=color,  # Fill color (RGB tuple)
         markerfacecolor='none',  # Marker fill color
         markeredgecolor=color,  # Marker outline color
-        markersize=8, linewidth=2.0,
+        markersize=8*paper_scaling,
+        linewidth=2.0*paper_scaling,
         label='$n_{\mathrm{iterations}}$'
     )
     ax_n_iterations.tick_params(axis='y')
     # ------------------------------------------
 
     # Put a legend above current axis
-    ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.15),
+    ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.35),
             fancybox=True, shadow=False, ncol=2)
 
     fig.savefig(output_path, dpi=300, bbox_inches="tight")
