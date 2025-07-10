@@ -87,7 +87,7 @@ def main() -> None:
             markerfacecolor='none',  # Marker fill color
             markeredgecolor=color,  # Marker outline color
             alpha=alpha_for_error_plots,       # Transparency for markers
-            label='$\|u_h - u_N^\star\|_a$',
+            label='$\|u^h_N - u_N^\star\|_a$',
             markersize=8*paper_scaling,
             linewidth=2.0*paper_scaling)
     # -------------------------------------
