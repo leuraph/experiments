@@ -5,16 +5,22 @@ import argparse
 
 # Define parameter lists
 theta_values = [0.5]
-fudge_values = [0.1, 0.01]
-batchsize_values = [2, 10]
-miniter_values = [5, 10]
+arioli_fudge_values = [1.0, 0.1]
+tail_fudge_values = [0.1, 0.01]
+miniter_values = [10]
+initial_delay_values = [10]
+delay_increase_values = [10]
+tau_values = [1.01]
 
 # Generate all combinations of parameters
 combinations = list(itertools.product(
     theta_values,
-    fudge_values,
-    batchsize_values,
-    miniter_values))
+    arioli_fudge_values,
+    tail_fudge_values,
+    miniter_values,
+    initial_delay_values,
+    delay_increase_values,
+    tau_values))
 
 # Directory for generated scripts
 output_dir = "sbatch_scripts"
@@ -31,7 +37,7 @@ sbatch_template = """#!/bin/bash
 # number of cpus per task
 #SBATCH --cpus-per-task=8
 
-# (4 * 24(h) * 60(min) = 2880)
+# (4 * 24(h) * 60(min) = 5760)
 #SBATCH --time=5760
 
 # Email when job is done or failed
@@ -42,7 +48,14 @@ module purge
 module load Workspace_Home
 
 source .venv/bin/activate
-python experiment_13.py --theta {theta} --fudge {fudge} --batchsize {batchsize} --miniter {miniter}
+python experiment_14.py \
+--theta {theta} \
+--fudge_arioli {fudge_arioli} \
+--fudge_tail {fudge_tail} \
+--miniter {miniter} \
+--initial_delay {initial_delay} \
+--delay_increase {delay_increase} \
+--tau {tau}
 """
 
 # Parse command-line arguments
@@ -51,17 +64,28 @@ parser.add_argument('--debug', action='store_true', help='Enable debug mode (do 
 args = parser.parse_args()
 
 # Generate and submit scripts
-for i, (theta, fudge, batchsize, miniter) in enumerate(combinations):
+for i, (theta, fudge_arioli, fudge_tail, miniter, initial_delay, delay_increase, tau) in enumerate(combinations):
     # Create a unique job name
-    job_name = f"exp-13_theta-{theta}_fudge-{fudge}_batchsize-{batchsize}_miniter-{miniter}"
+    job_name = (
+    f"exp-14_"
+    f"theta-{theta}_"
+    f"fudge_arioli-{fudge_arioli}_"
+    f"fudge_tail-{fudge_tail}"
+    f"miniter-{miniter}"
+    f"initial_delay-{initial_delay}"
+    f"delay_increase-{delay_increase}"
+    f"tau-{tau}")
 
     # Generate the script content
     sbatch_content = sbatch_template.format(
         job_name=job_name,
         theta=theta,
-        fudge=fudge,
-        batchsize=batchsize,
-        miniter=miniter
+        fudge_arioli=fudge_arioli,
+        fudge_tail=fudge_tail,
+        miniter=miniter,
+        initial_delay=initial_delay,
+        delay_increase=delay_increase,
+        tau=tau
     )
 
     # Save the script to a file
