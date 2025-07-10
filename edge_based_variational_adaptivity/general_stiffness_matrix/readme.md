@@ -201,13 +201,6 @@ $$
 is met.
 Then, we perform edge-based variational adaptivity to refine the mesh.
 
-## Experiment 11 (Problem 4 with combined stopping criterion and preconditioner $P=\text{diag}(\text{lhs})^{-1}$)
-Considers the solution of *problem 4* by using
-CG iterations with a diagonal prconditioner until both
-1. Energy Flattening-off indicates convergence
-2. Adaptive Energy Arioli indicates convergence
-Then, we perform edge-based variational adaptivity to refine the mesh.
-
 ## Experiment 12 (Problem 5 with adaptive Energy Arioli)
 Considers the solution of *Problem 5* by using
 CG iterations on each mesh with an energy version of
@@ -224,6 +217,34 @@ $$
 E(u^{n-1}) - E(u^{n}) < \alpha \frac{E(u^{n_{\text{min}}}) - E(u^n)}{n - n_{\text{min}}}
 $$
 is met.
+Then, we perform edge-based variational adaptivity to refine the mesh.
+
+## Experiment 14 (Problem 1 with combined stopping criterion)
+Considers the solution of *problem 1* by using
+CG iterations until both
+1. Energy Flattening-off indicates convergence
+2. Adaptive Energy Arioli indicates convergence
+Then, we perform edge-based variational adaptivity to refine the mesh.
+
+## Experiment 15 (Problem 2 with combined stopping criterion)
+Considers the solution of *problem 2* by using
+CG iterations until both
+1. Energy Flattening-off indicates convergence
+2. Adaptive Energy Arioli indicates convergence
+Then, we perform edge-based variational adaptivity to refine the mesh.
+
+## Experiment 16 (Problem 4 with combined stopping criterion and preconditioner $P=\text{diag}(\text{lhs})^{-1}$)
+Considers the solution of *problem 4* by using
+CG iterations with a diagonal prconditioner until both
+1. Energy Flattening-off indicates convergence
+2. Adaptive Energy Arioli indicates convergence
+Then, we perform edge-based variational adaptivity to refine the mesh.
+
+## Experiment 17 (Problem 5 with combined stopping criterion)
+Considers the solution of *problem 5* by using
+CG iterations until both
+1. Energy Flattening-off indicates convergence
+2. Adaptive Energy Arioli indicates convergence
 Then, we perform edge-based variational adaptivity to refine the mesh.
 
 ## Energy for problem 01
