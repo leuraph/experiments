@@ -150,12 +150,15 @@ def main() -> None:
         diagonal = lhs_reduced.diagonal()
         M = diags(diagonals=1./diagonal)
 
+        iteration_counter = IterationCounterCallback()
+
         current_iterate_on_free_nodes, _ = cg(
             A=lhs_reduced,
             b=rhs_vector[free_nodes],
             x0=current_iterate[free_nodes],
             M=M,
-            rtol=RTOL_CG)
+            rtol=RTOL_CG,
+            callback=iteration_counter)
 
         current_iterate[free_nodes] = current_iterate_on_free_nodes
 
@@ -163,7 +166,8 @@ def main() -> None:
             lhs_matrix.dot(current_iterate))
         print(
             f'nDOF = {n_dofs}, '
-            f'converged CG approximation energy norm squared = {energy_norm_squared}')
+            f'converged CG approximation energy norm squared = {energy_norm_squared}, '
+            f'n_iterations = {iteration_counter.n_iterations}')
 
         # stop right before refining if maximum number of DOFs is reached
         if n_dofs >= n_max_dofs:
@@ -179,6 +183,16 @@ def main() -> None:
                 elements=elements,
                 marked_elements=marked,
                 boundary_conditions=boundaries)
+
+
+class IterationCounterCallback:
+    n_iterations: int
+
+    def __init__(self):
+        self.n_iterations = 0
+
+    def __call__(self, *args, **kwds):
+        self.n_iterations += 1
 
 
 if __name__ == '__main__':
