@@ -48,7 +48,7 @@ module purge
 module load Workspace_Home
 
 source .venv/bin/activate
-python experiment_14.py \
+python experiment_16.py \
 --theta {theta} \
 --fudge_arioli {fudge_arioli} \
 --fudge_tail {fudge_tail} \
@@ -67,7 +67,7 @@ args = parser.parse_args()
 for i, (theta, fudge_arioli, fudge_tail, miniter, initial_delay, delay_increase, tau) in enumerate(combinations):
     # Create a unique job name
     job_name = (
-    f"exp-14_"
+    f"exp-16_"
     f"theta-{theta}_"
     f"fudge_arioli-{fudge_arioli}_"
     f"fudge_tail-{fudge_tail}"
