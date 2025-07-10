@@ -1,12 +1,3 @@
-"""
-This experiment considers the Problem
-nabla (A(x) nabla u(x)) + u(x) = 1,
-a_11(x) = - 1,
-a_12(x) = 0,
-a_21(x) = 0,
-a_22(x) = - 1e-2,
-on (0,1)^2 with homogeneous boundary conditions.
-"""
 import numpy as np
 from p1afempy import refinement
 from p1afempy.solvers import \
