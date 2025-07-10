@@ -14,14 +14,22 @@ from p1afempy.refinement import refineNVB
 from scipy.sparse import csr_matrix, diags
 from scipy.sparse.linalg import cg
 from problems import get_problem
+import argparse
 
 
 def main() -> None:
 
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--problem", type=int, required=True,
+                        help="problem number to be considered")
+    parser.add_argument("--rtol", type=float, required=True,
+                        help="relative tolerance for CG iterations")
+    args = parser.parse_args()
+
     n_max_dofs = 100e6
     n_initial_refinements = 5
-    RTOL_CG = 1e-5
-    PROBLEM_N = 1
+    RTOL_CG = args.rtol
+    PROBLEM_N = args.problem
 
     problem = get_problem(PROBLEM_N)
 
