@@ -1,7 +1,7 @@
 import numpy as np
 from p1afempy import refinement
 from p1afempy.solvers import \
-    get_general_stiffness_matrix, get_mass_matrix, get_right_hand_side
+    get_general_stiffness_matrix, get_right_hand_side
 from triangle_cubature.cubature_rule import CubatureRuleEnum
 from scipy.sparse.linalg import spsolve
 import matplotlib.pyplot as plt
@@ -18,8 +18,8 @@ from variational_adaptivity.edge_based_variational_adaptivity import \
 from variational_adaptivity.markers import doerfler_marking
 from p1afempy.refinement import refineNVB_edge_based
 from custom_callback import ConvergedException
-from scipy.sparse import csr_matrix, diags
-from problems import get_problem_4
+from scipy.sparse import csr_matrix
+from problems import get_problem_5
 
 
 def show_solution(coordinates, solution):
@@ -88,7 +88,7 @@ def main() -> None:
     np.random.seed(42)
 
     base_results_path = (
-        Path('results/experiment_11') /
+        Path('results/experiment_17') /
         Path(
             f'theta-{THETA}_'
             f'fudge_tail-{FUDGE_TAIL}_'
@@ -99,20 +99,32 @@ def main() -> None:
     # mesh
     # ----
     coordinates = np.array([
-        [0., 0.],
-        [1., 0.],
-        [1., 1.],
-        [0., 1.]
+        [-1, -1],
+        [0, -1],
+        [-1, 0],
+        [0, 0],
+        [1, 0],
+        [-1, 1],
+        [0, 1],
+        [1, 1]
     ])
     elements = np.array([
-        [0, 1, 2],
-        [2, 3, 0]
+        [3, 0, 1],
+        [0, 3, 2],
+        [6, 2, 3],
+        [7, 3, 4],
+        [2, 6, 5],
+        [3, 7, 6]
     ])
     dirichlet = np.array([
         [0, 1],
-        [1, 2],
-        [2, 3],
-        [3, 0]
+        [1, 3],
+        [3, 4],
+        [4, 7],
+        [7, 6],
+        [6, 5],
+        [5, 2],
+        [2, 0]
     ])
     boundaries = [dirichlet]
 
@@ -141,20 +153,17 @@ def main() -> None:
     rhs_vector = get_right_hand_side(
         coordinates=coordinates,
         elements=elements,
-        f=get_problem_4().f,
+        f=get_problem_5().f,
         cubature_rule=CubatureRuleEnum.DAYTAYLOR)
     stiffness_matrix = get_general_stiffness_matrix(
         coordinates=coordinates,
         elements=elements,
-        a_11=get_problem_4().a_11,
-        a_12=get_problem_4().a_12,
-        a_21=get_problem_4().a_21,
-        a_22=get_problem_4().a_22,
+        a_11=get_problem_5().a_11,
+        a_12=get_problem_5().a_12,
+        a_21=get_problem_5().a_21,
+        a_22=get_problem_5().a_22,
         cubature_rule=CubatureRuleEnum.DAYTAYLOR)
-    mass_matrix = get_mass_matrix(
-        coordinates=coordinates,
-        elements=elements)
-    lhs_matrix = csr_matrix(mass_matrix + stiffness_matrix)
+    lhs_matrix = csr_matrix(stiffness_matrix)
 
     galerkin_solution = np.zeros(n_vertices)
     galerkin_solution[free_nodes] = spsolve(
@@ -220,12 +229,12 @@ def main() -> None:
         elements=elements,
         non_boundary_edges=non_boundary_edges,
         current_iterate=current_iterate,
-        f=get_problem_4().f,
-        a_11=get_problem_4().a_11,
-        a_12=get_problem_4().a_12,
-        a_21=get_problem_4().a_21,
-        a_22=get_problem_4().a_22,
-        c=get_problem_4().c,
+        f=get_problem_5().f,
+        a_11=get_problem_5().a_11,
+        a_12=get_problem_5().a_12,
+        a_21=get_problem_5().a_21,
+        a_22=get_problem_5().a_22,
+        c=get_problem_5().c,
         cubature_rule=CubatureRuleEnum.DAYTAYLOR,
         verbose=False)
 
@@ -264,20 +273,17 @@ def main() -> None:
         general_stiffness_matrix = get_general_stiffness_matrix(
             coordinates=coordinates,
             elements=elements,
-            a_11=get_problem_4().a_11,
-            a_12=get_problem_4().a_12,
-            a_21=get_problem_4().a_21,
-            a_22=get_problem_4().a_22,
+            a_11=get_problem_5().a_11,
+            a_12=get_problem_5().a_12,
+            a_21=get_problem_5().a_21,
+            a_22=get_problem_5().a_22,
             cubature_rule=CubatureRuleEnum.DAYTAYLOR)
-        mass_matrix = get_mass_matrix(
-            coordinates=coordinates,
-            elements=elements)
 
-        lhs_matrix = csr_matrix(general_stiffness_matrix + mass_matrix)
+        lhs_matrix = csr_matrix(general_stiffness_matrix)
         rhs_vector = get_right_hand_side(
             coordinates=coordinates,
             elements=elements,
-            f=get_problem_4().f,
+            f=get_problem_5().f,
             cubature_rule=CubatureRuleEnum.DAYTAYLOR)
 
         # compute the Galerkin solution on current mesh
@@ -308,13 +314,11 @@ def main() -> None:
         try:
             lhs_reduced = lhs_matrix[free_nodes, :][:, free_nodes]
             diagonal = lhs_reduced.diagonal()
-            M = diags(diagonals=1./diagonal)
             current_iterate[free_nodes], _ = cg(
                 A=lhs_matrix[free_nodes, :][:, free_nodes],
                 b=rhs_vector[free_nodes],
                 x0=current_iterate[free_nodes],
                 rtol=1e-100,
-                M=M,
                 callback=custom_callback)
         except ConvergedException as conv:
             cg_converged = True
@@ -386,12 +390,12 @@ def main() -> None:
             elements=elements,
             non_boundary_edges=non_boundary_edges,
             current_iterate=current_iterate,
-            f=get_problem_4().f,
-            a_11=get_problem_4().a_11,
-            a_12=get_problem_4().a_12,
-            a_21=get_problem_4().a_21,
-            a_22=get_problem_4().a_22,
-            c=get_problem_4().c,
+            f=get_problem_5().f,
+            a_11=get_problem_5().a_11,
+            a_12=get_problem_5().a_12,
+            a_21=get_problem_5().a_21,
+            a_22=get_problem_5().a_22,
+            c=get_problem_5().c,
             cubature_rule=CubatureRuleEnum.DAYTAYLOR,
             verbose=True,
             parallel=False)
