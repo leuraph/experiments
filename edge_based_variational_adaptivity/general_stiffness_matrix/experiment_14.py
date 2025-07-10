@@ -18,8 +18,8 @@ from variational_adaptivity.edge_based_variational_adaptivity import \
 from variational_adaptivity.markers import doerfler_marking
 from p1afempy.refinement import refineNVB_edge_based
 from custom_callback import ConvergedException
-from scipy.sparse import csr_matrix, diags
-from problems import get_problem_4
+from scipy.sparse import csr_matrix
+from problems import get_problem_1
 
 
 def show_solution(coordinates, solution):
@@ -88,7 +88,7 @@ def main() -> None:
     np.random.seed(42)
 
     base_results_path = (
-        Path('results/experiment_11') /
+        Path('results/experiment_14') /
         Path(
             f'theta-{THETA}_'
             f'fudge_tail-{FUDGE_TAIL}_'
@@ -141,15 +141,15 @@ def main() -> None:
     rhs_vector = get_right_hand_side(
         coordinates=coordinates,
         elements=elements,
-        f=get_problem_4().f,
+        f=get_problem_1().f,
         cubature_rule=CubatureRuleEnum.DAYTAYLOR)
     stiffness_matrix = get_general_stiffness_matrix(
         coordinates=coordinates,
         elements=elements,
-        a_11=get_problem_4().a_11,
-        a_12=get_problem_4().a_12,
-        a_21=get_problem_4().a_21,
-        a_22=get_problem_4().a_22,
+        a_11=get_problem_1().a_11,
+        a_12=get_problem_1().a_12,
+        a_21=get_problem_1().a_21,
+        a_22=get_problem_1().a_22,
         cubature_rule=CubatureRuleEnum.DAYTAYLOR)
     mass_matrix = get_mass_matrix(
         coordinates=coordinates,
@@ -220,12 +220,12 @@ def main() -> None:
         elements=elements,
         non_boundary_edges=non_boundary_edges,
         current_iterate=current_iterate,
-        f=get_problem_4().f,
-        a_11=get_problem_4().a_11,
-        a_12=get_problem_4().a_12,
-        a_21=get_problem_4().a_21,
-        a_22=get_problem_4().a_22,
-        c=get_problem_4().c,
+        f=get_problem_1().f,
+        a_11=get_problem_1().a_11,
+        a_12=get_problem_1().a_12,
+        a_21=get_problem_1().a_21,
+        a_22=get_problem_1().a_22,
+        c=get_problem_1().c,
         cubature_rule=CubatureRuleEnum.DAYTAYLOR,
         verbose=False)
 
@@ -264,10 +264,10 @@ def main() -> None:
         general_stiffness_matrix = get_general_stiffness_matrix(
             coordinates=coordinates,
             elements=elements,
-            a_11=get_problem_4().a_11,
-            a_12=get_problem_4().a_12,
-            a_21=get_problem_4().a_21,
-            a_22=get_problem_4().a_22,
+            a_11=get_problem_1().a_11,
+            a_12=get_problem_1().a_12,
+            a_21=get_problem_1().a_21,
+            a_22=get_problem_1().a_22,
             cubature_rule=CubatureRuleEnum.DAYTAYLOR)
         mass_matrix = get_mass_matrix(
             coordinates=coordinates,
@@ -277,7 +277,7 @@ def main() -> None:
         rhs_vector = get_right_hand_side(
             coordinates=coordinates,
             elements=elements,
-            f=get_problem_4().f,
+            f=get_problem_1().f,
             cubature_rule=CubatureRuleEnum.DAYTAYLOR)
 
         # compute the Galerkin solution on current mesh
@@ -308,13 +308,11 @@ def main() -> None:
         try:
             lhs_reduced = lhs_matrix[free_nodes, :][:, free_nodes]
             diagonal = lhs_reduced.diagonal()
-            M = diags(diagonals=1./diagonal)
             current_iterate[free_nodes], _ = cg(
                 A=lhs_matrix[free_nodes, :][:, free_nodes],
                 b=rhs_vector[free_nodes],
                 x0=current_iterate[free_nodes],
                 rtol=1e-100,
-                M=M,
                 callback=custom_callback)
         except ConvergedException as conv:
             cg_converged = True
@@ -386,12 +384,12 @@ def main() -> None:
             elements=elements,
             non_boundary_edges=non_boundary_edges,
             current_iterate=current_iterate,
-            f=get_problem_4().f,
-            a_11=get_problem_4().a_11,
-            a_12=get_problem_4().a_12,
-            a_21=get_problem_4().a_21,
-            a_22=get_problem_4().a_22,
-            c=get_problem_4().c,
+            f=get_problem_1().f,
+            a_11=get_problem_1().a_11,
+            a_12=get_problem_1().a_12,
+            a_21=get_problem_1().a_21,
+            a_22=get_problem_1().a_22,
+            c=get_problem_1().c,
             cubature_rule=CubatureRuleEnum.DAYTAYLOR,
             verbose=True,
             parallel=False)
