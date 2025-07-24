@@ -3,36 +3,6 @@ from p1afempy.data_structures import \
 import numpy as np
 
 
-class Problem:
-    """
-    This class resembles the
-    homogeneous BVP problem
-    nabla (A(x) nabla u(x)) + cu(x) = f(x),
-    where A(x)_ij = a_ij(x) is a 2x2 Matrix
-    """
-    f: BoundaryConditionType
-    a_11: BoundaryConditionType
-    a_12: BoundaryConditionType
-    a_21: BoundaryConditionType
-    a_22: BoundaryConditionType
-    c: float
-
-    def __init__(
-            self,
-            f: BoundaryConditionType,
-            a_11: BoundaryConditionType,
-            a_12: BoundaryConditionType,
-            a_21: BoundaryConditionType,
-            a_22: BoundaryConditionType,
-            c: float):
-        self.f = f
-        self.a_11 = a_11
-        self.a_12 = a_12
-        self.a_21 = a_21
-        self.a_22 = a_22
-        self.c = c
-
-
 class Rectangle:
     x_min: float
     x_max: float
@@ -70,6 +40,36 @@ class Mesh:
         self.coordinates = coordinates
         self.elements= elements
         self.boundaries = boundaries
+
+
+class Problem:
+    """
+    This class resembles the
+    homogeneous BVP problem
+    nabla (A(x) nabla u(x)) + cu(x) = f(x),
+    where A(x)_ij = a_ij(x) is a 2x2 Matrix
+    """
+    f: BoundaryConditionType
+    a_11: BoundaryConditionType
+    a_12: BoundaryConditionType
+    a_21: BoundaryConditionType
+    a_22: BoundaryConditionType
+    c: float
+
+    def __init__(
+            self,
+            f: BoundaryConditionType,
+            a_11: BoundaryConditionType,
+            a_12: BoundaryConditionType,
+            a_21: BoundaryConditionType,
+            a_22: BoundaryConditionType,
+            c: float):
+        self.f = f
+        self.a_11 = a_11
+        self.a_12 = a_12
+        self.a_21 = a_21
+        self.a_22 = a_22
+        self.c = c
 
 
 def get_coarse_square_mesh() -> Mesh:
