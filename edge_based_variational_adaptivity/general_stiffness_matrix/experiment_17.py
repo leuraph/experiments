@@ -98,35 +98,11 @@ def main() -> None:
 
     # mesh
     # ----
-    coordinates = np.array([
-        [-1, -1],
-        [0, -1],
-        [-1, 0],
-        [0, 0],
-        [1, 0],
-        [-1, 1],
-        [0, 1],
-        [1, 1]
-    ])
-    elements = np.array([
-        [3, 0, 1],
-        [0, 3, 2],
-        [6, 2, 3],
-        [7, 3, 4],
-        [2, 6, 5],
-        [3, 7, 6]
-    ])
-    dirichlet = np.array([
-        [0, 1],
-        [1, 3],
-        [3, 4],
-        [4, 7],
-        [7, 6],
-        [6, 5],
-        [5, 2],
-        [2, 0]
-    ])
-    boundaries = [dirichlet]
+    coarse_mesh = get_problem_5().get_coarse_initial_mesh()
+    
+    coordinates = coarse_mesh.coordinates
+    elements = coarse_mesh.elements
+    boundaries = coarse_mesh.boundaries
 
     # initial refinement
     # ------------------
