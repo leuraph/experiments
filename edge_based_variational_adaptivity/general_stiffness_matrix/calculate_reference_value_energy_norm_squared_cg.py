@@ -1,8 +1,7 @@
 """
 This scripts approximates the energy norm squared
 for the specified problem using CG iterations
-on uniformly refined meshes, where the domain
-is hard-coded to be the unit square
+on uniformly refined meshes
 """
 import numpy as np
 from p1afempy import refinement
@@ -42,25 +41,13 @@ def main() -> None:
     print(f'relative tolerance for CG = {RTOL_CG}')
     print(f'')
 
-    # mesh
-    # ----
-    coordinates = np.array([
-        [0., 0.],
-        [1., 0.],
-        [1., 1.],
-        [0., 1.]
-    ])
-    elements = np.array([
-        [0, 1, 2],
-        [2, 3, 0]
-    ])
-    dirichlet = np.array([
-        [0, 1],
-        [1, 2],
-        [2, 3],
-        [3, 0]
-    ])
-    boundaries = [dirichlet]
+    # initial coarse mesh
+    # -------------------
+    coarse_mesh = problem.get_coarse_initial_mesh()
+
+    coordinates = coarse_mesh.coordinates
+    elements = coarse_mesh.elements
+    boundaries = coarse_mesh.boundaries
 
     # initial refinement
     # ------------------
