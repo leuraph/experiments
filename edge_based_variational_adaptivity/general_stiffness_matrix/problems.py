@@ -1,4 +1,5 @@
-from p1afempy.data_structures import BoundaryConditionType, CoordinatesType
+from p1afempy.data_structures import \
+    BoundaryConditionType, CoordinatesType, ElementsType, BoundaryType
 import numpy as np
 
 
@@ -54,6 +55,94 @@ class Rectangle:
             (x < self.x_max) &
             (self.y_min < y) &
             (y < self.y_max))
+
+
+class Mesh:
+    coordinates: CoordinatesType
+    elements: ElementsType
+    boundaries: list[BoundaryType]
+
+    def __init__(
+            self,
+            coordinates: CoordinatesType,
+            elements: ElementsType,
+            boundaries: list[BoundaryType]):
+        self.coordinates = coordinates
+        self.elements= elements
+        self.boundaries = boundaries
+
+
+def get_coarse_square_mesh() -> Mesh:
+    """
+    returns a coarse mesh for the domain (0,1)^2 with
+    homogeneous Dirichlet boundary conditions
+    """
+
+    coordinates = np.array([
+        [0., 0.],
+        [1., 0.],
+        [1., 1.],
+        [0., 1.]
+    ])
+    elements = np.array([
+        [0, 1, 2],
+        [2, 3, 0]
+    ])
+    dirichlet = np.array([
+        [0, 1],
+        [1, 2],
+        [2, 3],
+        [3, 0]
+    ])
+    boundaries = [dirichlet]
+
+    return Mesh(
+        coordinates=coordinates,
+        elements=elements,
+        boundaries=boundaries)
+
+
+def get_coarse_L_shape_mesh() -> Mesh:
+    """
+    returns a coarse mesh for the L-shaped domain
+    Omega = (-1, 1)^2 \ (0, 1)x(-1, 0) with
+    homogeneous Dirichlet boundary conditions
+    """
+
+    coordinates = np.array([
+        [-1, -1],
+        [0, -1],
+        [-1, 0],
+        [0, 0],
+        [1, 0],
+        [-1, 1],
+        [0, 1],
+        [1, 1]
+    ])
+    elements = np.array([
+        [3, 0, 1],
+        [0, 3, 2],
+        [6, 2, 3],
+        [7, 3, 4],
+        [2, 6, 5],
+        [3, 7, 6]
+    ])
+    dirichlet = np.array([
+        [0, 1],
+        [1, 3],
+        [3, 4],
+        [4, 7],
+        [7, 6],
+        [6, 5],
+        [5, 2],
+        [2, 0]
+    ])
+    boundaries = [dirichlet]
+
+    return Mesh(
+        coordinates=coordinates,
+        elements=elements,
+        boundaries=boundaries)
 
 
 def get_problem_1() -> Problem:
