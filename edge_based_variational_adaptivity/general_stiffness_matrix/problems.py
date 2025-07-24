@@ -1,5 +1,6 @@
 from p1afempy.data_structures import \
     BoundaryConditionType, CoordinatesType, ElementsType, BoundaryType
+from typing import Callable
 import numpy as np
 
 
@@ -56,6 +57,9 @@ class Problem:
     a_22: BoundaryConditionType
     c: float
 
+    # a function that returns a coarse mesh of the problem's domain
+    get_coarse_initial_mesh: Callable[[], Mesh]
+
     def __init__(
             self,
             f: BoundaryConditionType,
@@ -63,13 +67,15 @@ class Problem:
             a_12: BoundaryConditionType,
             a_21: BoundaryConditionType,
             a_22: BoundaryConditionType,
-            c: float):
+            c: float,
+            get_coarse_initial_mesh: Callable[[], Mesh]):
         self.f = f
         self.a_11 = a_11
         self.a_12 = a_12
         self.a_21 = a_21
         self.a_22 = a_22
         self.c = c
+        self.get_coarse_initial_mesh = get_coarse_initial_mesh
 
 
 def get_coarse_square_mesh() -> Mesh:
@@ -170,7 +176,8 @@ def get_problem_1() -> Problem:
 
     return Problem(
         f=f, a_11=a_11, a_12=a_12,
-        a_21=a_21, a_22=a_22, c=c)
+        a_21=a_21, a_22=a_22, c=c,
+        get_coarse_initial_mesh=get_coarse_square_mesh)
 
 
 def get_problem_2() -> Problem:
@@ -198,7 +205,8 @@ def get_problem_2() -> Problem:
 
     return Problem(
         f=f, a_11=a_11, a_12=a_12,
-        a_21=a_21, a_22=a_22, c=c)
+        a_21=a_21, a_22=a_22, c=c,
+        get_coarse_initial_mesh=get_coarse_square_mesh)
 
 
 def get_problem_3() -> Problem:
@@ -244,7 +252,8 @@ def get_problem_3() -> Problem:
 
     return Problem(
         f=f, a_11=a_11, a_12=a_12,
-        a_21=a_21, a_22=a_22, c=c)
+        a_21=a_21, a_22=a_22, c=c,
+        get_coarse_initial_mesh=get_coarse_square_mesh)
 
 
 def get_problem_4() -> Problem:
@@ -290,7 +299,8 @@ def get_problem_4() -> Problem:
 
     return Problem(
         f=f, a_11=a_11, a_12=a_12,
-        a_21=a_21, a_22=a_22, c=c)
+        a_21=a_21, a_22=a_22, c=c,
+        get_coarse_initial_mesh=get_coarse_square_mesh)
 
 
 def get_problem_5() -> Problem:
@@ -318,7 +328,8 @@ def get_problem_5() -> Problem:
 
     return Problem(
         f=f, a_11=a_11, a_12=a_12,
-        a_21=a_21, a_22=a_22, c=c)
+        a_21=a_21, a_22=a_22, c=c,
+        get_coarse_initial_mesh=get_coarse_L_shape_mesh)
 
 
 def get_problem(number: int) -> Problem:
