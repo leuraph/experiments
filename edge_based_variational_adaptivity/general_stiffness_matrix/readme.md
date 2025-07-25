@@ -256,6 +256,8 @@ For problems 1,2, and 4, we compute reference values
 by uniformly refining the mesh and
 1. solve for the Galerkin solution,
 2. approximate the Galerkin solution by using CG with a predescribed relative tolerance.
+The computations of the latter (CG) were performed using the script
+`calculate_reference_value_energy_norm_squared_cg.py`.
 We found that solving for the Galerkin solution becomes impractical for meshes
 with more than ~7 million degrees of freedom, whereas CG only fails for meshes
 with more than ~30 million degrees of freedom.
