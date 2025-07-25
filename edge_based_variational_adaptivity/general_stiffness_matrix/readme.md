@@ -306,36 +306,6 @@ which can be found in the file
 `energy_norm_squared_reference_value_problem_02.dat`
 
 
-## Energy for problem 03
-Generates a reference value of
-$\|u\|_a^2$, where $u$ is the exact solution of problem 3 by
-1. uniformly refine all elements using NVB,
-2. solve $Ax=b$ exactly,
-3. and calculate $x^\top A x = \|x\|_a^2$.
-
-We ran this script locally.
-The highest n_DOF we reached was 7'562'721.
-The output of the experiment looks like this.
-```sh
-nDOF = 1776, Galerkin solution energy norm squared = 0.026667819476661962
-nDOF = 7246, Galerkin solution energy norm squared = 0.027921257728616127
-nDOF = 29271, Galerkin solution energy norm squared = 0.028138367251330947
-nDOF = 117661, Galerkin solution energy norm squared = 0.028409062970528115
-nDOF = 471801, Galerkin solution energy norm squared = 0.028610912906002713
-nDOF = 1889521, Galerkin solution energy norm squared = 0.028661547745637728
-nDOF = 7562721, Galerkin solution energy norm squared = 0.028670618542377395
-```
-
-Our reference value for problem 03 is therefore
-$$
-\|u\|^2_a \approx \|u^{7562721}_h\|^2_a
-=
-0.028670618542377395
-$$
-which can be found in the file
-`energy_norm_squared_reference_value_problem_03.dat`
-
-
 ## Energy for problem 04
 Generates a reference value of
 $\|u\|_a^2$, where $u$ is the exact solution of problem 4 by
