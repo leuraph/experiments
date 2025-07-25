@@ -356,7 +356,7 @@ Our reference value for problem 01 is therefore
 $$
 \|u\|^2_a \approx \|u^{7562721}_h\|^2_a
 =
-0.07121838188085848,
+0.07121857719182778,
 $$
 which can be found in the file
 `energy_norm_squared_reference_value_problem_01.dat`
@@ -450,7 +450,7 @@ Our reference value for problem 02 is therefore
 $$
 \|u\|^2_a \approx \|u^{7562721}_h\|^2_a
 =
-0.6509445059014127
+0.6509451171871544
 $$
 which can be found in the file
 `energy_norm_squared_reference_value_problem_02.dat`
@@ -545,7 +545,7 @@ Our reference value for problem 04 is therefore
 $$
 \|u\|^2_a \approx \|u^h_{7562721}\|^2_a
 =
-0.04074476586361528
+0.040756312505732355
 $$
 which can be found in the file
 `energy_norm_squared_reference_value_problem_04.dat`
