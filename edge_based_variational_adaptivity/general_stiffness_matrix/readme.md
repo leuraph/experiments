@@ -458,6 +458,8 @@ which can be found in the file
 
 ## Problem 04
 Reference value for the energy norm squared of the solution to problem 4.
+The initial mesh was chosen to be aligned with the subdomains
+on which the diffusion matrix is constant.
 
 ### Direct Solver
 1. uniformly refine all elements using NVB,
@@ -481,64 +483,20 @@ nDOF = 7562721, Galerkin solution energy norm squared = 0.04074476586361528
 2. run CG for $Ax=b$ until relative tolerance is reached,
 3. and calculate $x^\top A x = \|x\|_a^2$.
 
-The outputs look like this.
+The output looks like this.
 
 ```bash
 problem number = 4
-relative tolerance for CG = 0.01
-
-nDOF = 1776,     converged CG approximation energy norm squared = 0.039422725739309716, n_iterations = 109
-nDOF = 7246,     converged CG approximation energy norm squared = 0.04003509142917638,  n_iterations = 230
-nDOF = 29271,    converged CG approximation energy norm squared = 0.04043828160637063,  n_iterations = 473
-nDOF = 117661,   converged CG approximation energy norm squared = 0.040636791882217485, n_iterations = 972
-nDOF = 471801,   converged CG approximation energy norm squared = 0.04068995744785822,  n_iterations = 2051
-nDOF = 1889521,  converged CG approximation energy norm squared = 0.040720515409082336, n_iterations = 4148
-nDOF = 7562721,  converged CG approximation energy norm squared = 0.04074476424872379,  n_iterations = 8467
-nDOF = 30260161, converged CG approximation energy norm squared = 0.04075631158690203,  n_iterations = 17155
-/var/spool/slurmd.spool/job27752262/slurm_script: line 25: 4171355 Killed                  python -u calculate_reference_value_energy_norm_squared_cg.py --problem 4 --rtol 1e-2
-slurmstepd: error: Detected 1 oom_kill event in StepId=27752262.batch. Some of the step tasks have been OOM Killed.
-
-problem number = 4
-relative tolerance for CG = 0.001
-
-nDOF = 1776,     converged CG approximation energy norm squared = 0.03942286265887802, n_iterations = 131
-nDOF = 7246,     converged CG approximation energy norm squared = 0.04003515816920987, n_iterations = 270
-nDOF = 29271,    converged CG approximation energy norm squared = 0.04043831862402136, n_iterations = 554
-nDOF = 117661,   converged CG approximation energy norm squared = 0.04063681115855645, n_iterations = 1126
-nDOF = 471801,   converged CG approximation energy norm squared = 0.040689961677195,   n_iterations = 2329
-nDOF = 1889521,  converged CG approximation energy norm squared = 0.04072051858373632, n_iterations = 4716
-nDOF = 7562721,  converged CG approximation energy norm squared = 0.04074476586398393, n_iterations = 9565
-nDOF = 30260161, converged CG approximation energy norm squared = 0.04075631249679278, n_iterations = 19410
-/var/spool/slurmd.spool/job27752277/slurm_script: line 25: 302478 Killed                  python -u calculate_reference_value_energy_norm_squared_cg.py --problem 4 --rtol 1e-3
-slurmstepd: error: Detected 1 oom_kill event in StepId=27752277.batch. Some of the step tasks have been OOM Killed.
-
-problem number = 4
-relative tolerance for CG = 0.0001
-
-nDOF = 1776,     converged CG approximation energy norm squared = 0.03942286290591484,  n_iterations = 146
-nDOF = 7246,     converged CG approximation energy norm squared = 0.04003515888647288,  n_iterations = 304
-nDOF = 29271,    converged CG approximation energy norm squared = 0.040438318858596584, n_iterations = 621
-nDOF = 117661,   converged CG approximation energy norm squared = 0.040636811289673884, n_iterations = 1267
-nDOF = 471801,   converged CG approximation energy norm squared = 0.04068996171869217,  n_iterations = 2606
-nDOF = 1889521,  converged CG approximation energy norm squared = 0.04072051861277673,  n_iterations = 5343
-nDOF = 7562721,  converged CG approximation energy norm squared = 0.040744765881266555, n_iterations = 10821
-nDOF = 30260161, converged CG approximation energy norm squared = 0.04075631250568247,  n_iterations = 21798
-/var/spool/slurmd.spool/job27752279/slurm_script: line 25: 4104463 Killed                  python -u calculate_reference_value_energy_norm_squared_cg.py --problem 4 --rtol 1e-4
-slurmstepd: error: Detected 1 oom_kill event in StepId=27752279.batch. Some of the step tasks have been OOM Killed.
-
-problem number = 4
 relative tolerance for CG = 1e-05
 
-nDOF = 1776,     converged CG approximation energy norm squared = 0.039422862913769695, n_iterations = 164
-nDOF = 7246,     converged CG approximation energy norm squared = 0.04003515886670348,  n_iterations = 340
-nDOF = 29271,    converged CG approximation energy norm squared = 0.04043831886269658,  n_iterations = 696
-nDOF = 117661,   converged CG approximation energy norm squared = 0.04063681129116415,  n_iterations = 1403
-nDOF = 471801,   converged CG approximation energy norm squared = 0.040689961719291526, n_iterations = 2857
-nDOF = 1889521,  converged CG approximation energy norm squared = 0.04072051861301904,  n_iterations = 5780
-nDOF = 7562721,  converged CG approximation energy norm squared = 0.04074476588139947,  n_iterations = 11673
-nDOF = 30260161, converged CG approximation energy norm squared = 0.040756312505732355, n_iterations = 23645
-/var/spool/slurmd.spool/job27752280/slurm_script: line 25: 43020 Killed                  python -u calculate_reference_value_energy_norm_squared_cg.py --problem 4 --rtol 1e-5
-slurmstepd: error: Detected 1 oom_kill event in StepId=27752280.batch. Some of the step tasks have been OOM Killed.
+nDOF = 22312, converged CG approximation energy norm squared = 0.040670982776073866, n_iterations = 703
+nDOF = 89645, converged CG approximation energy norm squared = 0.040736741677697294, n_iterations = 1430
+nDOF = 359377, converged CG approximation energy norm squared = 0.040755642655566915, n_iterations = 2910
+nDOF = 1439105, converged CG approximation energy norm squared = 0.04076128252017521, n_iterations = 5979
+nDOF = 5759617, converged CG approximation energy norm squared = 0.04076302756250941, n_iterations = 12176
+nDOF = 23044865, converged CG approximation energy norm squared = 0.04076358619422494, n_iterations = 24658
+/var/spool/slurmd.spool/job29147208/slurm_script: line 25: 99832 Killed                  python -u calculate_reference_value_energy_norm_squared_cg.py --problem 4 --rtol 1e-5
+slurmstepd: error: Detected 1 oom_kill event in StepId=29147208.batch. Some of the step tasks have been OOM Killed.
 ```
 
 Our reference value for problem 04 is therefore
