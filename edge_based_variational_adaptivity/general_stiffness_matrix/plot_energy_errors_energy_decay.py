@@ -62,12 +62,13 @@ def main() -> None:
 
     # plotting ideal convergence order
     # --------------------------------
+    n_points_for_fit = 2
     def model(x, m):
         return -0.5*x + m
     popt, pcov = curve_fit(
         model,
-        np.log(n_dofs),
-        np.log(energy_norm_errors_last_iterate_to_exact))
+        np.log(n_dofs[-n_points_for_fit:]),
+        np.log(energy_norm_errors_last_iterate_to_exact[-n_points_for_fit:]))
     m_optimized = popt[0]
     ax.loglog(n_dofs, np.exp(model(np.log(n_dofs), m_optimized)),
               color='black', linestyle='--',
