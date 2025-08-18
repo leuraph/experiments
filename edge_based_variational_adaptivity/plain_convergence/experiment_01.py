@@ -37,7 +37,7 @@ def a_21(r: CoordinatesType) -> np.ndarray:
 
 def main() -> None:
 
-    n_max_dofs = 1e2
+    n_max_dofs = 1e3
     n_initial_refinements = 2
 
     # ------------------------------------------------
