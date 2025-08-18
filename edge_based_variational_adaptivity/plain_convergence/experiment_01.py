@@ -121,6 +121,9 @@ def main() -> None:
             cubature_rule=CubatureRuleEnum.DAYTAYLOR)
         lhs_matrix = csr_matrix(stiffness_matrix)
 
+        def energy(u: np.ndarray) -> float:
+            return 0.5 * u.dot(lhs_matrix.dot(u)) - rhs_vector.dot(u)
+
         galerkin_solution = np.zeros(n_vertices)
         galerkin_solution[free_nodes] = spsolve(
             A=lhs_matrix[free_nodes, :][:, free_nodes],
@@ -137,6 +140,9 @@ def main() -> None:
         dump_object(
             obj=galerkin_solution, path_to_file=base_results_path /
             Path(f'{n_dofs}/galerkin_solution.pkl'))
+        dump_object(
+            obj=energy(galerkin_solution),
+            path_to_file=base_results_path / Path(f'{n_dofs}/galerkin_solution_energy.pkl'))
         # -----------------------------------------------------
 
         # EVA
