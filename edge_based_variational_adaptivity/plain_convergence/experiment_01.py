@@ -4,7 +4,6 @@ from p1afempy.solvers import \
     get_general_stiffness_matrix, get_right_hand_side
 from triangle_cubature.cubature_rule import CubatureRuleEnum
 from scipy.sparse.linalg import spsolve
-import argparse
 from pathlib import Path
 from load_save_dumps import dump_object
 from p1afempy.mesh import provide_geometric_data
