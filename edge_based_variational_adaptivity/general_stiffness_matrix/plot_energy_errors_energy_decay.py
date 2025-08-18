@@ -146,7 +146,7 @@ def main() -> None:
     # ------------------------------------------
 
     # Put a legend above current axis
-    ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.35),
+    ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.2),
             fancybox=True, shadow=False, ncol=2)
 
     fig.savefig(output_path, dpi=300, bbox_inches="tight")
