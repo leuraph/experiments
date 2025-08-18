@@ -43,8 +43,8 @@ def main() -> None:
     # including a graphic of (possibly) smaller witdth than 1.0\textwidth
     # inside a minipage of (possibly) smaller width than 0.5\textwidth,
     # hence, the scaling factor:
-    graphic_scaling = 1.0
-    minipage_scaling = 0.45
+    graphic_scaling = 0.7
+    minipage_scaling = 1.0
     paper_scaling = 1/(graphic_scaling * minipage_scaling)
     alpha_for_error_plots = 0.8
     font_size = 14 * paper_scaling
