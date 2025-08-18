@@ -9,7 +9,6 @@ from p1afempy.solvers import \
     get_general_stiffness_matrix, get_mass_matrix, get_right_hand_side
 from triangle_cubature.cubature_rule import CubatureRuleEnum
 from scipy.sparse.linalg import spsolve
-from custom_callback import EnergyTailOffAveragedCustomCallback
 import argparse
 from scipy.sparse.linalg import cg
 from pathlib import Path
@@ -20,43 +19,35 @@ from variational_adaptivity.edge_based_variational_adaptivity import \
     get_energy_gains
 from variational_adaptivity.markers import doerfler_marking
 from p1afempy.refinement import refineNVB_edge_based
-from custom_callback import ConvergedException
 from scipy.sparse import csr_matrix
-from problems import get_problem_5
+
+def f(coordinates: np.ndarray) -> np.ndarray:
+    pass
+
+def a_11(coordinates: np.ndarray) -> np.ndarray:
+    pass
+
+def a_12(coordinates: np.ndarray) -> np.ndarray:
+    pass
+
+def a_21(coordinates: np.ndarray) -> np.ndarray:
+    pass
+
+def a_22(coordinates: np.ndarray) -> np.ndarray:
+    pass
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--theta", type=float, required=True,
-                        help="value of theta used in the Dörfler marking")
-    parser.add_argument("--fudge", type=float, required=True,
-                        help="if current_ennergy_gain < fudge * "
-                        "accumulated_energy_gain / n_iterations, "
-                        "iteration is halted and refinement is started")
-    parser.add_argument("--miniter", type=int, required=True,
-                        help="minimum number of iterations on each mesh")
-    parser.add_argument("--batchsize", type=int, required=True,
-                        help="number of CG iterations per update step")
-    args = parser.parse_args()
 
-    MINITER = args.miniter
-    BATCHSIZE = args.batchsize
-    THETA = args.theta
-    FUDGE = args.fudge
-
-    n_max_dofs = 1e6
-    n_initial_refinements = 5
+    n_max_dofs = 1e2
+    n_initial_refinements = 2
 
     # ------------------------------------------------
     # Setup
     # ------------------------------------------------
     np.random.seed(42)
 
-    base_results_path = (
-        Path('results/experiment_13') /
-        Path(
-            f'theta-{THETA}_fudge-{FUDGE}_'
-            f'miniter-{MINITER}_batchsize-{BATCHSIZE}'))
+    base_results_path = Path('results/experiment_01')
 
     # mesh
     # ----
@@ -115,20 +106,20 @@ def main() -> None:
     rhs_vector = get_right_hand_side(
         coordinates=coordinates,
         elements=elements,
-        f=get_problem_5().f,
+        f=f,
         cubature_rule=CubatureRuleEnum.DAYTAYLOR)
     stiffness_matrix = get_general_stiffness_matrix(
         coordinates=coordinates,
         elements=elements,
-        a_11=get_problem_5().a_11,
-        a_12=get_problem_5().a_12,
-        a_21=get_problem_5().a_21,
-        a_22=get_problem_5().a_22,
+        a_11=a_11,
+        a_12=a_12,
+        a_21=a_21,
+        a_22=a_22,
         cubature_rule=CubatureRuleEnum.DAYTAYLOR)
     mass_matrix = get_mass_matrix(
         coordinates=coordinates,
         elements=elements)
-    c: float = get_problem_5().c
+    c: float = c
     lhs_matrix = csr_matrix(c * mass_matrix + stiffness_matrix)
 
     galerkin_solution = np.zeros(n_vertices)
@@ -192,12 +183,12 @@ def main() -> None:
         elements=elements,
         non_boundary_edges=non_boundary_edges,
         current_iterate=current_iterate,
-        f=get_problem_5().f,
-        a_11=get_problem_5().a_11,
-        a_12=get_problem_5().a_12,
-        a_21=get_problem_5().a_21,
-        a_22=get_problem_5().a_22,
-        c=get_problem_5().c,
+        f=f,
+        a_11=a_11,
+        a_12=a_12,
+        a_21=a_21,
+        a_22=a_22,
+        c=c,
         cubature_rule=CubatureRuleEnum.DAYTAYLOR,
         verbose=False)
 
@@ -236,20 +227,20 @@ def main() -> None:
         general_stiffness_matrix = get_general_stiffness_matrix(
             coordinates=coordinates,
             elements=elements,
-            a_11=get_problem_5().a_11,
-            a_12=get_problem_5().a_12,
-            a_21=get_problem_5().a_21,
-            a_22=get_problem_5().a_22,
+            a_11=a_11,
+            a_12=a_12,
+            a_21=a_21,
+            a_22=a_22,
             cubature_rule=CubatureRuleEnum.DAYTAYLOR)
         mass_matrix = get_mass_matrix(
             coordinates=coordinates,
             elements=elements)
-        c: float = get_problem_5().c
+        c: float = c
         lhs_matrix = csr_matrix(general_stiffness_matrix + c*mass_matrix)
         rhs_vector = get_right_hand_side(
             coordinates=coordinates,
             elements=elements,
-            f=get_problem_5().f,
+            f=f,
             cubature_rule=CubatureRuleEnum.DAYTAYLOR)
 
         # compute the Galerkin solution on current mesh
@@ -347,12 +338,12 @@ def main() -> None:
             elements=elements,
             non_boundary_edges=non_boundary_edges,
             current_iterate=current_iterate,
-            f=get_problem_5().f,
-            a_11=get_problem_5().a_11,
-            a_12=get_problem_5().a_12,
-            a_21=get_problem_5().a_21,
-            a_22=get_problem_5().a_22,
-            c=get_problem_5().c,
+            f=f,
+            a_11=a_11,
+            a_12=a_12,
+            a_21=a_21,
+            a_22=a_22,
+            c=c,
             cubature_rule=CubatureRuleEnum.DAYTAYLOR,
             verbose=False)
 
