@@ -14,6 +14,7 @@ from p1afempy.refinement import refineNVB_edge_based
 from scipy.sparse import csr_matrix
 from p1afempy.data_structures import CoordinatesType
 from variational_adaptivity.markers import doerfler_marking
+import argparse
 
 def f(r: CoordinatesType) -> float:
     """returns ones only"""
@@ -38,9 +39,14 @@ def a_21(r: CoordinatesType) -> np.ndarray:
 
 def main() -> None:
 
-    THETA = 0.1
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--theta", type=float, required=True,
+                        help="dörfler parameter")
+    args = parser.parse_args()
 
-    n_max_dofs = 1e3
+    THETA = args.theta
+
+    n_max_dofs = 1e6
     n_initial_refinements = 2
 
     # ------------------------------------------------
@@ -48,7 +54,7 @@ def main() -> None:
     # ------------------------------------------------
     np.random.seed(42)
 
-    base_results_path = Path('results/experiment_01')
+    base_results_path = Path('results/experiment_02') / Path(f'theta-{THETA}')
 
     # mesh
     # ----
@@ -192,15 +198,16 @@ def main() -> None:
             cubature_rule=CubatureRuleEnum.DAYTAYLOR,
             verbose=False)
 
+        # dörfler based on EVA
         marked_edges = np.zeros(edges.shape[0], dtype=int)
-        marked_non_boundary_edges = np.zeros(len(energy_gains), dtype=bool)
-        marked_non_boundary_edges[energy_gains.argmax()] = True
-        marked_edges[free_edges] = marked_non_boundary_edges
+        marked_non_boundary_egdes = doerfler_marking(
+            input=energy_gains, theta=THETA)
+        marked_edges[free_edges] = marked_non_boundary_egdes
 
         element_to_edges, edge_to_nodes, boundaries_to_edges =\
             provide_geometric_data(elements=elements, boundaries=boundaries)
 
-        coordinates, elements, boundaries, _ = \
+        coordinates, elements, boundaries, galerkin_solution = \
             refineNVB_edge_based(
                 coordinates=coordinates,
                 elements=elements,
