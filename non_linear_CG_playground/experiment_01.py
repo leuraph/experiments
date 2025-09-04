@@ -30,8 +30,8 @@ def a_21(r: CoordinatesType) -> np.ndarray:
     n_vertices = r.shape[0]
     return np.zeros(n_vertices, dtype=float)
 
-def phi(u: float) -> float:
-    return np.exp(u)
+def phi(tau: float) -> float:
+    return np.exp(tau)
 
 def Phi(u: float) -> float:
     return np.exp(u)
