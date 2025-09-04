@@ -52,8 +52,8 @@ def main() -> None:
     elements = load_dump(path_to_dump=path_to_elements)
     galerkin_solution = load_dump(path_to_dump=path_to_solution)
 
-    # show_mesh(coordinates=coordinates, elements=elements)
-    show_solution(coordinates=coordinates, solution=galerkin_solution)
+    show_mesh(coordinates=coordinates, elements=elements)
+    # show_solution(coordinates=coordinates, solution=galerkin_solution)
 
 
 if __name__ == '__main__':
