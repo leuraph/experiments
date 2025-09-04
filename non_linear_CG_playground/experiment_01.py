@@ -75,10 +75,9 @@ def main() -> None:
         ar2=np.unique(boundaries[0].flatten()))
     free_nodes = np.zeros(n_coordinates, dtype=bool)
     free_nodes[indices_of_free_nodes] = 1
+    n_dof = np.sum(free_nodes)
 
     initial_guess = np.zeros(n_coordinates)
-
-    current_iterate = initial_guess
 
     # midpoint suffices as we consider laplace operator
     stiffness_matrix = csr_matrix(get_general_stiffness_matrix(
@@ -102,7 +101,7 @@ def main() -> None:
             elements=elements,
             cubature_rule=CubatureRuleEnum.DAYTAYLOR)
 
-        grad_J = np.zeros(n_coordinates)
+        grad_J = np.zeros(n_coordinates, dtype=float)
         grad_J_on_free_nodes = (
             stiffness_matrix[free_nodes, :][:, free_nodes].dot(current_iterate[free_nodes])
             +
