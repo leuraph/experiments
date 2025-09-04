@@ -87,24 +87,21 @@ def main() -> None:
         a_11=a_11, a_12=a_12, a_21=a_21, a_22=a_22,
         cubature_rule=CubatureRuleEnum.MIDPOINT))
 
-    # using best available cubature scheme for
-    # functions involving exponential
-    # ----------------------------------------
     right_hand_side_vector = get_right_hand_side(
         coordinates=coordinates,
         elements=elements,
         f=right_hand_side,
         cubature_rule=CubatureRuleEnum.DAYTAYLOR)
 
-    load_vector_phi = get_load_vector_of_composition_nonlinear_with_fem(
-        f=Phi,
-        u=current_iterate,
-        coordinates=coordinates,
-        elements=elements,
-        cubature_rule=CubatureRuleEnum.DAYTAYLOR)
-    # ----------------------------------------
-
     def DJ(current_iterate: np.ndarray) -> np.ndarray:
+
+        load_vector_phi = get_load_vector_of_composition_nonlinear_with_fem(
+            f=Phi,
+            u=current_iterate,
+            coordinates=coordinates,
+            elements=elements,
+            cubature_rule=CubatureRuleEnum.DAYTAYLOR)
+
         grad_J = np.zeros(n_coordinates)
         grad_J_on_free_nodes = (
             stiffness_matrix[free_nodes, :][:, free_nodes].dot(current_iterate[free_nodes])
