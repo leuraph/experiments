@@ -98,7 +98,7 @@ def main() -> None:
     def DJ(current_iterate: np.ndarray) -> np.ndarray:
 
         load_vector_phi = get_load_vector_of_composition_nonlinear_with_fem(
-            f=Phi,
+            f=phi,
             u=current_iterate,
             coordinates=coordinates,
             elements=elements,
