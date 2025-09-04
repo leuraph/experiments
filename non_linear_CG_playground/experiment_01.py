@@ -94,6 +94,8 @@ def main() -> None:
     print(f'DOF = {n_dof}')
 
     # initializing with random values
+    # NOTE that [Glowinski, 2013, remark 2.10] suggests u=0 as initial guess,
+    # when there is no information available
     np.random.seed(42)
     random_values = np.random.rand(n_dof)
     initial_guess = np.zeros(n_coordinates, dtype=float)
