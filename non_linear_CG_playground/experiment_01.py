@@ -1,3 +1,4 @@
+from exceptiongroup import catch
 from matplotlib.pylab import f
 from p1afempy.solvers import \
     integrate_composition_nonlinear_with_fem, \
@@ -11,6 +12,7 @@ import numpy as np
 from scipy.optimize import fmin_cg
 from scipy.sparse import csr_matrix
 from show_solution import show_solution
+from custom_callback import ConvergedException, EnergyTailOffAveragedCustomCallback
 
 def a_11(r: CoordinatesType) -> np.ndarray:
     n_vertices = r.shape[0]
@@ -76,6 +78,7 @@ def main() -> None:
     free_nodes = np.zeros(n_coordinates, dtype=bool)
     free_nodes[indices_of_free_nodes] = 1
     n_dof = np.sum(free_nodes)
+    print(f'DOF = {n_dof}')
 
     initial_guess = np.zeros(n_coordinates)
 
@@ -126,10 +129,28 @@ def main() -> None:
             right_hand_side_vector.dot(current_iterate)
         )
         return J
-    
-    x_opt, f_opt, func_calls, grad_calls, _ = \
-        fmin_cg(f=J, x0=initial_guess, fprime=DJ, full_output=True)
 
+    # Custom Stopping Criterion: Energy Tail-Off
+    # ------------------------------------------
+    custom_callback = EnergyTailOffAveragedCustomCallback(
+        batch_size=1,
+        min_n_iterations_per_mesh=10,
+        fudge=0.01,
+        compute_energy=J)
+    try:
+        x_opt, f_opt, func_calls, grad_calls, _ = \
+            fmin_cg(f=J, x0=initial_guess, fprime=DJ, full_output=True, callback=custom_callback, gtol=1e-12)
+    except ConvergedException as conv:
+        x_opt = conv.last_iterate
+        n_iterations = conv.n_iterations_done
+    print(f'n iterations done for custom energy tail-off callback: {n_iterations}')
+    show_solution(coordinates=coordinates, solution=x_opt)
+
+    # Default usage of scipy's `fmin_cg`
+    # ----------------------------------
+    print('default usage')
+    x_opt, f_opt, func_calls, grad_calls, _ = \
+            fmin_cg(f=J, x0=initial_guess, fprime=DJ, full_output=True)
     show_solution(coordinates=coordinates, solution=x_opt)
 
 
