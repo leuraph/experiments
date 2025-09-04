@@ -45,6 +45,7 @@ Here, we provide
 - and impose the solution $u(x,y) := x(x-1)y(y-1)$.
 
 In conclusion, this implies the right-hand side
+(one may use the script `compute_rhs.py` to compute this function symbolically using `sympy`)
 $$
-f(x,y)=-2x(x - 1) - 2y(y - 1) + \exp \big[xy(x - 1)(y - 1)\big]
+f(x,y)=-2x(x - 1) - 2y(y - 1) + \exp \big[xy(x - 1)(y - 1)\big].
 $$
