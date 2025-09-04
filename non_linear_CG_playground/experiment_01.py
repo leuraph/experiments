@@ -13,6 +13,7 @@ from scipy.optimize import fmin_cg
 from scipy.sparse import csr_matrix
 from show_solution import show_solution
 from custom_callback import ConvergedException, EnergyTailOffAveragedCustomCallback
+import argparse
 
 def a_11(r: CoordinatesType) -> np.ndarray:
     n_vertices = r.shape[0]
@@ -42,6 +43,18 @@ def right_hand_side(r: CoordinatesType) -> np.ndarray:
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--fudge", type=float, required=True)
+    parser.add_argument("--miniter", type=int, required=True,
+                        help="minimum number of iterations on each mesh")
+    parser.add_argument("--batchsize", type=int, required=True,
+                        help="minimum number of iterations on each mesh")
+    args = parser.parse_args()
+
+    MINITER = args.miniter
+    FUDGE = args.fudge
+    BATCHSIZE = args.batchsize
+
     # generating a reasonable mesh
     # ----------------------------
     coordinates = np.array([
@@ -137,9 +150,9 @@ def main() -> None:
     # Custom Stopping Criterion: Energy Tail-Off
     # ------------------------------------------
     custom_callback = EnergyTailOffAveragedCustomCallback(
-        batch_size=1,
-        min_n_iterations_per_mesh=10,
-        fudge=0.01,
+        batch_size=BATCHSIZE,
+        min_n_iterations_per_mesh=MINITER,
+        fudge=FUDGE,
         compute_energy=J)
     try:
         x_opt, f_opt, func_calls, grad_calls, _ = \
@@ -147,12 +160,11 @@ def main() -> None:
     except ConvergedException as conv:
         x_opt = conv.last_iterate
         n_iterations = conv.n_iterations_done
-    print(f'n iterations done for custom energy tail-off callback: {n_iterations}')
+    print(f'\tIterations: {n_iterations}')
     show_solution(coordinates=coordinates, solution=x_opt)
 
     # Default usage of scipy's `fmin_cg`
     # ----------------------------------
-    print('default usage')
     x_opt, f_opt, func_calls, grad_calls, _ = \
             fmin_cg(f=J, x0=initial_guess, fprime=DJ, full_output=True)
     show_solution(coordinates=coordinates, solution=x_opt)
