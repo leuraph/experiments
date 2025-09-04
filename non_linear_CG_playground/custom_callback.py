@@ -1,3 +1,4 @@
+from abc import abstractmethod
 import numpy as np
 from p1afempy.mesh import provide_geometric_data
 from p1afempy.solvers import get_general_stiffness_matrix, get_right_hand_side
@@ -45,72 +46,19 @@ class CustomCallBack():
     batch_size: int
     min_n_iterations_per_mesh: int
 
-    # Mesh
-    elements: ElementsType
-    coordinates: CoordinatesType
-    boundaries: list[np.ndarray]
-    # ---
-    free_nodes: np.ndarray
-    edges: np.ndarray
-    non_boundary_edges: np.ndarray
-    free_edges: np.ndarray
-    # ---
-    lhs_matrix: csr_matrix
-    rhs_vector: np.ndarray
-
     def __init__(
             self,
             batch_size: int,
-            min_n_iterations_per_mesh: int,
-            elements: ElementsType,
-            coordinates: CoordinatesType,
-            boundaries: list[BoundaryType],
-            lhs_matrix: csr_matrix,
-            rhs_vector: np.ndarray) -> None:
+            min_n_iterations_per_mesh: int) -> None:
         self.n_iterations_done = 0
         self.batch_size = batch_size
         self.min_n_iterations_per_mesh = min_n_iterations_per_mesh
 
-        # mesh specific setup
-        # -------------------
-        self.elements = elements
-        self.coordinates = coordinates
-        self.boundaries = boundaries
-
-        # (non-boundary) edges
-        _, edge_to_nodes, _ = \
-            provide_geometric_data(
-                elements=elements,
-                boundaries=boundaries)
-
-        edge_to_nodes_flipped = np.column_stack(
-            [edge_to_nodes[:, 1], edge_to_nodes[:, 0]])
-        boundary = np.logical_or(
-            is_row_in(edge_to_nodes, self.boundaries[0]),
-            is_row_in(edge_to_nodes_flipped, self.boundaries[0])
-        )
-        non_boundary = np.logical_not(boundary)
-        self.edges = edge_to_nodes
-        self.non_boundary_edges = edge_to_nodes[non_boundary]
-
-        # free nodes / edges
-        n_vertices = coordinates.shape[0]
-        indices_of_free_nodes = np.setdiff1d(
-            ar1=np.arange(n_vertices),
-            ar2=np.unique(boundaries[0].flatten()))
-        free_nodes = np.zeros(n_vertices, dtype=bool)
-        free_nodes[indices_of_free_nodes] = 1
-        self.free_edges = non_boundary
-        self.free_nodes = free_nodes
-
-        # lhs-matrix / rhs-vector
-        self.lhs_matrix = lhs_matrix
-        self.rhs_vector = rhs_vector
-
+    @abstractmethod
     def perform_callback(self, current_iterate) -> None:
         pass
 
-    def __call__(self, current_iterate_on_free_nodes) -> None:
+    def __call__(self, current_iterate) -> None:
         # we know that scipy.sparse.linalg.cg calls this after each iteration
         self.n_iterations_done += 1
 
@@ -118,34 +66,12 @@ class CustomCallBack():
         min_iterations_reached = (
             self.n_iterations_done >= self.min_n_iterations_per_mesh)
         if batch_size_reached and min_iterations_reached:
-            current_iterate = np.zeros(self.coordinates.shape[0], dtype=float)
-            current_iterate[self.free_nodes] = current_iterate_on_free_nodes
-            # check if we must continue with iterations
+            # NOTE this part becomes obsolete because we plan to iterate on the full space
+            # 
+            # current_iterate = np.zeros(self.coordinates.shape[0], dtype=float)
+            # current_iterate[self.free_nodes] = current_iterate_on_free_nodes
+            # # check if we must continue with iterations
             self.perform_callback(current_iterate=current_iterate)
-
-    def get_energy(self, current_iterate: np.ndarray) -> float:
-        return (
-            0.5 * current_iterate.dot(self.lhs_matrix.dot(current_iterate))
-            - self.rhs_vector.dot(current_iterate))
-
-    @staticmethod
-    def get_global_iterate_from_iterate_on_free_nodes(
-            current_iterate_on_free_nodes: np.ndarray,
-            free_nodes: np.ndarray) -> np.ndarray:
-        """
-        given the iterate on free nodes, restores the global iterate
-        on all nodes
-
-        parameters
-        ----------
-        current_iterate_on_free_nodes: np.ndarray
-            iterate on free nodes only
-        free_nodes: np.ndarray
-            boolean mask indicating free nods
-        """
-        global_iterate = np.zeros(free_nodes.shape[0])
-        global_iterate[free_nodes] = current_iterate_on_free_nodes
-        return global_iterate
 
 
 class EnergyTailOffCustomCallback(CustomCallBack):
