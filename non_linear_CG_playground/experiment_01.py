@@ -80,7 +80,11 @@ def main() -> None:
     n_dof = np.sum(free_nodes)
     print(f'DOF = {n_dof}')
 
-    initial_guess = np.zeros(n_coordinates)
+    # initializing with random values
+    np.random.seed(42)
+    random_values = np.random.rand(n_dof)
+    initial_guess = np.zeros(n_coordinates, dtype=float)
+    initial_guess[free_nodes] = random_values
 
     # midpoint suffices as we consider laplace operator
     stiffness_matrix = csr_matrix(get_general_stiffness_matrix(
