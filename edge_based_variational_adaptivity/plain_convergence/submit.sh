@@ -19,4 +19,4 @@ module purge
 module load Workspace_Home
 
 source .venv/bin/activate
-python experiment_2.py --theta 0.1
+python experiment_02.py --theta 0.1
