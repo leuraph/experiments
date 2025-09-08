@@ -204,6 +204,17 @@ def main() -> None:
             input=energy_gains, theta=THETA)
         marked_edges[free_edges] = marked_non_boundary_egdes
 
+        # dumping sums of (marked) energy decays
+        sum_of_all_energy_decays = np.sum(energy_gains)
+        sum_of_all_marked_energy_decays = np.sum(energy_gains[marked_non_boundary_egdes])
+        dump_object(
+            obj=sum_of_all_energy_decays,
+            path_to_file=base_results_path / Path(f'{n_dofs}/sum_energy_decays.pkl'))
+        dump_object(
+            obj=sum_of_all_marked_energy_decays,
+            path_to_file=base_results_path / Path(f'{n_dofs}/sum_marked_energy_decays.pkl'))
+
+
         element_to_edges, edge_to_nodes, boundaries_to_edges =\
             provide_geometric_data(elements=elements, boundaries=boundaries)
 
