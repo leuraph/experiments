@@ -26,32 +26,16 @@ from problems import get_problem_5
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--theta", type=float, required=True,
-                        help="value of theta used in the Dörfler marking")
-    parser.add_argument("--fudge", type=float, required=True,
-                        help="additional fudge parameter "
-                        "in Ariolis stopping criterion")
-    parser.add_argument("--miniter", type=int, required=True,
-                        help="minimum number of iterations on each mesh")
-    parser.add_argument("--initial_delay", type=int, required=True,
-                        help="initial delay parameter for the "
-                        "Hestenes-Stiefel Estimator")
-    parser.add_argument("--delay_increase", type=int, required=True,
-                        help="increase delay by this amount if needed")
-    parser.add_argument("--tau", type=float, required=True,
-                        help="tau parameter in the adaptive delay choice")
-    args = parser.parse_args()
 
-    MINITER = args.miniter
-    DELAY = args.initial_delay
-    DELAY_INCREASE = args.delay_increase
-    TAU = args.tau
-    THETA = args.theta
-    FUDGE = args.fudge
+    MINITER = 10
+    DELAY = 10
+    DELAY_INCREASE = 10
+    TAU = 1.01
+    THETA = 0.5
+    FUDGE = 0.01
 
-    n_max_dofs = 1e6
-    n_initial_refinements = 5
+    n_max_dofs = 1e5
+    n_initial_refinements = 1
 
     # ------------------------------------------------
     # Setup
@@ -59,7 +43,7 @@ def main() -> None:
     np.random.seed(42)
 
     base_results_path = (
-        Path('results/experiment_12') /
+        Path('results/experiment_12_mesh') /
         Path(
             f'theta-{THETA}_fudge-{FUDGE}_'
             f'miniter-{MINITER}_initial_delay-{DELAY}_'
@@ -209,7 +193,7 @@ def main() -> None:
         a_22=get_problem_5().a_22,
         c=get_problem_5().c,
         cubature_rule=CubatureRuleEnum.DAYTAYLOR,
-        verbose=False)
+        verbose=True)
 
     # dörfler based on EVA
     marked_edges = np.zeros(edges.shape[0], dtype=int)
@@ -370,8 +354,7 @@ def main() -> None:
             a_22=get_problem_5().a_22,
             c=get_problem_5().c,
             cubature_rule=CubatureRuleEnum.DAYTAYLOR,
-            verbose=True,
-            parallel=False)
+            verbose=True)
 
         # dörfler based on EVA
         # --------------------

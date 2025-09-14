@@ -26,26 +26,14 @@ from problems import get_problem_5
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--theta", type=float, required=True,
-                        help="value of theta used in the Dörfler marking")
-    parser.add_argument("--fudge", type=float, required=True,
-                        help="if current_ennergy_gain < fudge * "
-                        "accumulated_energy_gain / n_iterations, "
-                        "iteration is halted and refinement is started")
-    parser.add_argument("--miniter", type=int, required=True,
-                        help="minimum number of iterations on each mesh")
-    parser.add_argument("--batchsize", type=int, required=True,
-                        help="number of CG iterations per update step")
-    args = parser.parse_args()
 
-    MINITER = args.miniter
-    BATCHSIZE = args.batchsize
-    THETA = args.theta
-    FUDGE = args.fudge
+    MINITER = 10
+    BATCHSIZE = 2
+    THETA = 0.5
+    FUDGE = 0.1
 
-    n_max_dofs = 1e6
-    n_initial_refinements = 5
+    n_max_dofs = 1e5
+    n_initial_refinements = 2
 
     # ------------------------------------------------
     # Setup
@@ -53,7 +41,7 @@ def main() -> None:
     np.random.seed(42)
 
     base_results_path = (
-        Path('results/experiment_13') /
+        Path('results/experiment_13_mesh') /
         Path(
             f'theta-{THETA}_fudge-{FUDGE}_'
             f'miniter-{MINITER}_batchsize-{BATCHSIZE}'))
@@ -199,7 +187,7 @@ def main() -> None:
         a_22=get_problem_5().a_22,
         c=get_problem_5().c,
         cubature_rule=CubatureRuleEnum.DAYTAYLOR,
-        verbose=False)
+        verbose=True)
 
     # dörfler based on EVA
     marked_edges = np.zeros(edges.shape[0], dtype=int)
@@ -354,7 +342,7 @@ def main() -> None:
             a_22=get_problem_5().a_22,
             c=get_problem_5().c,
             cubature_rule=CubatureRuleEnum.DAYTAYLOR,
-            verbose=False)
+            verbose=True)
 
         # dörfler based on EVA
         # --------------------
