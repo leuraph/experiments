@@ -201,6 +201,15 @@ $$
 is met.
 Then, we perform edge-based variational adaptivity to refine the mesh.
 
+## Experiment 09/10 (mesh)
+We have added two more experiment files `experiment_09_for_mesh.py`,
+and `experiment_10_for_mesh.py` that serve only the purpose
+of generating nice nice looking adaptively refined meshes for the
+EVA 2025 paper.
+The experiment parameters are hardcoded to resemble the parameters
+we chose to show results for in the paper.
+To show and save the mesh, use the script `show_and_save_mesh.py`
+
 ## Experiment 12 (Problem 5 with adaptive Energy Arioli)
 Considers the solution of *Problem 5* by using
 CG iterations on each mesh with an energy version of
@@ -218,6 +227,15 @@ E(u^{n-1}) - E(u^{n}) < \alpha \frac{E(u^{n_{\text{min}}}) - E(u^n)}{n - n_{\tex
 $$
 is met.
 Then, we perform edge-based variational adaptivity to refine the mesh.
+
+## Experiment 12/13 (mesh)
+We have added two more experiment files `experiment_12_for_mesh.py`,
+and `experiment_13_for_mesh.py` that serve only the purpose
+of generating nice nice looking adaptively refined meshes for the
+EVA 2025 paper.
+The experiment parameters are hardcoded to resemble the parameters
+we chose to show results for in the paper.
+To show and save the mesh, use the script `show_and_save_mesh.py`
 
 ## Experiment 14 (Problem 1 with combined stopping criterion)
 Considers the solution of *problem 1* by using
