@@ -52,7 +52,18 @@ def main() -> None:
     elements = load_dump(path_to_dump=path_to_elements)
     galerkin_solution = load_dump(path_to_dump=path_to_solution)
 
-    show_mesh(coordinates=coordinates, elements=elements)
+    n_dof = int(base_path.parts[-1])
+    parameter_string = base_path.parts[-2]
+    experiment_string = base_path.parts[-3]
+
+    output_path_dir = Path(f'plots/{experiment_string}/')
+    output_path_name = output_path_dir / f'{parameter_string}_n-dof-{n_dof}.pdf'
+    output_path_dir.mkdir(parents=True, exist_ok=True)
+
+    show_mesh(
+        coordinates=coordinates,
+        elements=elements,
+        path_to_save=output_path_name)
     # show_solution(coordinates=coordinates, solution=galerkin_solution)
 
 
