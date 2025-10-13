@@ -17,6 +17,7 @@ import argparse
 from p1afempy.solvers import get_load_vector_of_composition_nonlinear_with_fem, \
     integrate_composition_nonlinear_with_fem
 from scipy.optimize import fmin_cg
+from show_solution import show_solution
 
 
 def main() -> None:
@@ -26,12 +27,16 @@ def main() -> None:
                         help="problem number to be considered")
     parser.add_argument("--gtol", type=float, required=True,
                         help="stop when the norm of the gradient is less than `gtol`")
+    parser.add_argument("--debug", type=bool, required=False,
+                        default=False,
+                        help="if True, show solution after convergence")
     args = parser.parse_args()
 
     n_max_dofs = 100e6
     n_initial_refinements = 5
     GTOL_CG = args.gtol
     PROBLEM_N = args.problem
+    DEBUG = args.debug
 
     problem = get_problem(PROBLEM_N)
 
@@ -42,7 +47,6 @@ def main() -> None:
     a_22 = problem.a_22
     f = problem.f
     phi = problem.phi
-    phi_prime = problem.phi_prime
     Phi = problem.Phi
 
     # Printing meta information first
@@ -152,6 +156,9 @@ def main() -> None:
                 marked_elements=marked,
                 boundary_conditions=boundaries,
                 to_embed=current_iterate)
+        
+        if DEBUG:
+            show_solution(coordinates=coordinates, solution=current_iterate)
         
         # reset as the mesh has changed
         # -----------------------------
