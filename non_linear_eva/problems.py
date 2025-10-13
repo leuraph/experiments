@@ -117,7 +117,7 @@ def get_problem_1() -> Problem:
 
     def a_22(r: CoordinatesType) -> np.ndarray:
         n_vertices = r.shape[0]
-        return - np.ones(n_vertices, dtype=float) * 1e-2
+        return - np.ones(n_vertices, dtype=float)
 
     def a_12(r: CoordinatesType) -> np.ndarray:
         n_vertices = r.shape[0]
@@ -191,7 +191,7 @@ def get_problem_3() -> Problem:
 
     def a_22(r: CoordinatesType) -> np.ndarray:
         n_vertices = r.shape[0]
-        return - np.ones(n_vertices, dtype=float) * 1e-2
+        return - np.ones(n_vertices, dtype=float)
 
     def a_12(r: CoordinatesType) -> np.ndarray:
         n_vertices = r.shape[0]
