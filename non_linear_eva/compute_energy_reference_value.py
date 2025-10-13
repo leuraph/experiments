@@ -14,6 +14,9 @@ from scipy.sparse import csr_matrix, diags
 from scipy.sparse.linalg import cg
 from problems import get_problem
 import argparse
+from p1afempy.solvers import get_load_vector_of_composition_nonlinear_with_fem, \
+    integrate_composition_nonlinear_with_fem
+from scipy.optimize import fmin_cg
 
 
 def main() -> None:
@@ -32,8 +35,18 @@ def main() -> None:
 
     problem = get_problem(PROBLEM_N)
 
+    # extracting function handles from Problem object
+    a_11 = problem.a_11
+    a_12 = problem.a_12
+    a_21 = problem.a_21
+    a_22 = problem.a_22
+    f = problem.f
+    phi = problem.phi
+    phi_prime = problem.phi_prime
+    Phi = problem.Phi
+
     # Printing meta information first
-    print(f'Calculating CG approximations and their energy norm squared...')
+    print(f'Calculating CG approximations and their energy...')
     print(f'')
     print(f'parameters')
     print(f'----------')
@@ -59,10 +72,6 @@ def main() -> None:
                                  marked_elements=marked,
                                  boundary_conditions=boundaries)
 
-    # initial exact galerkin solution
-    # -------------------------------
-    # calculating free nodes on the initial mesh
-    # ------------------------------------------
     n_vertices = coordinates.shape[0]
     indices_of_free_nodes = np.setdiff1d(
         ar1=np.arange(n_vertices),
@@ -71,42 +80,79 @@ def main() -> None:
     free_nodes[indices_of_free_nodes] = 1
     n_dofs = np.sum(free_nodes)
 
-    rhs_vector = get_right_hand_side(
-        coordinates=coordinates,
-        elements=elements,
-        f=problem.f,
-        cubature_rule=CubatureRuleEnum.DAYTAYLOR)
-    stiffness_matrix = get_general_stiffness_matrix(
-        coordinates=coordinates,
-        elements=elements,
-        a_11=problem.a_11,
-        a_12=problem.a_12,
-        a_21=problem.a_21,
-        a_22=problem.a_22,
-        cubature_rule=CubatureRuleEnum.DAYTAYLOR)
-    mass_matrix = get_mass_matrix(
-        coordinates=coordinates,
-        elements=elements)
-    lhs_matrix = csr_matrix(
-        mass_matrix + problem.c * stiffness_matrix)
-
-    galerkin_solution = np.zeros(n_vertices)
-    galerkin_solution[free_nodes] = spsolve(
-        A=lhs_matrix[free_nodes, :][:, free_nodes],
-        b=rhs_vector[free_nodes])
-
-    current_iterate = np.copy(galerkin_solution)
-
-    coordinates, elements, boundaries, current_iterate = \
-        refineNVB(
-            coordinates=coordinates,
-            elements=elements,
-            marked_elements=marked,
-            boundary_conditions=boundaries,
-            to_embed=current_iterate)
-    # --------------------------------
+    # initial guess on initial mesh
+    # -----------------------------
+    current_iterate = np.zeros(n_vertices)
 
     while True:
+
+        stiffness_matrix = csr_matrix(get_general_stiffness_matrix(
+            coordinates=coordinates,
+            elements=elements,
+            a_11=a_11, a_12=a_12, a_21=a_21, a_22=a_22,
+            cubature_rule=CubatureRuleEnum.DAYTAYLOR))
+
+        right_hand_side_vector = get_right_hand_side(
+            coordinates=coordinates,
+            elements=elements,
+            f=f,
+            cubature_rule=CubatureRuleEnum.DAYTAYLOR)
+
+        def DJ(current_iterate: np.ndarray) -> np.ndarray:
+
+            load_vector_phi = get_load_vector_of_composition_nonlinear_with_fem(
+                f=phi,
+                u=current_iterate,
+                coordinates=coordinates,
+                elements=elements,
+                cubature_rule=CubatureRuleEnum.DAYTAYLOR)
+
+            grad_J = np.zeros(n_vertices, dtype=float)
+            grad_J_on_free_nodes = (
+                stiffness_matrix[free_nodes, :][:, free_nodes].dot(current_iterate[free_nodes])
+                +
+                load_vector_phi[free_nodes]
+                -
+                right_hand_side_vector[free_nodes]
+            )
+            grad_J[free_nodes] = grad_J_on_free_nodes
+            return grad_J
+
+        def J(current_iterate: np.ndarray) -> float:
+            J = (
+                0.5 * current_iterate.dot(stiffness_matrix.dot(current_iterate))
+                +
+                integrate_composition_nonlinear_with_fem(
+                    f=Phi,
+                    u=current_iterate,
+                    coordinates=coordinates,
+                    elements=elements,
+                    cubature_rule=CubatureRuleEnum.DAYTAYLOR)
+                -
+                right_hand_side_vector.dot(current_iterate)
+            )
+            return J
+
+        # approximate Galerkin solution on current mesh
+        # ---------------------------------------------
+        current_iterate, J_opt, func_calls, grad_calls, _ = fmin_cg(
+            f=J, x0=current_iterate, fprime=DJ, full_output=True)
+
+        print(
+            f'nDOF = {n_dofs}, \t'
+            f'converged CG approximation energy = {J_opt}, '
+            f'n function calls = {func_calls}, '
+            f'n gradient calls = {grad_calls}')
+
+        marked = np.ones(elements.shape[0], dtype=bool)
+        coordinates, elements, boundaries, current_iterate = \
+            refineNVB(
+                coordinates=coordinates,
+                elements=elements,
+                marked_elements=marked,
+                boundary_conditions=boundaries,
+                to_embed=current_iterate)
+        
         # reset as the mesh has changed
         # -----------------------------
         n_vertices = coordinates.shape[0]
@@ -117,77 +163,11 @@ def main() -> None:
         free_nodes[indices_of_free_nodes] = 1
         n_dofs = np.sum(free_nodes)
 
-        general_stiffness_matrix = get_general_stiffness_matrix(
-            coordinates=coordinates,
-            elements=elements,
-            a_11=problem.a_11,
-            a_12=problem.a_12,
-            a_21=problem.a_21,
-            a_22=problem.a_22,
-            cubature_rule=CubatureRuleEnum.DAYTAYLOR)
-        mass_matrix = get_mass_matrix(
-            coordinates=coordinates,
-            elements=elements)
-
-        lhs_matrix = csr_matrix(
-            general_stiffness_matrix + problem.c * mass_matrix)
-        rhs_vector = get_right_hand_side(
-            coordinates=coordinates,
-            elements=elements,
-            f=problem.f,
-            cubature_rule=CubatureRuleEnum.DAYTAYLOR)
-
-        # compute the Galerkin solution on current mesh
-        # ---------------------------------------------
-        current_iterate = np.zeros(n_vertices)
-
-        lhs_reduced = lhs_matrix[free_nodes, :][:, free_nodes]
-        diagonal = lhs_reduced.diagonal()
-        M = diags(diagonals=1./diagonal)
-
-        iteration_counter = IterationCounterCallback()
-
-        current_iterate_on_free_nodes, _ = cg(
-            A=lhs_reduced,
-            b=rhs_vector[free_nodes],
-            x0=current_iterate[free_nodes],
-            M=M,
-            rtol=RTOL_CG,
-            callback=iteration_counter)
-
-        current_iterate[free_nodes] = current_iterate_on_free_nodes
-
-        energy_norm_squared = current_iterate.dot(
-            lhs_matrix.dot(current_iterate))
-        print(
-            f'nDOF = {n_dofs}, '
-            f'converged CG approximation energy norm squared = {energy_norm_squared}, '
-            f'n_iterations = {iteration_counter.n_iterations}')
-
-        # stop right before refining if maximum number of DOFs is reached
         if n_dofs >= n_max_dofs:
             print(
                 f'Maximum number of DOFs ({n_max_dofs})'
                 'reached, stopping iteration.')
             break
-
-        marked = np.ones(elements.shape[0], dtype=bool)
-        coordinates, elements, boundaries, current_iterate = \
-            refineNVB(
-                coordinates=coordinates,
-                elements=elements,
-                marked_elements=marked,
-                boundary_conditions=boundaries)
-
-
-class IterationCounterCallback:
-    n_iterations: int
-
-    def __init__(self):
-        self.n_iterations = 0
-
-    def __call__(self, *args, **kwds):
-        self.n_iterations += 1
 
 
 if __name__ == '__main__':
