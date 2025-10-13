@@ -6,12 +6,9 @@ on uniformly refined meshes
 import numpy as np
 from p1afempy import refinement
 from p1afempy.solvers import \
-    get_general_stiffness_matrix, get_mass_matrix, get_right_hand_side
+    get_general_stiffness_matrix, get_right_hand_side
 from triangle_cubature.cubature_rule import CubatureRuleEnum
-from scipy.sparse.linalg import spsolve
 from p1afempy.refinement import refineNVB
-from scipy.sparse import csr_matrix, diags
-from scipy.sparse.linalg import cg
 from problems import get_problem
 import argparse
 from p1afempy.solvers import get_load_vector_of_composition_nonlinear_with_fem, \
