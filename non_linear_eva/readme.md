@@ -45,7 +45,7 @@ nonlinearity of the problem.
 ## Problem 3
 - Domain: L-shape
 - $\mathbf A = \mathrm{id}_{2\times 2}$
-- $\phi(u) := \exp (u)$
-- $\Phi(u) = \exp(u)$
+- $\phi(u) := \exp (u) - 1$
+- $\Phi(u) = \exp(u) - u$
 - $\phi'(u) = \exp (u)$
 - $f \equiv 1$

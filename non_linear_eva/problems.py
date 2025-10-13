@@ -202,10 +202,10 @@ def get_problem_3() -> Problem:
         return np.zeros(n_vertices, dtype=float)
 
     def phi(u: np.ndarray) -> np.ndarray:
-        return np.exp(u)
+        return np.exp(u) - 1
 
     def Phi(u: np.ndarray) -> np.ndarray:
-        return np.exp(u)
+        return np.exp(u) - u
     
     def phi_prime(u: np.ndarray) -> np.ndarray:
         return np.exp(u)
