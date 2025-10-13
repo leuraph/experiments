@@ -1,10 +1,10 @@
-from exceptiongroup import catch
-from matplotlib.pylab import f
 from p1afempy.solvers import \
     integrate_composition_nonlinear_with_fem, \
         get_load_vector_of_composition_nonlinear_with_fem, \
             get_general_stiffness_matrix, get_right_hand_side
 from p1afempy import refinement
+from p1afempy.mesh import provide_geometric_data
+from ismember import is_row_in
 from p1afempy.data_structures import \
     BoundaryConditionType, CoordinatesType, ElementsType, BoundaryType
 from triangle_cubature.cubature_rule import CubatureRuleEnum
@@ -14,6 +14,9 @@ from scipy.sparse import csr_matrix
 from show_solution import show_solution
 from custom_callback import ConvergedException, EnergyTailOffAveragedCustomCallback
 import argparse
+from variational_adaptivity.edge_based_variational_adaptivity import get_energy_gains_nonlinear
+from variational_adaptivity.markers import doerfler_marking
+from p1afempy.refinement import refineNVB_edge_based
 
 def a_11(r: CoordinatesType) -> np.ndarray:
     n_vertices = r.shape[0]
@@ -45,6 +48,7 @@ def right_hand_side(r: CoordinatesType) -> np.ndarray:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--fudge", type=float, required=True)
+    parser.add_argument("--theta", type=float, required=True)
     parser.add_argument("--miniter", type=int, required=True,
                         help="minimum number of iterations on each mesh")
     parser.add_argument("--batchsize", type=int, required=True,
@@ -54,6 +58,7 @@ def main() -> None:
     MINITER = args.miniter
     FUDGE = args.fudge
     BATCHSIZE = args.batchsize
+    THETA = args.theta
 
     # generating a reasonable mesh
     # ----------------------------
@@ -157,13 +162,75 @@ def main() -> None:
         fudge=FUDGE,
         compute_energy=J)
     try:
-        x_opt, f_opt, func_calls, grad_calls, _ = \
+        current_iterate, f_opt, func_calls, grad_calls, _ = \
             fmin_cg(f=J, x0=initial_guess, fprime=DJ, full_output=True, callback=custom_callback, gtol=1e-12)
     except ConvergedException as conv:
-        x_opt = conv.last_iterate
+        current_iterate = conv.last_iterate
         n_iterations = conv.n_iterations_done
     print(f'\tIterations: {n_iterations}')
-    show_solution(coordinates=coordinates, solution=x_opt)
+    show_solution(coordinates=coordinates, solution=current_iterate)
+
+    # nonlinear EVA
+    # -------------
+    _, edge_to_nodes, _ = \
+        provide_geometric_data(
+            elements=elements,
+            boundaries=boundaries)
+
+    edge_to_nodes_flipped = np.column_stack(
+        [edge_to_nodes[:, 1], edge_to_nodes[:, 0]])
+    boundary = np.logical_or(
+        is_row_in(edge_to_nodes, boundaries[0]),
+        is_row_in(edge_to_nodes_flipped, boundaries[0])
+    )
+    non_boundary = np.logical_not(boundary)
+    edges = edge_to_nodes
+    non_boundary_edges = edge_to_nodes[non_boundary]
+
+    # free nodes / edges
+    n_vertices = coordinates.shape[0]
+    indices_of_free_nodes = np.setdiff1d(
+        ar1=np.arange(n_vertices),
+        ar2=np.unique(boundaries[0].flatten()))
+    free_nodes = np.zeros(n_vertices, dtype=bool)
+    free_nodes[indices_of_free_nodes] = 1
+    free_edges = non_boundary  # integer array (holding actual indices)
+    free_nodes = free_nodes  # boolean array
+
+    energy_gains = get_energy_gains_nonlinear(
+        coordinates=coordinates,
+        elements=elements,
+        non_boundary_edges=non_boundary_edges,
+        current_iterate=current_iterate,
+        f=right_hand_side,
+        a_11=a_11,
+        a_12=a_12,
+        a_21=a_21,
+        a_22=a_22,
+        phi=phi,
+        eta=0.0,
+        cubature_rule=CubatureRuleEnum.DAYTAYLOR,
+        verbose=True)
+
+    # dörfler based on EVA
+    marked_edges = np.zeros(edges.shape[0], dtype=int)
+    marked_non_boundary_egdes = doerfler_marking(
+        input=energy_gains, theta=THETA)
+    marked_edges[free_edges] = marked_non_boundary_egdes
+
+    element_to_edges, edge_to_nodes, boundaries_to_edges =\
+        provide_geometric_data(elements=elements, boundaries=boundaries)
+
+    coordinates, elements, boundaries, current_iterate = \
+        refineNVB_edge_based(
+            coordinates=coordinates,
+            elements=elements,
+            boundary_conditions=boundaries,
+            element2edges=element_to_edges,
+            edge_to_nodes=edge_to_nodes,
+            boundaries_to_edges=boundaries_to_edges,
+            edge2newNode=marked_edges,
+            to_embed=current_iterate)
 
     # Default usage of scipy's `fmin_cg`
     # ----------------------------------
