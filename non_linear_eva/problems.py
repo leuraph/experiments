@@ -32,7 +32,8 @@ class Problem:
     a_12: BoundaryConditionType
     a_21: BoundaryConditionType
     a_22: BoundaryConditionType
-    c: float
+    phi: Callable[[np.ndarray], np.ndarray]
+    phi_prime: Callable[[np.ndarray], np.ndarray]
 
     # a function that returns a coarse mesh of the problem's domain
     get_coarse_initial_mesh: Callable[[], Mesh]
@@ -44,45 +45,17 @@ class Problem:
             a_12: BoundaryConditionType,
             a_21: BoundaryConditionType,
             a_22: BoundaryConditionType,
-            c: float,
+            phi: BoundaryConditionType,
+            phi_prime: BoundaryConditionType,
             get_coarse_initial_mesh: Callable[[], Mesh]):
         self.f = f
         self.a_11 = a_11
         self.a_12 = a_12
         self.a_21 = a_21
         self.a_22 = a_22
-        self.c = c
+        self.phi = phi
+        self.phi_prime = phi_prime
         self.get_coarse_initial_mesh = get_coarse_initial_mesh
-
-
-def get_coarse_square_mesh() -> Mesh:
-    """
-    returns a coarse mesh for the domain (0,1)^2 with
-    homogeneous Dirichlet boundary conditions
-    """
-
-    coordinates = np.array([
-        [0., 0.],
-        [1., 0.],
-        [1., 1.],
-        [0., 1.]
-    ])
-    elements = np.array([
-        [0, 1, 2],
-        [2, 3, 0]
-    ])
-    dirichlet = np.array([
-        [0, 1],
-        [1, 2],
-        [2, 3],
-        [3, 0]
-    ])
-    boundaries = [dirichlet]
-
-    return Mesh(
-        coordinates=coordinates,
-        elements=elements,
-        boundaries=boundaries)
 
 
 def get_coarse_L_shape_mesh() -> Mesh:
@@ -128,79 +101,6 @@ def get_coarse_L_shape_mesh() -> Mesh:
         boundaries=boundaries)
 
 
-def get_coarse_square_mesh_with_subdomains() -> Mesh:
-    """
-    returns a coarse mesh for the domain (0,1)^2
-    aligned with the subdomains of problem 4 and
-    homogeneous Dirichlet boundary conditions
-    """
-
-    coordinates = np.array([
-        [0, 0],
-        [0.3, 0],
-        [0.4, 0],
-        [1, 0],
-        [0.1, 0.1],
-        [0.3, 0.1],
-        [0.4, 0.1],
-        [0.7, 0.1],
-        [0, 0.2],
-        [0.1, 0.2],
-        [0.3, 0.2],
-        [0.4, 0.3],
-        [0.7, 0.3],
-        [0.8, 0.7],
-        [1, 0.7],
-        [0, 1],
-        [0.8, 1],
-        [1, 1]
-    ])
-    elements = np.array([
-        [0, 1, 5],
-        [1,2,5],
-        [2,3,6],
-        [0,5,4],
-        [2,6,5],
-        [6,3,7],
-        [0,4,8],
-        [4,9,8],
-        [4,10,9],
-        [4,5,10],
-        [5,6,10],
-        [6,11,10],
-        [6,7,12],
-        [6,12,11],
-        [7,3,12],
-        [3,14,12],
-        [8,9,15],
-        [9,10,15],
-        [10,11,15],
-        [11,16,15],
-        [11,13,16],
-        [13,17,16],
-        [13,14,17],
-        [11,14,13],
-        [11,12,14]
-    ])
-    dirichlet = np.array([
-        [0,1],
-        [1,2],
-        [2,3],
-        [3,14],
-        [14,17],
-        [17,16],
-        [16,15],
-        [15,8],
-        [8,0]
-    ])
-    boundaries = [dirichlet]
-
-    return Mesh(
-        coordinates=coordinates,
-        elements=elements,
-        boundaries=boundaries)
-
-
 def get_problem_1() -> Problem:
     def f(r: CoordinatesType) -> float:
         """returns ones only"""
@@ -222,12 +122,17 @@ def get_problem_1() -> Problem:
         n_vertices = r.shape[0]
         return np.zeros(n_vertices, dtype=float)
 
-    c = 1.0
+    def phi(u: np.ndarray) -> np.ndarray:
+        return u**3
+    
+    def phi_prime(u: np.ndarray) -> np.ndarray:
+        return 3. * u**2
 
     return Problem(
         f=f, a_11=a_11, a_12=a_12,
-        a_21=a_21, a_22=a_22, c=c,
-        get_coarse_initial_mesh=get_coarse_square_mesh)
+        a_21=a_21, a_22=a_22,
+        phi=phi, phi_prime=phi_prime,
+        get_coarse_initial_mesh=get_coarse_L_shape_mesh)
 
 
 def get_problem_2() -> Problem:
@@ -237,129 +142,6 @@ def get_problem_2() -> Problem:
 
     def a_11(r: CoordinatesType) -> np.ndarray:
         n_vertices = r.shape[0]
-        return - np.ones(n_vertices, dtype=float) * 1e-2
-
-    def a_22(r: CoordinatesType) -> np.ndarray:
-        n_vertices = r.shape[0]
-        return - np.ones(n_vertices, dtype=float) * 1e-2
-
-    def a_12(r: CoordinatesType) -> np.ndarray:
-        n_vertices = r.shape[0]
-        return np.zeros(n_vertices, dtype=float)
-
-    def a_21(r: CoordinatesType) -> np.ndarray:
-        n_vertices = r.shape[0]
-        return np.zeros(n_vertices, dtype=float)
-
-    c = 1.0
-
-    return Problem(
-        f=f, a_11=a_11, a_12=a_12,
-        a_21=a_21, a_22=a_22, c=c,
-        get_coarse_initial_mesh=get_coarse_square_mesh)
-
-
-def get_problem_3() -> Problem:
-
-    def kappa(coordinates: CoordinatesType):
-        omega_1 = Rectangle(0.1, 0.3, 0.1, 0.2)
-        omega_2 = Rectangle(0.4, 0.7, 0.1, 0.3)
-        omega_3 = Rectangle(0.4, 0.6, 0.5, 0.8)
-
-        in_omega_1 = omega_1.has_coordinates(coordinates)
-        in_omega_2 = omega_2.has_coordinates(coordinates)
-        in_omega_3 = omega_3.has_coordinates(coordinates)
-
-        # Values for each region
-        values = [1e2, 1e4, 1e6]
-
-        # Default value (like `else`)
-        default_value = 1.0
-
-        return np.select(
-            [in_omega_1, in_omega_2, in_omega_3],
-            values, default=default_value)
-
-    def f(r: CoordinatesType) -> float:
-        """returns ones only"""
-        return np.ones(r.shape[0], dtype=float)
-
-    def a_11(r: CoordinatesType) -> np.ndarray:
-        return - kappa(coordinates=r)
-
-    def a_22(r: CoordinatesType) -> np.ndarray:
-        return - kappa(coordinates=r)
-
-    def a_12(r: CoordinatesType) -> np.ndarray:
-        n_vertices = r.shape[0]
-        return np.zeros(n_vertices, dtype=float)
-
-    def a_21(r: CoordinatesType) -> np.ndarray:
-        n_vertices = r.shape[0]
-        return np.zeros(n_vertices, dtype=float)
-
-    c = 1.0
-
-    return Problem(
-        f=f, a_11=a_11, a_12=a_12,
-        a_21=a_21, a_22=a_22, c=c,
-        get_coarse_initial_mesh=get_coarse_square_mesh)
-
-
-def get_problem_4() -> Problem:
-
-    def kappa(coordinates: CoordinatesType):
-        omega_1 = Rectangle(0.1, 0.3, 0.1, 0.2)
-        omega_2 = Rectangle(0.4, 0.7, 0.1, 0.3)
-        omega_3 = Rectangle(0.8, 1.0, 0.7, 1.0)
-
-        in_omega_1 = omega_1.has_coordinates(coordinates)
-        in_omega_2 = omega_2.has_coordinates(coordinates)
-        in_omega_3 = omega_3.has_coordinates(coordinates)
-
-        # Values for each region
-        values = [10., 0.1, 0.05]
-
-        # Default value (like `else`)
-        default_value = 1.0
-
-        return np.select(
-            [in_omega_1, in_omega_2, in_omega_3],
-            values, default=default_value)
-
-    def f(r: CoordinatesType) -> float:
-        """returns ones only"""
-        return np.ones(r.shape[0], dtype=float)
-
-    def a_11(r: CoordinatesType) -> np.ndarray:
-        return - kappa(coordinates=r)
-
-    def a_22(r: CoordinatesType) -> np.ndarray:
-        return - kappa(coordinates=r)
-
-    def a_12(r: CoordinatesType) -> np.ndarray:
-        n_vertices = r.shape[0]
-        return np.zeros(n_vertices, dtype=float)
-
-    def a_21(r: CoordinatesType) -> np.ndarray:
-        n_vertices = r.shape[0]
-        return np.zeros(n_vertices, dtype=float)
-
-    c = 1.0
-
-    return Problem(
-        f=f, a_11=a_11, a_12=a_12,
-        a_21=a_21, a_22=a_22, c=c,
-        get_coarse_initial_mesh=get_coarse_square_mesh_with_subdomains)
-
-
-def get_problem_5() -> Problem:
-    def f(r: CoordinatesType) -> float:
-        """returns ones only"""
-        return np.ones(r.shape[0], dtype=float)
-
-    def a_11(r: CoordinatesType) -> np.ndarray:
-        n_vertices = r.shape[0]
         return - np.ones(n_vertices, dtype=float)
 
     def a_22(r: CoordinatesType) -> np.ndarray:
@@ -374,11 +156,16 @@ def get_problem_5() -> Problem:
         n_vertices = r.shape[0]
         return np.zeros(n_vertices, dtype=float)
 
-    c = 0.0
+    def phi(u: np.ndarray) -> np.ndarray:
+        return u * np.abs(u)
+    
+    def phi_prime(u: np.ndarray) -> np.ndarray:
+        return 2. * np.abs(u)
 
     return Problem(
         f=f, a_11=a_11, a_12=a_12,
-        a_21=a_21, a_22=a_22, c=c,
+        a_21=a_21, a_22=a_22,
+        phi=phi, phi_prime=phi_prime,
         get_coarse_initial_mesh=get_coarse_L_shape_mesh)
 
 
@@ -387,10 +174,4 @@ def get_problem(number: int) -> Problem:
         return get_problem_1()
     if number == 2:
         return get_problem_2()
-    if number == 3:
-        return get_problem_3()
-    if number == 4:
-        return get_problem_4()
-    if number == 5:
-        return get_problem_5()
     raise RuntimeError(f'unknown problem number: {number}')
