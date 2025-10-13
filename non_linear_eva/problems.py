@@ -25,7 +25,9 @@ class Problem:
     homogeneous BVP problem
     nabla (A(x) nabla u(x)) + phi(u(x)) = f(x),
     where A(x)_ij = a_ij(x) is a 2x2 Matrix,
-    phi: Omega -> R is C^1 non-linearity
+    phi: Omega -> R is C^1 non-linearity,
+    phi' its derivative, and
+    Phi its indefinite integral (without a constant)
     """
     f: BoundaryConditionType
     a_11: BoundaryConditionType
@@ -34,6 +36,7 @@ class Problem:
     a_22: BoundaryConditionType
     phi: Callable[[np.ndarray], np.ndarray]
     phi_prime: Callable[[np.ndarray], np.ndarray]
+    Phi: Callable[[np.ndarray], np.ndarray]
 
     # a function that returns a coarse mesh of the problem's domain
     get_coarse_initial_mesh: Callable[[], Mesh]
@@ -45,8 +48,9 @@ class Problem:
             a_12: BoundaryConditionType,
             a_21: BoundaryConditionType,
             a_22: BoundaryConditionType,
-            phi: BoundaryConditionType,
-            phi_prime: BoundaryConditionType,
+            phi: Callable[[np.ndarray], np.ndarray],
+            phi_prime: Callable[[np.ndarray], np.ndarray],
+            Phi: Callable[[np.ndarray], np.ndarray],
             get_coarse_initial_mesh: Callable[[], Mesh]):
         self.f = f
         self.a_11 = a_11
@@ -55,6 +59,7 @@ class Problem:
         self.a_22 = a_22
         self.phi = phi
         self.phi_prime = phi_prime
+        self.Phi = Phi
         self.get_coarse_initial_mesh = get_coarse_initial_mesh
 
 
@@ -125,6 +130,9 @@ def get_problem_1() -> Problem:
     def phi(u: np.ndarray) -> np.ndarray:
         return u**3
     
+    def Phi(u: np.ndarray) -> np.ndarray:
+        return u**4 / 4.
+    
     def phi_prime(u: np.ndarray) -> np.ndarray:
         return 3. * u**2
 
@@ -158,6 +166,9 @@ def get_problem_2() -> Problem:
 
     def phi(u: np.ndarray) -> np.ndarray:
         return u * np.abs(u)
+
+    def Phi(u: np.ndarray) -> np.ndarray:
+        return np.abs(u) * u**2 / 3.
     
     def phi_prime(u: np.ndarray) -> np.ndarray:
         return 2. * np.abs(u)
@@ -191,6 +202,9 @@ def get_problem_3() -> Problem:
         return np.zeros(n_vertices, dtype=float)
 
     def phi(u: np.ndarray) -> np.ndarray:
+        return np.exp(u)
+
+    def Phi(u: np.ndarray) -> np.ndarray:
         return np.exp(u)
     
     def phi_prime(u: np.ndarray) -> np.ndarray:
