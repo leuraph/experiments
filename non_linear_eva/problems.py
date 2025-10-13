@@ -139,7 +139,7 @@ def get_problem_1() -> Problem:
     return Problem(
         f=f, a_11=a_11, a_12=a_12,
         a_21=a_21, a_22=a_22,
-        phi=phi, phi_prime=phi_prime,
+        phi=phi, phi_prime=phi_prime, Phi=Phi,
         get_coarse_initial_mesh=get_coarse_L_shape_mesh)
 
 
@@ -176,7 +176,7 @@ def get_problem_2() -> Problem:
     return Problem(
         f=f, a_11=a_11, a_12=a_12,
         a_21=a_21, a_22=a_22,
-        phi=phi, phi_prime=phi_prime,
+        phi=phi, phi_prime=phi_prime, Phi=Phi,
         get_coarse_initial_mesh=get_coarse_L_shape_mesh)
 
 
@@ -213,7 +213,7 @@ def get_problem_3() -> Problem:
     return Problem(
         f=f, a_11=a_11, a_12=a_12,
         a_21=a_21, a_22=a_22,
-        phi=phi, phi_prime=phi_prime,
+        phi=phi, phi_prime=phi_prime, Phi=Phi,
         get_coarse_initial_mesh=get_coarse_L_shape_mesh)
 
 
