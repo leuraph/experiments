@@ -169,9 +169,45 @@ def get_problem_2() -> Problem:
         get_coarse_initial_mesh=get_coarse_L_shape_mesh)
 
 
+def get_problem_3() -> Problem:
+    def f(r: CoordinatesType) -> float:
+        """returns ones only"""
+        return np.ones(r.shape[0], dtype=float)
+
+    def a_11(r: CoordinatesType) -> np.ndarray:
+        n_vertices = r.shape[0]
+        return - np.ones(n_vertices, dtype=float)
+
+    def a_22(r: CoordinatesType) -> np.ndarray:
+        n_vertices = r.shape[0]
+        return - np.ones(n_vertices, dtype=float) * 1e-2
+
+    def a_12(r: CoordinatesType) -> np.ndarray:
+        n_vertices = r.shape[0]
+        return np.zeros(n_vertices, dtype=float)
+
+    def a_21(r: CoordinatesType) -> np.ndarray:
+        n_vertices = r.shape[0]
+        return np.zeros(n_vertices, dtype=float)
+
+    def phi(u: np.ndarray) -> np.ndarray:
+        return np.exp(u)
+    
+    def phi_prime(u: np.ndarray) -> np.ndarray:
+        return np.exp(u)
+
+    return Problem(
+        f=f, a_11=a_11, a_12=a_12,
+        a_21=a_21, a_22=a_22,
+        phi=phi, phi_prime=phi_prime,
+        get_coarse_initial_mesh=get_coarse_L_shape_mesh)
+
+
 def get_problem(number: int) -> Problem:
     if number == 1:
         return get_problem_1()
     if number == 2:
         return get_problem_2()
+    if number == 3:
+        return get_problem_3()
     raise RuntimeError(f'unknown problem number: {number}')
