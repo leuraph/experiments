@@ -30,6 +30,7 @@ nonlinearity of the problem.
 - Domain: L-shape
 - $\mathbf A = \mathrm{id}_{2\times 2}$
 - $\phi(u) := u^3$
+- $\Phi(u) = u^4 / 4$
 - $\phi'(u) = 3 u^2$
 - $f \equiv 1$
 
@@ -37,6 +38,7 @@ nonlinearity of the problem.
 - Domain: L-shape
 - $\mathbf A = \mathrm{id}_{2\times 2}$
 - $\phi(u) := u |u|$
+- $\Phi(u) = u |u|^2 / 3$
 - $\phi'(u) = 2 |u|$
 - $f \equiv 1$
 
@@ -44,5 +46,6 @@ nonlinearity of the problem.
 - Domain: L-shape
 - $\mathbf A = \mathrm{id}_{2\times 2}$
 - $\phi(u) := \exp (u)$
+- $\Phi(u) = \exp(u)$
 - $\phi'(u) = \exp (u)$
 - $f \equiv 1$
