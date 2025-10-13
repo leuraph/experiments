@@ -54,6 +54,8 @@ def main() -> None:
                         help="problem number to be considered")
     parser.add_argument("--theta", type=float, required=True,
                         help="Dörfler marking parameter")
+    parser.add_argument("--eta", type=float, required=True,
+                        help="control parameter for computation of locally imporved approximation")
     parser.add_argument("--stopping-criterion", type=str, required=True,
                         choices=["energy-tail-off", "relative-energy-decay", "default"],
                         help="stopping criterion to be used, "
@@ -77,35 +79,48 @@ def main() -> None:
     parser.add_argument("--delay-increase", type=int, required=False)
     args = parser.parse_args()
 
+    # validation depending on the choice of stopping criterion
     validate_args(args=args, parser=parser)
 
+    # control parameter extraction
+    # ----------------------------
+    PROBLEM_N = args.problem
+    THETA = args.theta
+    ETA = args.eta
+    STOPPING_CRITERION = args.stopping_criterion
     MINITER = args.miniter
+    GTOL = args.gtol
     FUDGE = args.fudge
     BATCHSIZE = args.batchsize
-    THETA = args.theta
-
-    # generating a reasonable mesh
+    TAU = args.tau
+    INITIAL_DELAY = args.initial_delay
+    DELAY_INCREASE = args.delay_increase
     # ----------------------------
-    coordinates = np.array([
-        [0., 0.],
-        [1., 0.],
-        [1., 1.],
-        [0., 1.]
-    ])
-    elements = np.array([
-        [0, 1, 2],
-        [0, 2, 3]
-    ])
-    dirichlet = np.array([
-        [0, 1],
-        [1, 2],
-        [2, 3],
-        [3, 0]
-    ])
-    boundaries = [dirichlet]
+
+    problem = get_problem(number=PROBLEM_N)
+
+    # extracting the initial mesh
+    # ---------------------------
+    initial_coarse_mesh = problem.get_coarse_initial_mesh()
+    coordinates = initial_coarse_mesh.coordinates
+    elements = initial_coarse_mesh.elements
+    boundaries = initial_coarse_mesh.boundaries
+    # ---------------------------
+
+    # extracting the corresponding PDE's data
+    # ---------------------------------------
+    f = problem.f
+    phi = problem.phi
+    phi_prime = problem.phi
+    Phi = problem.phi
+    a_11 = problem.a_11
+    a_12 = problem.a_12
+    a_21 = problem.a_21
+    a_22 = problem.a_22
+    # ---------------------------------------
 
     # initial refinement
-    n_refinements = 6
+    n_refinements = 5
     for _ in range(n_refinements):
         marked_elements = np.arange(elements.shape[0])
         coordinates, elements, boundaries, _ = refinement.refineNVB(
@@ -122,13 +137,7 @@ def main() -> None:
     n_dof = np.sum(free_nodes)
     print(f'DOF = {n_dof}')
 
-    # initializing with random values
-    # NOTE that [Glowinski, 2013, remark 2.10] suggests u=0 as initial guess,
-    # when there is no information available
-    np.random.seed(42)
-    random_values = np.random.rand(n_dof)
-    initial_guess = np.zeros(n_coordinates, dtype=float)
-    initial_guess[free_nodes] = random_values
+    current_iterate = np.zeros(n_coordinates, dtype=float)
 
     # midpoint suffices as we consider laplace operator
     stiffness_matrix = csr_matrix(get_general_stiffness_matrix(
@@ -140,7 +149,7 @@ def main() -> None:
     right_hand_side_vector = get_right_hand_side(
         coordinates=coordinates,
         elements=elements,
-        f=right_hand_side,
+        f=f,
         cubature_rule=CubatureRuleEnum.DAYTAYLOR)
 
     def DJ(current_iterate: np.ndarray) -> np.ndarray:
@@ -187,7 +196,7 @@ def main() -> None:
         compute_energy=J)
     try:
         current_iterate, f_opt, func_calls, grad_calls, _ = \
-            fmin_cg(f=J, x0=initial_guess, fprime=DJ, full_output=True, callback=custom_callback, gtol=1e-12)
+            fmin_cg(f=J, x0=current_iterate, fprime=DJ, full_output=True, callback=custom_callback, gtol=1e-12)
     except ConvergedException as conv:
         current_iterate = conv.last_iterate
         n_iterations = conv.n_iterations_done
@@ -226,13 +235,14 @@ def main() -> None:
         elements=elements,
         non_boundary_edges=non_boundary_edges,
         current_iterate=current_iterate,
-        f=right_hand_side,
+        f=f,
         a_11=a_11,
         a_12=a_12,
         a_21=a_21,
         a_22=a_22,
         phi=phi,
-        eta=0.0,
+        phi_prime=phi_prime,
+        eta=ETA,
         cubature_rule=CubatureRuleEnum.DAYTAYLOR,
         verbose=True)
 
@@ -255,12 +265,6 @@ def main() -> None:
             boundaries_to_edges=boundaries_to_edges,
             edge2newNode=marked_edges,
             to_embed=current_iterate)
-
-    # Default usage of scipy's `fmin_cg`
-    # ----------------------------------
-    x_opt, f_opt, func_calls, grad_calls, _ = \
-            fmin_cg(f=J, x0=initial_guess, fprime=DJ, full_output=True)
-    show_solution(coordinates=coordinates, solution=x_opt)
 
 
 if __name__ == '__main__':
