@@ -24,13 +24,13 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--problem", type=int, required=True,
                         help="problem number to be considered")
-    parser.add_argument("--rtol", type=float, required=True,
-                        help="relative tolerance for CG iterations")
+    parser.add_argument("--gtol", type=float, required=True,
+                        help="stop when the norm of the gradient is less than `gtol`")
     args = parser.parse_args()
 
     n_max_dofs = 100e6
     n_initial_refinements = 5
-    RTOL_CG = args.rtol
+    GTOL_CG = args.gtol
     PROBLEM_N = args.problem
 
     problem = get_problem(PROBLEM_N)
@@ -51,7 +51,7 @@ def main() -> None:
     print(f'parameters')
     print(f'----------')
     print(f'problem number = {PROBLEM_N}')
-    print(f'relative tolerance for CG = {RTOL_CG}')
+    print(f'stop when the norm of the gradient is less than {GTOL_CG}')
     print(f'')
 
     # initial coarse mesh
@@ -136,7 +136,7 @@ def main() -> None:
         # approximate Galerkin solution on current mesh
         # ---------------------------------------------
         current_iterate, J_opt, func_calls, grad_calls, _ = fmin_cg(
-            f=J, x0=current_iterate, fprime=DJ, full_output=True)
+            f=J, x0=current_iterate, fprime=DJ, full_output=True, gtol=GTOL_CG)
 
         print(
             f'nDOF = {n_dofs}, \t'
