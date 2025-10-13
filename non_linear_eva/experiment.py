@@ -17,43 +17,67 @@ import argparse
 from variational_adaptivity.edge_based_variational_adaptivity import get_energy_gains_nonlinear
 from variational_adaptivity.markers import doerfler_marking
 from p1afempy.refinement import refineNVB_edge_based
+from problems import get_problem
 
-def a_11(r: CoordinatesType) -> np.ndarray:
-    n_vertices = r.shape[0]
-    return - np.ones(n_vertices, dtype=float)
 
-def a_22(r: CoordinatesType) -> np.ndarray:
-    n_vertices = r.shape[0]
-    return - np.ones(n_vertices, dtype=float)
+def validate_args(args: argparse.Namespace, parser: argparse.ArgumentParser) -> None:
+    if args.stopping_criterion == "energy-tail-off":
+        if args.miniter is None:
+            parser.error("--miniter is required for 'energy-tail-off' stopping criterion.")
+        if args.batchsize is None:
+            parser.error("--batchsize is required for 'energy-tail-off' stopping criterion.")
+        if args.fudge is None:
+            parser.error("--fudge is required for 'energy-tail-off' stopping criterion.")
+    if args.stopping_criterion == "relative-energy-decay":
+        if args.miniter is None:
+            parser.error("--miniter is required for 'relative-energy-decay' stopping criterion.")
+        if args.tau is None:
+            parser.error("--tau is required for 'relative-energy-decay' stopping criterion.")
+        if args.fudge is None:
+            parser.error("--fudge is required for 'relative-energy-decay' stopping criterion.")
+        if args.initial_delay is None:
+            parser.error("--initial-delay is required for 'relative-energy-decay' stopping criterion.")
+        if args.delay_increase is None:
+            parser.error("--delay-increase is required for 'relative-energy-decay' stopping criterion.")
+    if args.stopping_criterion == "default":
+        if args.miniter is None:
+            parser.error("--miniter is required for 'default' stopping criterion.")
+        if args.gtol is None:
+            parser.error("--gtol is required for 'default' stopping criterion.")
 
-def a_12(r: CoordinatesType) -> np.ndarray:
-    n_vertices = r.shape[0]
-    return np.zeros(n_vertices, dtype=float)
-
-def a_21(r: CoordinatesType) -> np.ndarray:
-    n_vertices = r.shape[0]
-    return np.zeros(n_vertices, dtype=float)
-
-def phi(tau: float) -> float:
-    return np.exp(tau)
-
-def Phi(u: float) -> float:
-    return np.exp(u)
-
-def right_hand_side(r: CoordinatesType) -> np.ndarray:
-    x, y = r[:, 0], r[:, 1]
-    return -2.0*x*(x - 1) - 2.0*y*(y - 1) + np.exp(x*y*(x - 1)*(y - 1))
 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--fudge", type=float, required=True)
-    parser.add_argument("--theta", type=float, required=True)
-    parser.add_argument("--miniter", type=int, required=True,
+
+    parser.add_argument("--problem", type=int, required=True,
+                        help="problem number to be considered")
+    parser.add_argument("--theta", type=float, required=True,
+                        help="Dörfler marking parameter")
+    parser.add_argument("--stopping-criterion", type=str, required=True,
+                        choices=["energy-tail-off", "relative-energy-decay", "default"],
+                        help="stopping criterion to be used, "
+                        "choices are: [`energy-tail-off`, `relative-energy-decay`, `default`]")
+
+    # arguments used for all stopping criteria
+    # ----------------------------------------
+    parser.add_argument("--miniter", type=int, required=False,
                         help="minimum number of iterations on each mesh")
-    parser.add_argument("--batchsize", type=int, required=True,
-                        help="minimum number of iterations on each mesh")
+
+    # arguments not used for all criteria
+    # -----------------------------------
+    parser.add_argument("--gtol", type=float, required=False,
+                        help="stop when the norm of the gradient is less than `gtol`")
+    parser.add_argument("--fudge", type=float, required=False,
+                        help="fudge factor")
+    parser.add_argument("--batchsize", type=int, required=False)
+    parser.add_argument("--tau", type=float, required=False,
+                        help="relative energy decay parameter")
+    parser.add_argument("--initial-delay", type=int, required=False)
+    parser.add_argument("--delay-increase", type=int, required=False)
     args = parser.parse_args()
+
+    validate_args(args=args, parser=parser)
 
     MINITER = args.miniter
     FUDGE = args.fudge
