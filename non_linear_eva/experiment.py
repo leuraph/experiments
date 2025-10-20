@@ -20,6 +20,7 @@ from p1afempy.refinement import refineNVB_edge_based
 from problems import get_problem
 from custom_callback import CustomCallBack, EnergyTailOffAveragedCustomCallback, \
     AriolisAdaptiveDelayCustomCallback
+from p1afempy.mesh import show_mesh
 
 
 def validate_args(args: argparse.Namespace, parser: argparse.ArgumentParser) -> None:
@@ -85,6 +86,9 @@ def get_custom_callback(
 
 
 def main() -> None:
+    n_refinements = 2
+    max_dof = 1e6
+
     parser = argparse.ArgumentParser()
 
     parser.add_argument("--problem", type=int, required=True,
@@ -157,7 +161,6 @@ def main() -> None:
     # ---------------------------------------
 
     # initial refinement
-    n_refinements = 2
     for _ in range(n_refinements):
         marked_elements = np.arange(elements.shape[0])
         coordinates, elements, boundaries, _ = refinement.refineNVB(
@@ -165,16 +168,16 @@ def main() -> None:
             elements=elements,
             marked_elements=marked_elements,
             boundary_conditions=boundaries)
-    n_coordinates = coordinates.shape[0]
+    n_vertices = coordinates.shape[0]
     indices_of_free_nodes = np.setdiff1d(
-        ar1=np.arange(n_coordinates),
+        ar1=np.arange(n_vertices),
         ar2=np.unique(boundaries[0].flatten()))
-    free_nodes = np.zeros(n_coordinates, dtype=bool)
+    free_nodes = np.zeros(n_vertices, dtype=bool)
     free_nodes[indices_of_free_nodes] = 1
     n_dof = np.sum(free_nodes)
     print(f'DOF = {n_dof}')
 
-    current_iterate = np.zeros(n_coordinates, dtype=float)
+    current_iterate = np.zeros(n_vertices, dtype=float)
 
     while True:
         _, edge_to_nodes, _ = \
@@ -200,7 +203,7 @@ def main() -> None:
         free_nodes = np.zeros(n_vertices, dtype=bool)
         free_nodes[indices_of_free_nodes] = 1
         free_edges = non_boundary  # integer array (holding actual indices)
-        free_nodes = free_nodes  # boolean array
+        n_dof = np.sum(free_nodes)
 
         # midpoint suffices as we consider laplace operator
         stiffness_matrix = csr_matrix(get_general_stiffness_matrix(
@@ -224,7 +227,7 @@ def main() -> None:
                 elements=elements,
                 cubature_rule=CubatureRuleEnum.DAYTAYLOR)
 
-            grad_J = np.zeros(n_coordinates, dtype=float)
+            grad_J = np.zeros(n_vertices, dtype=float)
             grad_J_on_free_nodes = (
                 stiffness_matrix[free_nodes, :][:, free_nodes].dot(current_iterate[free_nodes])
                 +
@@ -286,6 +289,11 @@ def main() -> None:
                 current_iterate = conv.last_iterate
                 n_iterations = conv.n_iterations_done
 
+        # break after we have solved for the first mesh that
+        # exceeds the maximum number of degrees of freedom
+        if n_dof >= max_dof:
+            print("maximum number of degrees of freedom exceeded, stopping iteration")
+            break
 
         # nonlinear EVA
         # -------------
@@ -324,6 +332,9 @@ def main() -> None:
                 boundaries_to_edges=boundaries_to_edges,
                 edge2newNode=marked_edges,
                 to_embed=current_iterate)
+        
+        show_mesh(coordinates, elements)
+        show_solution(coordinates, current_iterate)
 
 
 if __name__ == '__main__':
