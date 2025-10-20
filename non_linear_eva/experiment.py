@@ -178,8 +178,8 @@ def main() -> None:
         ar2=np.unique(boundaries[0].flatten()))
     free_nodes = np.zeros(n_vertices, dtype=bool)
     free_nodes[indices_of_free_nodes] = 1
-    n_dof = np.sum(free_nodes)
-    print(f'DOF = {n_dof}')
+    n_dofs = np.sum(free_nodes)
+    print(f'DOF = {n_dofs}')
 
     current_iterate = np.zeros(n_vertices, dtype=float)
 
@@ -207,7 +207,7 @@ def main() -> None:
         free_nodes = np.zeros(n_vertices, dtype=bool)
         free_nodes[indices_of_free_nodes] = 1
         free_edges = non_boundary  # integer array (holding actual indices)
-        n_dof = np.sum(free_nodes)
+        n_dofs = np.sum(free_nodes)
 
         # midpoint suffices as we consider laplace operator
         stiffness_matrix = csr_matrix(get_general_stiffness_matrix(
@@ -243,7 +243,7 @@ def main() -> None:
             return grad_J
 
         def J(current_iterate: np.ndarray) -> float:
-            J = (
+            energy = (
                 0.5 * current_iterate.dot(stiffness_matrix.dot(current_iterate))
                 +
                 integrate_composition_nonlinear_with_fem(
@@ -255,7 +255,7 @@ def main() -> None:
                 -
                 right_hand_side_vector.dot(current_iterate)
             )
-            return J
+            return energy
 
         # Custom Stopping Criterion: Energy Tail-Off or Others
         # ----------------------------------------------------
@@ -298,7 +298,7 @@ def main() -> None:
 
         # break after we have solved for the first mesh that
         # exceeds the maximum number of degrees of freedom
-        if n_dof >= max_dof:
+        if n_dofs >= max_dof:
             print("maximum number of degrees of freedom exceeded, stopping iteration")
             break
 
