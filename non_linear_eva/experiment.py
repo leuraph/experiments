@@ -111,8 +111,8 @@ def main() -> None:
     # ---------------------------------------
     f = problem.f
     phi = problem.phi
-    phi_prime = problem.phi
-    Phi = problem.phi
+    phi_prime = problem.phi_prime
+    Phi = problem.Phi
     a_11 = problem.a_11
     a_12 = problem.a_12
     a_21 = problem.a_21
@@ -144,7 +144,7 @@ def main() -> None:
         coordinates=coordinates,
         elements=elements,
         a_11=a_11, a_12=a_12, a_21=a_21, a_22=a_22,
-        cubature_rule=CubatureRuleEnum.MIDPOINT))
+        cubature_rule=CubatureRuleEnum.DAYTAYLOR))
 
     right_hand_side_vector = get_right_hand_side(
         coordinates=coordinates,
