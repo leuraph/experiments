@@ -12,7 +12,7 @@ import numpy as np
 from scipy.optimize import fmin_cg
 from scipy.sparse import csr_matrix
 from show_solution import show_solution
-from custom_callback import ConvergedException, EnergyTailOffAveragedCustomCallback
+from custom_callback import AriolisAdaptiveDelayCustomCallback, ConvergedException, EnergyTailOffAveragedCustomCallback
 import argparse
 from variational_adaptivity.edge_based_variational_adaptivity import get_energy_gains_nonlinear
 from variational_adaptivity.markers import doerfler_marking
@@ -56,11 +56,28 @@ def get_custom_callback(
     returns the corresponding custom callback
     """
     if stopping_criterion == "energy-tail-off":
-        pass
+        callback = EnergyTailOffAveragedCustomCallback(
+            batch_size=args.batchsize,
+            min_n_iterations_per_mesh=args.miniter,
+            fudge=args.fudge,
+            compute_energy=None #TODO add
+        )
+        return callback
     elif stopping_criterion == "relative-energy-decay":
-        pass
+        callback = AriolisAdaptiveDelayCustomCallback(
+            batch_size=1,
+            min_n_iterations_per_mesh=args.miniter,
+            initial_delay=args.initial_delay,
+            delay_increase=args.delay_increase,
+            tau=args.tau,
+            fudge=args.fudge,
+            compute_energy=None #TODO add
+        )
+        return callback
     elif stopping_criterion == "default":
-        pass
+        def callback() -> None:
+            pass
+        return callback
     else:
         raise NotImplementedError(
             'The custom callback corresponding to the stopping criterion'
