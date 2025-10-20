@@ -65,8 +65,6 @@ def get_custom_callback(
         raise NotImplementedError(
             'The custom callback corresponding to the stopping criterion'
             f'{stopping_criterion} is not implemented.')
-        
-
 
 
 def main() -> None:
