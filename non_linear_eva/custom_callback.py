@@ -51,21 +51,17 @@ class CustomCallBack():
 
     @abstractmethod
     def perform_callback(self, current_iterate) -> None:
+        """must be implemented by child classes"""
         pass
 
     def __call__(self, current_iterate) -> None:
-        # we know that scipy.sparse.linalg.cg calls this after each iteration
+        # callback is called after each iteration
         self.n_iterations_done += 1
 
         batch_size_reached = self.n_iterations_done % self.batch_size == 0
         min_iterations_reached = (
             self.n_iterations_done >= self.min_n_iterations_per_mesh)
         if batch_size_reached and min_iterations_reached:
-            # NOTE this part becomes obsolete because we plan to iterate on the full space
-            # 
-            # current_iterate = np.zeros(self.coordinates.shape[0], dtype=float)
-            # current_iterate[self.free_nodes] = current_iterate_on_free_nodes
-            # # check if we must continue with iterations
             self.perform_callback(current_iterate=current_iterate)
 
 
