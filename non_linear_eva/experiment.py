@@ -86,7 +86,7 @@ def get_custom_callback(
 
 
 def main() -> None:
-    n_refinements = 2
+    n_initial_refinements = 2
     max_dof = 1e6
 
     parser = argparse.ArgumentParser()
@@ -161,7 +161,7 @@ def main() -> None:
     # ---------------------------------------
 
     # initial refinement
-    for _ in range(n_refinements):
+    for _ in range(n_initial_refinements):
         marked_elements = np.arange(elements.shape[0])
         coordinates, elements, boundaries, _ = refinement.refineNVB(
             coordinates=coordinates,
