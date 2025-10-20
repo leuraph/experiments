@@ -21,6 +21,7 @@ from problems import get_problem
 from custom_callback import CustomCallBack, EnergyTailOffAveragedCustomCallback, \
     AriolisAdaptiveDelayCustomCallback
 from p1afempy.mesh import show_mesh
+from typing import Callable
 
 
 def validate_args(args: argparse.Namespace, parser: argparse.ArgumentParser) -> None:
@@ -51,7 +52,9 @@ def validate_args(args: argparse.Namespace, parser: argparse.ArgumentParser) -> 
 
 def get_custom_callback(
         stopping_criterion: str,
-        args: argparse.Namespace) -> CustomCallBack:
+        args: argparse.Namespace,
+        n_dofs: int,
+        compute_energy: Callable[[np.ndarray], float]) -> CustomCallBack:
     """
     based on the arguments passed,
     returns the corresponding custom callback
@@ -61,7 +64,7 @@ def get_custom_callback(
             batch_size=args.batchsize,
             min_n_iterations_per_mesh=args.miniter,
             fudge=args.fudge,
-            compute_energy=None #TODO add
+            compute_energy=compute_energy
         )
         return callback
     elif stopping_criterion == "relative-energy-decay":
@@ -72,7 +75,8 @@ def get_custom_callback(
             delay_increase=args.delay_increase,
             tau=args.tau,
             fudge=args.fudge,
-            compute_energy=None #TODO add
+            n_dofs=n_dofs,
+            compute_energy=compute_energy
         )
         return callback
     elif stopping_criterion == "default":
