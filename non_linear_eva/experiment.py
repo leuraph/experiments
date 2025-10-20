@@ -177,6 +177,30 @@ def main() -> None:
     current_iterate = np.zeros(n_coordinates, dtype=float)
 
     while True:
+        _, edge_to_nodes, _ = \
+            provide_geometric_data(
+                elements=elements,
+                boundaries=boundaries)
+
+        edge_to_nodes_flipped = np.column_stack(
+            [edge_to_nodes[:, 1], edge_to_nodes[:, 0]])
+        boundary = np.logical_or(
+            is_row_in(edge_to_nodes, boundaries[0]),
+            is_row_in(edge_to_nodes_flipped, boundaries[0])
+        )
+        non_boundary = np.logical_not(boundary)
+        edges = edge_to_nodes
+        non_boundary_edges = edge_to_nodes[non_boundary]
+
+        # free nodes / edges
+        n_vertices = coordinates.shape[0]
+        indices_of_free_nodes = np.setdiff1d(
+            ar1=np.arange(n_vertices),
+            ar2=np.unique(boundaries[0].flatten()))
+        free_nodes = np.zeros(n_vertices, dtype=bool)
+        free_nodes[indices_of_free_nodes] = 1
+        free_edges = non_boundary  # integer array (holding actual indices)
+        free_nodes = free_nodes  # boolean array
 
         # midpoint suffices as we consider laplace operator
         stiffness_matrix = csr_matrix(get_general_stiffness_matrix(
@@ -265,31 +289,6 @@ def main() -> None:
 
         # nonlinear EVA
         # -------------
-        _, edge_to_nodes, _ = \
-            provide_geometric_data(
-                elements=elements,
-                boundaries=boundaries)
-
-        edge_to_nodes_flipped = np.column_stack(
-            [edge_to_nodes[:, 1], edge_to_nodes[:, 0]])
-        boundary = np.logical_or(
-            is_row_in(edge_to_nodes, boundaries[0]),
-            is_row_in(edge_to_nodes_flipped, boundaries[0])
-        )
-        non_boundary = np.logical_not(boundary)
-        edges = edge_to_nodes
-        non_boundary_edges = edge_to_nodes[non_boundary]
-
-        # free nodes / edges
-        n_vertices = coordinates.shape[0]
-        indices_of_free_nodes = np.setdiff1d(
-            ar1=np.arange(n_vertices),
-            ar2=np.unique(boundaries[0].flatten()))
-        free_nodes = np.zeros(n_vertices, dtype=bool)
-        free_nodes[indices_of_free_nodes] = 1
-        free_edges = non_boundary  # integer array (holding actual indices)
-        free_nodes = free_nodes  # boolean array
-
         energy_gains = get_energy_gains_nonlinear(
             coordinates=coordinates,
             elements=elements,
