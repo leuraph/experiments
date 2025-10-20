@@ -278,7 +278,7 @@ def main() -> None:
                     full_output=True,
                     callback=custom_callback,
                     gtol=gtol)
-            n_iterations = func_calls
+            n_iterations = grad_calls
         else:
             gtol = 1e-20  # or smaller to ensure custom stopping criterion is used
             try:
@@ -296,6 +296,7 @@ def main() -> None:
                 current_iterate = conv.last_iterate
                 n_iterations = conv.n_iterations_done
 
+        print(f"n_iterations: {n_iterations}")
         # break after we have solved for the first mesh that
         # exceeds the maximum number of degrees of freedom
         if n_dofs >= max_dof:
