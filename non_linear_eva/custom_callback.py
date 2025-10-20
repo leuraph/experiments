@@ -139,3 +139,143 @@ class EnergyTailOffAveragedCustomCallback(CustomCallBack):
 
         # keep energy considerations in memory
         self.energy_of_last_iterate = current_energy
+
+
+class AriolisAdaptiveDelayCustomCallback(CustomCallBack):
+    """
+    Implements the stopping criterion from [1]
+    in an an energy fashion and with an adaptive
+    choice of the delay (also mentioned in [1]).
+
+    Attributes
+    ----------
+    delay: int
+        initial delay parameter in the Hestenes-Stiefel Estimator,
+        see [1] for details
+
+    References
+    ----------
+    [1] Arioli, M.
+    A Stopping Criterion for the Conjugate Gradient Algorithm
+    in a Finite Element Method Framework.
+    Numerische Mathematik 97, no. 1 (1 March 2004): 1-24.
+    https://doi.org/10.1007/s00211-003-0500-y.
+    """
+    n_dofs: int
+    delay: int
+    delay_increase: int
+    tau: float
+    energy_history: list[float]
+    candidates: list[np.ndarray]
+    fudge: float
+
+    def __init__(
+            self,
+            batch_size: int,
+            min_n_iterations_per_mesh: int,
+            elements: ElementsType,
+            coordinates: CoordinatesType,
+            boundaries: list[BoundaryType],
+            initial_delay: int,
+            delay_increase: int,
+            tau: float,
+            fudge: float,
+            lhs_matrix: csr_matrix,
+            rhs_vector: np.ndarray):
+        super().__init__(
+            batch_size=batch_size,
+            min_n_iterations_per_mesh=min_n_iterations_per_mesh,
+            elements=elements,
+            coordinates=coordinates,
+            boundaries=boundaries,
+            lhs_matrix=lhs_matrix,
+            rhs_vector=rhs_vector)
+        self.delay = initial_delay
+        self.delay_increase = delay_increase
+        self.tau = tau
+        self.fudge = fudge
+        self.energy_history = []
+        self.candidates = []
+
+        # calculate number of degrees of freedom
+        n_vertices = coordinates.shape[0]
+        indices_of_free_nodes = np.setdiff1d(
+            ar1=np.arange(n_vertices),
+            ar2=np.unique(boundaries[0].flatten()))
+        free_nodes = np.zeros(n_vertices, dtype=bool)
+        free_nodes[indices_of_free_nodes] = 1
+        self.n_dofs = np.sum(free_nodes)
+
+    def perform_callback(
+            self,
+            current_iterate) -> None:
+
+        # calculate and save energy of current iterate
+        current_energy = self.get_energy(
+            current_iterate=current_iterate)
+        self.energy_history.append(current_energy)
+        self.candidates.append(current_iterate)
+
+        while True:
+
+            # keep on iterating until we can calculate both
+            # relevant HS-estimates
+            if not self.can_calculate_hs_estimates():
+                break
+
+            # check if the current HS-estimate is a "good" approximation
+            # with the rule given in [1]
+            # if not, increase delay and continue
+            if self.need_to_increase_delay():
+                self.delay += self.delay_increase
+                continue
+
+            if self.has_converged():
+                converged_exception = ConvergedException(
+                    last_iterate=self.candidates[0],
+                    n_iterations_done=self.n_iterations_done,
+                    delay=self.delay,
+                    energy_history=self.energy_history)
+                raise converged_exception
+
+            # throw away the oldest iterate and continue
+            self.candidates = self.candidates[1:]
+
+    def need_to_increase_delay(self) -> bool:
+        """implements the criterion for increasing the delay from [1]"""
+        hs_1, hs_2 = self.get_hs_estimates()
+        return hs_2 > hs_1 * self.tau
+
+    def can_calculate_hs_estimates(self) -> bool:
+        """
+        returns True if we have enough candidates in memory
+        in order to calculate both HS estimates
+        """
+        return self.delay + 2 <= len(self.candidates)
+
+    def get_hs_estimates(self) -> tuple[float, float]:
+        """
+        returns both HS estimates needed in the adaptive delay scheme
+        """
+        e_1 = self.get_energy(self.candidates[0])
+        e_2 = self.get_energy(self.candidates[1])
+        e_1_d = self.get_energy(self.candidates[self.delay])
+        e_2_d = self.get_energy(self.candidates[self.delay + 1])
+
+        hs_1 = 2. * (e_1 - e_1_d)
+        hs_2 = 2. * (e_2 - e_2_d)
+
+        return hs_1, hs_2
+
+    def has_converged(self) -> float:
+        """
+        checks for the CG stopping criterion
+        as given in [1] but formulated in an
+        energy fashion
+        """
+        e_1 = self.get_energy(self.candidates[0])
+        e_1_d = self.get_energy(self.candidates[self.delay])
+
+        lhs = ((self.fudge+self.n_dofs)/self.n_dofs) * e_1
+        rhs = e_1_d
+        return lhs <= rhs
