@@ -224,21 +224,42 @@ def main() -> None:
         )
         return J
 
-    # Custom Stopping Criterion: Energy Tail-Off
-    # ------------------------------------------
-    custom_callback = EnergyTailOffAveragedCustomCallback(
-        batch_size=BATCHSIZE,
-        min_n_iterations_per_mesh=MINITER,
-        fudge=FUDGE,
-        compute_energy=J)
-    try:
+    # Custom Stopping Criterion: Energy Tail-Off or Others
+    # ----------------------------------------------------
+    custom_callback = get_custom_callback(
+        stopping_criterion=args.stopping_criterion, args=args)
+
+    # distinguish two cases; default and non-default stopping criteria
+    # as default criteria does not implement a custom callback and therefore
+    # does not raise on convergence
+    if args.stopping_criterion == "default":
+        gtol = GTOL  # could be None, fmin_cg will use its default
         current_iterate, f_opt, func_calls, grad_calls, _ = \
-            fmin_cg(f=J, x0=current_iterate, fprime=DJ, full_output=True, callback=custom_callback, gtol=1e-12)
-    except ConvergedException as conv:
-        current_iterate = conv.last_iterate
-        n_iterations = conv.n_iterations_done
-    print(f'\tIterations: {n_iterations}')
-    show_solution(coordinates=coordinates, solution=current_iterate)
+            fmin_cg(
+                f=J,
+                x0=current_iterate,
+                fprime=DJ,
+                full_output=True,
+                callback=custom_callback,
+                gtol=gtol)
+        n_iterations = func_calls
+    else:
+        gtol = 1e-12  # or smaller to ensure custom stopping criterion is used
+        try:
+            _, _, _, _, _ = \
+            fmin_cg(
+                f=J,
+                x0=current_iterate,
+                fprime=DJ,
+                full_output=True,
+                callback=custom_callback,
+                gtol=gtol
+            )
+            raise RuntimeError("fmin_cg failed to converge, stopping immediately")
+        except ConvergedException as conv:
+            current_iterate = conv.last_iterate
+            n_iterations = conv.n_iterations_done
+
 
     # nonlinear EVA
     # -------------
