@@ -40,19 +40,23 @@ class CustomCallBack():
     n_iterations_done: int
     batch_size: int
     min_n_iterations_per_mesh: int
+    energy_history: list[float]
+    compute_energy: Callable[[np.ndarray], float]
 
     def __init__(
             self,
             batch_size: int,
-            min_n_iterations_per_mesh: int) -> None:
+            min_n_iterations_per_mesh: int,
+            compute_energy: Callable[[np.ndarray], float]) -> None:
         self.n_iterations_done = 0
         self.batch_size = batch_size
         self.min_n_iterations_per_mesh = min_n_iterations_per_mesh
+        self.compute_energy = compute_energy
+        self.energy_history = []
 
-    @abstractmethod
     def perform_callback(self, current_iterate) -> None:
         """must be implemented by child classes"""
-        pass
+        self.energy_history.append(self.compute_energy(current_iterate))
 
     def __call__(self, current_iterate) -> None:
         # callback is called after each iteration
@@ -87,10 +91,7 @@ class EnergyTailOffAveragedCustomCallback(CustomCallBack):
     fudge: float
     accumulated_energy_gain: float
     verbose: bool
-    energy_history: list[float]
     n_callback_called: int
-
-    compute_energy: Callable[[np.ndarray], float]
 
     def __init__(
             self,
@@ -100,13 +101,12 @@ class EnergyTailOffAveragedCustomCallback(CustomCallBack):
             compute_energy: Callable[[np.ndarray], float]):
         super().__init__(
             batch_size=batch_size,
-            min_n_iterations_per_mesh=min_n_iterations_per_mesh)
+            min_n_iterations_per_mesh=min_n_iterations_per_mesh,
+            compute_energy=compute_energy)
         self.fudge = fudge
         self.accumulated_energy_gain = 0.
         self.energy_of_last_iterate = None
-        self.energy_history = []
         self.n_callback_called = 0
-        self.compute_energy = compute_energy
 
     def perform_callback(
             self,
@@ -161,10 +161,8 @@ class AriolisAdaptiveDelayCustomCallback(CustomCallBack):
     delay: int
     delay_increase: int
     tau: float
-    energy_history: list[float]
     candidates: list[np.ndarray]
     fudge: float
-    compute_energy: Callable[[np.ndarray], float]
 
     def __init__(
             self,
@@ -178,14 +176,13 @@ class AriolisAdaptiveDelayCustomCallback(CustomCallBack):
             compute_energy: Callable[[np.ndarray], float]):
         super().__init__(
             batch_size=batch_size,
-            min_n_iterations_per_mesh=min_n_iterations_per_mesh)
+            min_n_iterations_per_mesh=min_n_iterations_per_mesh,
+            compute_energy=compute_energy)
         self.delay = initial_delay
         self.delay_increase = delay_increase
         self.tau = tau
         self.fudge = fudge
         self.n_dofs = n_dofs
-        self.compute_energy = compute_energy
-        self.energy_history = []
         self.candidates = []
 
     def perform_callback(
