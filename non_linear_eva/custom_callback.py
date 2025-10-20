@@ -1,6 +1,8 @@
 from abc import abstractmethod
 import numpy as np
 from collections.abc import Callable
+from p1afempy.data_structures import ElementsType, CoordinatesType, BoundaryType
+from scipy.sparse import csr_matrix
 
 
 class ConvergedException(Exception):
