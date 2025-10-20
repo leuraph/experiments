@@ -193,7 +193,7 @@ class AriolisAdaptiveDelayCustomCallback(CustomCallBack):
             current_iterate) -> None:
 
         # calculate and save energy of current iterate
-        current_energy = self.get_energy(
+        current_energy = self.compute_energy(
             current_iterate=current_iterate)
         self.energy_history.append(current_energy)
         self.candidates.append(current_iterate)
@@ -239,10 +239,10 @@ class AriolisAdaptiveDelayCustomCallback(CustomCallBack):
         """
         returns both HS estimates needed in the adaptive delay scheme
         """
-        e_1 = self.get_energy(self.candidates[0])
-        e_2 = self.get_energy(self.candidates[1])
-        e_1_d = self.get_energy(self.candidates[self.delay])
-        e_2_d = self.get_energy(self.candidates[self.delay + 1])
+        e_1 = self.compute_energy(self.candidates[0])
+        e_2 = self.compute_energy(self.candidates[1])
+        e_1_d = self.compute_energy(self.candidates[self.delay])
+        e_2_d = self.compute_energy(self.candidates[self.delay + 1])
 
         hs_1 = 2. * (e_1 - e_1_d)
         hs_2 = 2. * (e_2 - e_2_d)
@@ -255,8 +255,8 @@ class AriolisAdaptiveDelayCustomCallback(CustomCallBack):
         as given in [1] but formulated in an
         energy fashion
         """
-        e_1 = self.get_energy(self.candidates[0])
-        e_1_d = self.get_energy(self.candidates[self.delay])
+        e_1 = self.compute_energy(self.candidates[0])
+        e_1_d = self.compute_energy(self.candidates[self.delay])
 
         lhs = ((self.fudge+self.n_dofs)/self.n_dofs) * e_1
         rhs = e_1_d
