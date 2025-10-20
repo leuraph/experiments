@@ -164,43 +164,29 @@ class AriolisAdaptiveDelayCustomCallback(CustomCallBack):
     energy_history: list[float]
     candidates: list[np.ndarray]
     fudge: float
+    compute_energy: Callable[[np.ndarray], float]
 
     def __init__(
             self,
             batch_size: int,
             min_n_iterations_per_mesh: int,
-            elements: ElementsType,
-            coordinates: CoordinatesType,
-            boundaries: list[BoundaryType],
             initial_delay: int,
             delay_increase: int,
             tau: float,
             fudge: float,
-            lhs_matrix: csr_matrix,
-            rhs_vector: np.ndarray):
+            n_dofs: int,
+            compute_energy: Callable[[np.ndarray], float]):
         super().__init__(
             batch_size=batch_size,
-            min_n_iterations_per_mesh=min_n_iterations_per_mesh,
-            elements=elements,
-            coordinates=coordinates,
-            boundaries=boundaries,
-            lhs_matrix=lhs_matrix,
-            rhs_vector=rhs_vector)
+            min_n_iterations_per_mesh=min_n_iterations_per_mesh)
         self.delay = initial_delay
         self.delay_increase = delay_increase
         self.tau = tau
         self.fudge = fudge
+        self.n_dofs = n_dofs
+        self.compute_energy = compute_energy
         self.energy_history = []
         self.candidates = []
-
-        # calculate number of degrees of freedom
-        n_vertices = coordinates.shape[0]
-        indices_of_free_nodes = np.setdiff1d(
-            ar1=np.arange(n_vertices),
-            ar2=np.unique(boundaries[0].flatten()))
-        free_nodes = np.zeros(n_vertices, dtype=bool)
-        free_nodes[indices_of_free_nodes] = 1
-        self.n_dofs = np.sum(free_nodes)
 
     def perform_callback(
             self,
