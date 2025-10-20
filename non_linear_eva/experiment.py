@@ -260,7 +260,10 @@ def main() -> None:
         # Custom Stopping Criterion: Energy Tail-Off or Others
         # ----------------------------------------------------
         custom_callback = get_custom_callback(
-            stopping_criterion=args.stopping_criterion, args=args)
+            stopping_criterion=args.stopping_criterion,
+            args=args,
+            n_dofs=n_dofs,
+            compute_energy=J)
 
         # distinguish two cases; default and non-default stopping criteria
         # as default criteria does not implement a custom callback and therefore
