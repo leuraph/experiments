@@ -80,8 +80,11 @@ def get_custom_callback(
         )
         return callback
     elif stopping_criterion == "default":
-        def callback(current_iterate: np.ndarray) -> None:
-            pass
+        callback = CustomCallBack(
+            batch_size=1,
+            min_n_iterations_per_mesh=1,
+            compute_energy=compute_energy
+        )
         return callback
     else:
         raise NotImplementedError(
