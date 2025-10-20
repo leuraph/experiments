@@ -1,2 +1,2 @@
-variational_adaptivity @ git+ssh://git@github.com/leuraph/variational_adaptivity@v3.0.1
+variational_adaptivity @ git+ssh://git@github.com/leuraph/variational_adaptivity@v3.0.2
 p1afempy @ git+ssh://git@github.com/leuraph/p1afempy@v0.2.15
