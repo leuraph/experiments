@@ -22,6 +22,8 @@ from custom_callback import CustomCallBack, EnergyTailOffAveragedCustomCallback,
     AriolisAdaptiveDelayCustomCallback
 from p1afempy.mesh import show_mesh
 from typing import Callable
+from load_save_dumps import dump_object
+from pathlib import Path
 
 
 def validate_args(args: argparse.Namespace, parser: argparse.ArgumentParser) -> None:
@@ -92,6 +94,32 @@ def get_custom_callback(
             f'{stopping_criterion} is not implemented.')
 
 
+def get_results_path(args: argparse.Namespace) -> Path:
+    """
+    Returns a Path object for the results directory, based on the stopping criterion and arguments.
+    The path string starts with the problem number and includes the stopping criterion name.
+    """
+    base = f"problem-{args.problem}_{args.stopping_criterion}_"
+    if args.stopping_criterion == "energy-tail-off":
+        path_str = (
+            base +
+            f"theta-{args.theta}_eta-{args.eta}_fudge-{args.fudge}_miniter-{args.miniter}_batchsize-{args.batchsize}"
+        )
+    elif args.stopping_criterion == "relative-energy-decay":
+        path_str = (
+            base +
+            f"theta-{args.theta}_eta-{args.eta}_fudge-{args.fudge}_miniter-{args.miniter}_tau-{args.tau}_initial_delay-{args.initial_delay}_delay_increase-{args.delay_increase}"
+        )
+    elif args.stopping_criterion == "default":
+        path_str = (
+            base +
+            f"theta-{args.theta}_eta-{args.eta}_miniter-{args.miniter}_gtol-{args.gtol}"
+        )
+    else:
+        raise ValueError(f"Unknown stopping criterion: {args.stopping_criterion}")
+    return Path("results/") / Path(path_str)
+
+
 def main() -> None:
     n_initial_refinements = 4
     max_dof = 1e6
@@ -144,6 +172,8 @@ def main() -> None:
     INITIAL_DELAY = args.initial_delay
     DELAY_INCREASE = args.delay_increase
     # ----------------------------
+
+    base_results_path = get_results_path(args=args)
 
     problem = get_problem(number=PROBLEM_N)
 
@@ -298,6 +328,23 @@ def main() -> None:
             except ConvergedException as conv:
                 current_iterate = conv.last_iterate
                 n_iterations = conv.n_iterations_done
+        
+        # dump the current state
+        # ----------------------
+        dump_object(obj=elements, path_to_file=base_results_path /
+                    Path(f'{n_dofs}/elements.pkl'))
+        dump_object(obj=coordinates, path_to_file=base_results_path /
+                    Path(f'{n_dofs}/coordinates.pkl'))
+        dump_object(obj=boundaries, path_to_file=base_results_path /
+                    Path(f'{n_dofs}/boundaries.pkl'))
+        dump_object(obj=custom_callback.energy_history, path_to_file=base_results_path /
+                    Path(f'{n_dofs}/energy_history.pkl'))
+        dump_object(obj=n_iterations, path_to_file=base_results_path /
+                    Path(f'{n_dofs}/n_iterations.pkl'))
+        dump_object(obj=current_iterate, path_to_file=base_results_path /
+                    Path(f'{n_dofs}/last_iterate.pkl'))
+        dump_object(obj=n_dofs, path_to_file=base_results_path /
+                    Path(f'{n_dofs}/n_dofs.pkl'))
 
         print(f"n_iterations: {n_iterations}")
         # break after we have solved for the first mesh that
