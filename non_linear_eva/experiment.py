@@ -90,7 +90,7 @@ def get_custom_callback(
 
 
 def main() -> None:
-    n_initial_refinements = 2
+    n_initial_refinements = 4
     max_dof = 1e6
 
     parser = argparse.ArgumentParser()
@@ -280,7 +280,7 @@ def main() -> None:
                     gtol=gtol)
             n_iterations = func_calls
         else:
-            gtol = 1e-12  # or smaller to ensure custom stopping criterion is used
+            gtol = 1e-20  # or smaller to ensure custom stopping criterion is used
             try:
                 _, _, _, _, _ = \
                 fmin_cg(
