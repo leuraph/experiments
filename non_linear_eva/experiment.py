@@ -18,6 +18,8 @@ from variational_adaptivity.edge_based_variational_adaptivity import get_energy_
 from variational_adaptivity.markers import doerfler_marking
 from p1afempy.refinement import refineNVB_edge_based
 from problems import get_problem
+from custom_callback import CustomCallBack, EnergyTailOffAveragedCustomCallback, \
+    energ
 
 
 def validate_args(args: argparse.Namespace, parser: argparse.ArgumentParser) -> None:
@@ -44,6 +46,26 @@ def validate_args(args: argparse.Namespace, parser: argparse.ArgumentParser) -> 
             parser.error("--miniter is required for 'default' stopping criterion.")
         if args.gtol is None:
             parser.error("--gtol is required for 'default' stopping criterion.")
+
+
+def get_custom_callback(
+        stopping_criterion: str,
+        args: argparse.Namespace) -> CustomCallBack:
+    """
+    based on the arguments passed,
+    returns the corresponding custom callback
+    """
+    if stopping_criterion == "energy-tail-off":
+        pass
+    elif stopping_criterion == "relative-energy-decay":
+        pass
+    elif stopping_criterion == "default":
+        pass
+    else:
+        raise NotImplementedError(
+            'The custom callback corresponding to the stopping criterion'
+            f'{stopping_criterion} is not implemented.')
+        
 
 
 
