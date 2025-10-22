@@ -121,7 +121,7 @@ def get_results_path(args: argparse.Namespace) -> Path:
 
 
 def main() -> None:
-    n_initial_refinements = 4
+    n_initial_refinements = 5
     max_dof = 1e6
 
     parser = argparse.ArgumentParser()
