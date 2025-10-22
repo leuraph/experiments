@@ -296,7 +296,10 @@ def main() -> None:
 
     print("solving and refining using default stopping criterion on initial mesh...")
 
-    custom_callback = CustomCallBack(batch_size=1, min_n_iterations_per_mesh=1, compute_energy=J)
+    custom_callback = CustomCallBack(
+        batch_size=1,
+        min_n_iterations_per_mesh=1,
+        compute_energy=J)
     current_iterate, f_opt, func_calls, grad_calls, _ = \
         fmin_cg(
             f=J,
