@@ -1,3 +1,4 @@
+from logging import warning
 from p1afempy.solvers import \
     integrate_composition_nonlinear_with_fem, \
         get_load_vector_of_composition_nonlinear_with_fem, \
@@ -454,7 +455,7 @@ def main() -> None:
         # does not raise on convergence
         if args.stopping_criterion == "default":
             gtol = GTOL  # could be None, fmin_cg will use its default
-            current_iterate, f_opt, func_calls, grad_calls, _ = \
+            current_iterate, _, _, _, _ = \
                 fmin_cg(
                     f=J,
                     x0=current_iterate,
