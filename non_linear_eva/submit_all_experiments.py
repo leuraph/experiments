@@ -41,7 +41,7 @@ for i, cmd in enumerate(commands, start=1):
         f.write(job_script)
 
     # Submit with sbatch
-    subprocess.run(["cat", script_name])
+    subprocess.run(["sbatch", script_name])
 
     # Optional: remove the temp file after submission
     # os.remove(script_name)
