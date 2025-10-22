@@ -466,7 +466,7 @@ def main() -> None:
         else:
             gtol = 1e-20  # or smaller to ensure custom stopping criterion is used
             try:
-                _, _, _, _, _ = \
+                current_iterate, _, _, _, warnflag = \
                 fmin_cg(
                     f=J,
                     x0=current_iterate,
@@ -475,8 +475,9 @@ def main() -> None:
                     callback=custom_callback,
                     gtol=gtol
                 )
-                raise RuntimeError("fmin_cg failed to converge, stopping immediately")
+                warning("custom stopping criterion was not resolved, continuing anyway...")
             except ConvergedException as conv:
+                print('fmin_cg converged on custom stopping criterion')
                 current_iterate = conv.last_iterate
         
         # dump the current state
