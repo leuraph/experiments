@@ -363,11 +363,10 @@ def main() -> None:
             boundaries_to_edges=boundaries_to_edges,
             edge2newNode=marked_edges,
             to_embed=current_iterate)
-    
-    # show_mesh(coordinates, elements)
-    # show_solution(coordinates, current_iterate)
 
-
+    # main loop of the experiment, i.e.,
+    # approximate -> mark -> refine
+    # ----------------------------------
     while True:
         _, edge_to_nodes, _ = \
             provide_geometric_data(
