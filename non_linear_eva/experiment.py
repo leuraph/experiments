@@ -307,9 +307,6 @@ def main() -> None:
             fprime=DJ,
             full_output=True,
             callback=custom_callback)
-    n_iterations = grad_calls
-
-    print(f"n_iterations: {n_iterations}")
     # -------------------------------------------------------
 
     # dump the current state
@@ -322,7 +319,7 @@ def main() -> None:
                 Path(f'{n_dofs}/boundaries.pkl'))
     dump_object(obj=custom_callback.energy_history, path_to_file=base_results_path /
                 Path(f'{n_dofs}/energy_history.pkl'))
-    dump_object(obj=n_iterations, path_to_file=base_results_path /
+    dump_object(obj=custom_callback.n_iterations_done, path_to_file=base_results_path /
                 Path(f'{n_dofs}/n_iterations.pkl'))
     dump_object(obj=current_iterate, path_to_file=base_results_path /
                 Path(f'{n_dofs}/last_iterate.pkl'))
@@ -466,7 +463,6 @@ def main() -> None:
                     full_output=True,
                     callback=custom_callback,
                     gtol=gtol)
-            n_iterations = grad_calls
         else:
             gtol = 1e-20  # or smaller to ensure custom stopping criterion is used
             try:
@@ -482,7 +478,6 @@ def main() -> None:
                 raise RuntimeError("fmin_cg failed to converge, stopping immediately")
             except ConvergedException as conv:
                 current_iterate = conv.last_iterate
-                n_iterations = conv.n_iterations_done
         
         # dump the current state
         # ----------------------
@@ -494,14 +489,13 @@ def main() -> None:
                     Path(f'{n_dofs}/boundaries.pkl'))
         dump_object(obj=custom_callback.energy_history, path_to_file=base_results_path /
                     Path(f'{n_dofs}/energy_history.pkl'))
-        dump_object(obj=n_iterations, path_to_file=base_results_path /
+        dump_object(obj=custom_callback.n_iterations_done, path_to_file=base_results_path /
                     Path(f'{n_dofs}/n_iterations.pkl'))
         dump_object(obj=current_iterate, path_to_file=base_results_path /
                     Path(f'{n_dofs}/last_iterate.pkl'))
         dump_object(obj=n_dofs, path_to_file=base_results_path /
                     Path(f'{n_dofs}/n_dofs.pkl'))
 
-        print(f"n_iterations: {n_iterations}")
         # break after we have solved for the first mesh that
         # exceeds the maximum number of degrees of freedom
         if n_dofs >= max_dof:
