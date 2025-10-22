@@ -1,0 +1,18 @@
+python experiment.py --eta 1.0 --theta 0.5 --problem 1 --stopping-criterion relative-energy-decay --miniter 10 --delay-increase 5 --initial-delay 10 --tau 1.01 --fudge 1.0
+python experiment.py --eta 1.0 --theta 0.5 --problem 1 --stopping-criterion relative-energy-decay --miniter 10 --delay-increase 5 --initial-delay 10 --tau 1.01 --fudge 0.1
+python experiment.py --eta 1.0 --theta 0.5 --problem 2 --stopping-criterion relative-energy-decay --miniter 10 --delay-increase 5 --initial-delay 10 --tau 1.01 --fudge 1.0
+python experiment.py --eta 1.0 --theta 0.5 --problem 2 --stopping-criterion relative-energy-decay --miniter 10 --delay-increase 5 --initial-delay 10 --tau 1.01 --fudge 0.1
+python experiment.py --eta 1.0 --theta 0.5 --problem 3 --stopping-criterion relative-energy-decay --miniter 10 --delay-increase 5 --initial-delay 10 --tau 1.01 --fudge 1.0
+python experiment.py --eta 1.0 --theta 0.5 --problem 3 --stopping-criterion relative-energy-decay --miniter 10 --delay-increase 5 --initial-delay 10 --tau 1.01 --fudge 0.1
+python experiment.py --eta 1.0 --theta 0.5 --problem 1 --stopping-criterion energy-tail-off --miniter 10 --batchsize 5 --fudge 0.1
+python experiment.py --eta 1.0 --theta 0.5 --problem 1 --stopping-criterion energy-tail-off --miniter 10 --batchsize 5 --fudge 0.01
+python experiment.py --eta 1.0 --theta 0.5 --problem 2 --stopping-criterion energy-tail-off --miniter 10 --batchsize 5 --fudge 0.1
+python experiment.py --eta 1.0 --theta 0.5 --problem 2 --stopping-criterion energy-tail-off --miniter 10 --batchsize 5 --fudge 0.01
+python experiment.py --eta 1.0 --theta 0.5 --problem 3 --stopping-criterion energy-tail-off --miniter 10 --batchsize 5 --fudge 0.1
+python experiment.py --eta 1.0 --theta 0.5 --problem 3 --stopping-criterion energy-tail-off --miniter 10 --batchsize 5 --fudge 0.01
+python experiment.py --eta 1.0 --theta 0.5 --problem 1 --stopping-criterion default --miniter 10 --gtol 1e-6
+python experiment.py --eta 1.0 --theta 0.5 --problem 1 --stopping-criterion default --miniter 10 --gtol 1e-8
+python experiment.py --eta 1.0 --theta 0.5 --problem 2 --stopping-criterion default --miniter 10 --gtol 1e-6
+python experiment.py --eta 1.0 --theta 0.5 --problem 2 --stopping-criterion default --miniter 10 --gtol 1e-8
+python experiment.py --eta 1.0 --theta 0.5 --problem 3 --stopping-criterion default --miniter 10 --gtol 1e-6
+python experiment.py --eta 1.0 --theta 0.5 --problem 3 --stopping-criterion default --miniter 10 --gtol 1e-8
