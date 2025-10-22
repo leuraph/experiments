@@ -56,10 +56,10 @@ class CustomCallBack():
 
     def perform_callback(self, current_iterate) -> None:
         """must be implemented by child classes"""
-        self.energy_history.append(self.compute_energy(current_iterate))
 
     def __call__(self, current_iterate) -> None:
         # callback is called after each iteration
+        self.energy_history.append(self.compute_energy(current_iterate))
         self.n_iterations_done += 1
 
         batch_size_reached = self.n_iterations_done % self.batch_size == 0
@@ -115,7 +115,6 @@ class EnergyTailOffAveragedCustomCallback(CustomCallBack):
 
         current_energy = self.compute_energy(
             current_iterate=current_iterate)
-        self.energy_history.append(current_energy)
 
         # reset the accumulated energy drop to zero
         # after min_n_iterationns is reached
@@ -192,7 +191,6 @@ class AriolisAdaptiveDelayCustomCallback(CustomCallBack):
         # calculate and save energy of current iterate
         current_energy = self.compute_energy(
             current_iterate=current_iterate)
-        self.energy_history.append(current_energy)
         self.candidates.append(current_iterate)
 
         while True:
