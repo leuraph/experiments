@@ -26,3 +26,5 @@ __pycache__/
 # Slurm submit scipts / output
 *.sl
 *.out
+
+non_linear_eva/graded_solver/refined_meshes/*
