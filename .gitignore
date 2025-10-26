@@ -4,6 +4,9 @@
 # ignore all venv's
 .venv/
 
+# MATLAB artefact
+*.asv
+
 # ignore plots
 *.png
 *.pdf
