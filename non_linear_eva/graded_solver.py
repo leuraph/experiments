@@ -12,16 +12,32 @@ from p1afempy.solvers import \
 from scipy.sparse import csr_matrix
 from triangle_cubature.cubature_rule import CubatureRuleEnum
 from scipy.sparse.linalg import spsolve
-from show_solution import show_solution
+import argparse
+import re
+from load_save_dumps import dump_object
 
 
 def main() -> None:
-    problem_number = 1
-    alpha = 0.9
-    gamma = 1
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--alpha", type=float, required=True)
+    parser.add_argument("--gamma", type=float, required=True)
+    parser.add_argument("--problem", type=int, required=True)
+    parser.add_argument("--mesh-path", type=str, required=True,
+                        help="path to the folder holding the graded mesh to be used")
+    args = parser.parse_args()
+
+    problem_number = args.problem
+    alpha = args.alpha
+    gamma = args.gamma
+    mesh_path = args.mesh_path
+
+    match = re.search(r"hmax-([0-9]*\.?[0-9]+)", mesh_path)
+    hmax = float(match.group(1))
+
+    output_path = Path('reference_solutions') / Path(f"hmax-{hmax}_alpha-{alpha}_gamma-{gamma}.pkl")
 
     problem = get_problem(number=problem_number)
-
     a_11 = problem.a_11
     a_12 = problem.a_12
     a_21 = problem.a_21
@@ -29,11 +45,11 @@ def main() -> None:
     phi = problem.phi
     f = problem.f
 
-    base_path = Path('graded_solver/graded_meshes/')
+    mesh_base_path = Path(args.mesh_path)
 
-    path_to_elements = base_path / Path('elements_refined_n_vertices-9272_hmax-0.01.dat')
-    path_to_coordinates = base_path / Path('coordinates_refined_n_vertices-9272_hmax-0.01.dat')
-    path_to_dirichlet = base_path / Path('dirichlet_refined_n_vertices-9272_hmax-0.01.dat')
+    path_to_elements = mesh_base_path / Path('elements.dat')
+    path_to_coordinates = mesh_base_path / Path('coordinates.dat')
+    path_to_dirichlet = mesh_base_path / Path('dirichlet.dat')
 
     elements = read_elements(
         path_to_elements=path_to_elements, shift_indices=True)
@@ -98,6 +114,10 @@ def main() -> None:
                     )
                 )
             )
+
+    dump_object(
+        obj=current_iterate,
+        path_to_file=output_path)
 
 if __name__ == '__main__':
     main()
