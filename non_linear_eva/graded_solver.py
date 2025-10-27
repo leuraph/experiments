@@ -35,7 +35,7 @@ def main() -> None:
     match = re.search(r"hmax-([0-9]*\.?[0-9]+)", mesh_path)
     hmax = float(match.group(1))
 
-    output_path = Path('reference_solutions') / Path(f"hmax-{hmax}_alpha-{alpha}_gamma-{gamma}.pkl")
+    output_path = Path('reference_solutions') / Path(f"problem-{problem_number}_hmax-{hmax}_alpha-{alpha}_gamma-{gamma}.pkl")
 
     problem = get_problem(number=problem_number)
     a_11 = problem.a_11
@@ -82,8 +82,6 @@ def main() -> None:
 
     # initial guess set to zero
     current_iterate = np.zeros(n_vertices)
-    print(current_iterate)
-    print(current_iterate[free_nodes])
 
     n = ceil(gamma * np.log(n_dofs))
 
