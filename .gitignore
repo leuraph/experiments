@@ -27,4 +27,4 @@ __pycache__/
 *.sl
 *.out
 
-non_linear_eva/graded_solver/refined_meshes/*
+non_linear_eva/graded_meshes/refined_meshes/*
