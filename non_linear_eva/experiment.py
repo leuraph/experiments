@@ -301,13 +301,18 @@ def main() -> None:
         batch_size=1,
         min_n_iterations_per_mesh=1,
         compute_energy=J)
-    current_iterate, f_opt, func_calls, grad_calls, _ = \
+    current_iterate, f_opt, func_calls, grad_calls, warnflag = \
         fmin_cg(
             f=J,
             x0=current_iterate,
             fprime=DJ,
             full_output=True,
             callback=custom_callback)
+    if warnflag == 0:
+        criterion_resolved = True
+    else:
+        criterion_resolved = False 
+
     # -------------------------------------------------------
 
     # dump the current state
@@ -326,6 +331,8 @@ def main() -> None:
                 Path(f'{n_dofs}/last_iterate.pkl'))
     dump_object(obj=n_dofs, path_to_file=base_results_path /
                 Path(f'{n_dofs}/n_dofs.pkl'))
+    dump_object(obj=criterion_resolved, path_to_file=base_results_path /
+                    Path(f'{n_dofs}/criterion_resolved.pkl'))
 
     # nonlinear EVA
     # -------------
@@ -455,7 +462,7 @@ def main() -> None:
         # does not raise on convergence
         if args.stopping_criterion == "default":
             gtol = GTOL  # could be None, fmin_cg will use its default
-            current_iterate, _, _, _, _ = \
+            current_iterate, fopt, func_calls, grad_calls, warnflag = \
                 fmin_cg(
                     f=J,
                     x0=current_iterate,
@@ -463,6 +470,10 @@ def main() -> None:
                     full_output=True,
                     callback=custom_callback,
                     gtol=gtol)
+            if warnflag == 0:
+                criterion_resolved = True
+            else:
+                criterion_resolved = False 
         else:
             gtol = 1e-20  # or smaller to ensure custom stopping criterion is used
             try:
@@ -476,9 +487,12 @@ def main() -> None:
                     gtol=gtol
                 )
                 warning("custom stopping criterion was not resolved, continuing anyway...")
+                criterion_resolved = False
             except ConvergedException as conv:
                 print('fmin_cg converged on custom stopping criterion')
                 current_iterate = conv.last_iterate
+                criterion_resolved = True
+
         
         # dump the current state
         # ----------------------
@@ -496,6 +510,8 @@ def main() -> None:
                     Path(f'{n_dofs}/last_iterate.pkl'))
         dump_object(obj=n_dofs, path_to_file=base_results_path /
                     Path(f'{n_dofs}/n_dofs.pkl'))
+        dump_object(obj=criterion_resolved, path_to_file=base_results_path /
+                    Path(f'{n_dofs}/criterion_resolved.pkl'))
 
         # break after we have solved for the first mesh that
         # exceeds the maximum number of degrees of freedom
