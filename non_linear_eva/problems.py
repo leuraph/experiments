@@ -281,4 +281,6 @@ def get_problem(number: int) -> Problem:
         return get_problem_2()
     if number == 3:
         return get_problem_3()
+    if number == 4:
+        return get_problem_4()
     raise RuntimeError(f'unknown problem number: {number}')
