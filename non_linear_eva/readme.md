@@ -59,5 +59,5 @@ The following problem is taken from
 - $\phi(u) := u^3$
 - $\Phi(u) = \frac{u^4}{4}$
 - $\phi'(u) = 3 u^2$
-- $u(x, y) := r^{-4/3} xy (1-x^2)(1-y^2), \quad r:= \sqrt{x^2 + y^2}$
+- $u(x, y) := 2 r^{-4/3} xy (1-x^2)(1-y^2), \quad r:= \sqrt{x^2 + y^2}$
 - $f(x, y)$ is chosen accordingly
