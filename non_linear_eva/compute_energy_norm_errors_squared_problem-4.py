@@ -17,9 +17,6 @@ def main() -> None:
 
     problem_4 = get_problem(number=4)
 
-    f = problem_4.f
-    phi = problem_4.phi
-
     base_result_path = Path(args.path)
 
     def u(r):
