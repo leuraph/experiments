@@ -116,12 +116,27 @@ $\|\tilde u - I_h(u^\star_N)\|_a^2$
 becomes very easy as both FEM functions
 live on the same graded mesh now.
 
+### Tool-Chain
+
+1. Compute the reference mesh and a reference solution on it.
+2. Do the experiment(s) `experiments.py`.
+3. For the results, perform the mesh transfer.
+4. Compute the energy norm errors.
+5. Plot the energy norm errors.
+
 ## Problem 2 / 3
 
 For these problems, we merely plot the energy errors
 $\mathrm E (u^\star_N) - \mathrm E (\tilde u)$,
 where $\tilde u$ is the reference solution computed
 on a graded mesh as described above.
+
+### Tool-Chain
+
+1. Compute the reference mesh and a reference solution on it.
+2. Do the experiment(s) `experiments.py`
+3. Compute the energies from experiments.
+4. Plot the energy norm errors.
 
 ## Problem 4
 This problem is constructed such
@@ -178,3 +193,9 @@ can be both integrated using the same routine.
 An implementation of all of these computations
 is found in the post-processing script
 `compute_energy_norm_errors_squared_problem-4.py`.
+
+### Tool-Chain
+
+1. Do the experiment(s) `experiments.py`
+2. Compute the energies norm errors: `compute_energy_norm_errors_squared_problem-4.py`.
+3. Plot the energy norm errors.
