@@ -16,6 +16,7 @@ def main() -> None:
     path_to_results = Path(args.path)
 
     energy_norm_errors_squared =[]
+    criteria_resolved = []
     n_dofs = []
 
     for path_to_n_dofs in tqdm(list(path_to_results.iterdir())):
@@ -26,17 +27,22 @@ def main() -> None:
 
         current_energy = load_dump(
             path_to_dump=path_to_n_dofs / 'energy_norm_error_squared.pkl')
+        criterion_resolved = load_dump(
+            path_to_dump=path_to_n_dofs / 'criterion_resolved.pkl')
 
         energy_norm_errors_squared.append(current_energy)
+        criteria_resolved.append(criterion_resolved)
 
     # converting lists to numpy arrays
     energy_norm_errors_squared = np.array(energy_norm_errors_squared)
+    criteria_resolved = np.array(criteria_resolved)
     n_dofs = np.array(n_dofs)
     
     # sorting corresponding to number of degrees of freedom
     sort_n_dof = n_dofs.argsort()
     n_dofs = n_dofs[sort_n_dof]
     energy_norm_errors_squared = energy_norm_errors_squared[sort_n_dof]
+    criteria_resolved = criteria_resolved[sort_n_dof]
 
     # settinng plot params
     # --------------------
@@ -53,12 +59,30 @@ def main() -> None:
     ax.set_ylabel(r'$E(\tilde u) - E(u)$')
     ax.grid(True)
 
+    # plot all points connected by a dotted black line
     ax.loglog(
-            n_dofs,
-            energy_norm_errors_squared,
-            linestyle='--')
-
-    # ax.legend(loc='best')
+        n_dofs,
+        energy_norm_errors_squared,
+        linestyle=':',
+        color='black',
+        zorder=1
+    )
+    # plot resolved points (blue) and non-resolved points (red)
+    ax.scatter(
+        n_dofs[criteria_resolved],
+        energy_norm_errors_squared[criteria_resolved],
+        color='blue',
+        label='resolved',
+        zorder=2
+    )
+    ax.scatter(
+        n_dofs[np.logical_not(criteria_resolved)],
+        energy_norm_errors_squared[np.logical_not(criteria_resolved)],
+        color='red',
+        label='not resolved',
+        zorder=2
+    )
+    ax.legend(loc='best')
 
     fig.savefig(output_path, dpi=300, bbox_inches="tight")
 
