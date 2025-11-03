@@ -4,29 +4,25 @@ from tqdm import tqdm
 from load_save_dumps import load_dump
 from p1afempy.io_helpers import read_elements, read_coordinates
 import numpy as np
-from p1afempy.solvers import evaluate_on_coordinates
-from scipy.sparse import csr_matrix
-from p1afempy.solvers import get_stiffness_matrix, get_right_hand_side, \
-    integrate_composition_nonlinear_with_fem, get_mass_matrix
-from p1afempy.data_structures import ElementsType, CoordinatesType
-from triangle_cubature.cubature_rule import CubatureRuleEnum
 from problems import get_problem
 import matplotlib.pyplot as plt
+from compute_energies import compute_energy
+
 
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--reference-solution", type=str, required=True)
     parser.add_argument("--reference-mesh", type=str, required=True)
     parser.add_argument("--problem", type=int, required=True)
-    parser.add_argument("--results", type=str, required=True)
+    parser.add_argument("--path", type=str, required=True)
     args = parser.parse_args()
 
+    output_path = Path('plots') / Path(f'{args.path}.pdf').name
+
     problem = get_problem(number=args.problem)
-    phi = problem.phi
-    f=problem.f
 
     path_to_reference_solution = Path(args.reference_solution)
-    path_to_results = Path(args.results)
+    path_to_results = Path(args.path)
 
     path_to_reference_mesh = Path(args.reference_mesh)
     path_to_reference_coordinates = path_to_reference_mesh / Path("coordinates.dat")
@@ -40,13 +36,14 @@ def main() -> None:
         path_to_elements=path_to_reference_elements, shift_indices=True)
     reference_solution =load_dump(path_to_dump=path_to_reference_solution)
 
-    errors_squared =[]
+    reference_energy = compute_energy(
+        problem=problem,
+        elements=reference_elements,
+        coordinates=reference_coordinates,
+        current_iterate=reference_solution)
+
+    energies =[]
     n_dofs = []
-    
-    stiffness_matrix_graded_mesh = csr_matrix(get_stiffness_matrix(
-            coordinates=reference_coordinates,
-            elements=reference_elements
-        ))
 
     for path_to_n_dofs in tqdm(list(path_to_results.iterdir())):
         if not path_to_n_dofs.is_dir():
@@ -54,116 +51,51 @@ def main() -> None:
         n_dof = int(path_to_n_dofs.name)
         n_dofs.append(n_dof)
 
-        path_to_results_coordinates = path_to_n_dofs / Path("coordinates.pkl")
-        path_to_results_elements = path_to_n_dofs / Path("elements.pkl")
-        path_to_results_solution = path_to_n_dofs / Path("last_iterate.pkl")
-
-        results_coordinates = load_dump(path_to_dump=path_to_results_coordinates)
-        results_elements = load_dump(path_to_dump=path_to_results_elements)
-        results_solution = load_dump(path_to_dump=path_to_results_solution)
-
-        # print("evaluating last iterate on graded mesh")
-        # results_solution_on_reference_mesh = evaluate_on_coordinates(
-        #     u=results_solution,
-        #     elements=results_elements,
-        #     coordinates=results_coordinates,
-        #     r=reference_coordinates,
-        #     display_progress_bar=True)
-
-        # du = results_solution_on_reference_mesh - reference_solution
-        # error_squared = du.dot(stiffness_matrix_graded_mesh.dot(du))
-
-        error_squared = upper_bound(
-            reference_solution=reference_solution,
-            results_solution=results_solution,
-            reference_elements=reference_elements,
-            reference_coordinates=reference_coordinates,
-            results_coordinates=results_coordinates,
-            results_elements=results_elements,
-            phi=phi, f=f
-        )
-
-        errors_squared.append(error_squared)
+        current_energy = load_dump(
+            path_to_dump=path_to_n_dofs / 'energy.pkl')
+        
+        energies.append(current_energy)
 
     # converting lists to numpy arrays
-    errors_squared = np.array(errors_squared)
+    energies = np.array(energies)
     n_dofs = np.array(n_dofs)
     
     # sorting corresponding to number of degrees of freedom
     sort_n_dof = n_dofs.argsort()
     n_dofs = n_dofs[sort_n_dof]
-    errors_squared = errors_squared[sort_n_dof]
+    energies = energies[sort_n_dof]
 
-    print(errors_squared)
+    energy_differences = energies - reference_energy
+    if np.any(energy_differences < 0.0):
+        raise RuntimeError(
+            "None of the energy differences should be negative!" \
+            "This probably means that the reference mesh was too " \
+            "coarse or the reference solution too rough"
+        )
 
-    plt.loglog(n_dofs, errors_squared)
-    plt.show()
+    # settinng plot params
+    # --------------------
 
+    plt.rcParams["mathtext.fontset"] = "cm"
+    plt.rcParams['xtick.labelsize'] = 16
+    plt.rcParams['ytick.labelsize'] = 16
+    plt.rcParams['axes.labelsize'] = 20
+    plt.rcParams['axes.titlesize'] = 12
+    plt.rcParams['legend.fontsize'] = 16
 
-def upper_bound(
-        reference_solution: np.ndarray,
-        results_solution: np.ndarray,
-        reference_elements: ElementsType,
-        reference_coordinates: CoordinatesType,
-        results_elements: ElementsType,
-        results_coordinates: CoordinatesType,
-        phi, f) -> float:
-    """
-    based on the computable upper bound
-    |u - u_tilde|^2_a
-    \leq
-    a(u,u) + a(u_tilde, u_tilde) - 2 <f, u_tilde> + 2 |phi(u)|_L2 |u_tilde|_L2
+    fig, ax = plt.subplots()
+    ax.set_xlabel(r'$n_{\text{DOF}}$')
+    ax.set_ylabel(r'$E(\tilde u) - E(u)$')
+    ax.grid(True)
 
-    note
-    ----
-    this is just an approximative upper bound as,
-    in order to derive it, we used that u is indeed the exact solution.
-    in this implementation, however, we would
-    use the reference solution on the graded mesh
-    """
-    stiffness_matrix_reference = csr_matrix(get_stiffness_matrix(
-        coordinates=reference_coordinates,
-        elements=reference_elements
-    ))
-    auu = reference_solution.dot(
-        stiffness_matrix_reference.dot(reference_solution))
+    ax.loglog(
+            n_dofs,
+            energy_differences,
+            linestyle='--')
 
-    stiffness_matrix_results = csr_matrix(get_stiffness_matrix(
-        coordinates=results_coordinates,
-        elements=results_elements
-    ))
-    
+    # ax.legend(loc='best')
 
-    mass_matrix_reference = csr_matrix(get_mass_matrix(
-        coordinates=reference_coordinates,
-        elements=reference_elements
-    ))
-    right_hand_silde_results = get_right_hand_side(
-        coordinates=results_coordinates,
-        elements=results_elements,
-        f=f, cubature_rule=CubatureRuleEnum.DAYTAYLOR
-    )
-    phiu_norm = np.sqrt(integrate_composition_nonlinear_with_fem(
-        f=lambda x: phi(x)**2,
-        u=results_solution,
-        coordinates=results_coordinates,
-        elements=results_elements,
-        cubature_rule=CubatureRuleEnum.DAYTAYLOR
-    ))
-    u_tilde_norm = np.sqrt(
-        reference_solution.dot(mass_matrix_reference.dot(reference_solution)))
-    
-    return (
-        reference_solution.dot(
-            stiffness_matrix_reference.dot(reference_solution))
-        +
-        results_solution.dot(
-            stiffness_matrix_results.dot(results_solution))
-        -
-        2. * right_hand_silde_results.dot(results_solution)
-        +
-        2. * phiu_norm * u_tilde_norm
-    )
+    fig.savefig(output_path, dpi=300, bbox_inches="tight")
 
 
 if __name__ == '__main__':
