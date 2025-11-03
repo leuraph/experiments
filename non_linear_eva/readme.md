@@ -121,7 +121,10 @@ live on the same graded mesh now.
 1. Compute the reference mesh and a reference solution on it.
 2. Do the experiment(s) `experiments.py`.
 3. For the results, perform the mesh transfer.
-4. Compute the energy norm errors.
+4. Compute the energy norm errors:
+   `compute_error_norms_squared.py`
+   (This script performs the tedious mesh transfer
+   but does not save the resulting transferred solutions).
 5. Plot the energy norm errors.
 
 ## Problem 2 / 3
@@ -134,9 +137,11 @@ on a graded mesh as described above.
 ### Tool-Chain
 
 1. Compute the reference mesh and a reference solution on it.
-2. Do the experiment(s) `experiments.py`
-3. Compute the energies from experiments.
-4. Plot the energy norm errors.
+2. Do the experiment(s) `experiments.py`.
+3. Compute the energies from experiments: `compute_energies.py`.
+4. Plot the energy errors: `plot_energy_errors`
+   (This script computes the reference energy on the way,
+   using the reference solution on the reference mesh).
 
 ## Problem 4
 This problem is constructed such
@@ -197,5 +202,13 @@ is found in the post-processing script
 ### Tool-Chain
 
 1. Do the experiment(s) `experiments.py`
-2. Compute the energies norm errors: `compute_energy_norm_errors_squared_problem-4.py`.
-3. Plot the energy norm errors.
+2. Compute a reference value for $\|u\|_a^2$
+   (using pre-computed graded meshes and numerical integration)
+   with `energy_norm_problem_4.ipynb`.
+   If needed, change the hard-coded reference value in the script
+   `compute_energy_norm_errors_squared_problem-4.py`.
+3. Compute the energies norm errors:
+    `compute_energy_norm_errors_squared_problem-4.py`.
+    Given a reference value for $\|u\|_a^2$,
+    this script performs the post-processing as described above.
+3. Plot the energy norm errors: `plot_energy_norm_errors.py`
