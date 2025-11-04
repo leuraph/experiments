@@ -253,6 +253,10 @@ class AriolisAdaptiveDelayCustomCallback(CustomCallBack):
         e_1 = self.compute_energy(self.candidates[0])
         e_1_d = self.compute_energy(self.candidates[self.delay])
 
-        lhs = ((self.fudge+self.n_dofs)/self.n_dofs) * e_1
-        rhs = e_1_d
-        return lhs <= rhs
+        # lhs = ((self.fudge+self.n_dofs)/self.n_dofs) * e_1
+        # rhs = e_1_d
+        # return lhs <= rhs
+
+        relative_difference = np.abs(e_1 - e_1_d) / np.abs(e_1)
+
+        return relative_difference <= self.fudge / self.n_dofs
