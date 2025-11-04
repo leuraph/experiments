@@ -557,8 +557,8 @@ def main() -> None:
                 edge2newNode=marked_edges,
                 to_embed=current_iterate)
         
-        show_mesh(coordinates, elements)
-        show_solution(coordinates, current_iterate)
+        # show_mesh(coordinates, elements)
+        # show_solution(coordinates, current_iterate)
 
 
 if __name__ == '__main__':
