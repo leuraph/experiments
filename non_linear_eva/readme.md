@@ -38,7 +38,7 @@ nonlinearity of the problem.
 - Domain: L-shape
 - $\mathbf A = \mathrm{id}_{2\times 2}$
 - $\phi(u) := u |u|$
-- $\Phi(u) = u |u|^2 / 3$
+- $\Phi(u) = |u|^3 / 3$
 - $\phi'(u) = 2 |u|$
 - $f \equiv 1$
 
