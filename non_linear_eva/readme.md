@@ -83,51 +83,7 @@ and described in [this paper](https://arxiv.org/abs/2504.11292).
    `graded_meshes/refinement_script.m`
 2. Compute the reference solution on the graded mesh using the script `graded_solver.py`.
 
-## Problem 1
-For this problem, we want to plot the energy norm error,
-despite not having access to the exact solution $u$.
-Following the above procedure, we do have a reference solution at hand.
-However, as the reference solution was computed on
-a pre-computed graded mesh, it does not only
-not live in the same FEM-space as $u_N^\star$,
-but the two meshes do, in general, not have anything in common.
-The problem becomes apparent when remembering
-one needs to evaluate the term
-$a(\tilde u, u_N^\star)$ in order to compute
-the energy norm error.
-As we may assume the graded mesh has more degrees of
-freedom than the finest mesh produced by EVA,
-we assume the finest graded mesh available
-resolves the singularity much better.
-Motivated by this observation, we provide an
-implementation of the mapping that evaluates
-any FEM function on a given set of coordinates
-via the `python` package `p1afempy`,
-i.e. the function `p1afempy.solvers.evaluate_on_coordinates`
-provides the mapping
-$$
-u_N^\star \mapsto I_h(u^\star_N) := \sum_{z \in \mathcal V_h}
-u_N^\star(z) \phi_{z}.
-$$
-Once the "transfer" is finished
-(for many degrees of freedom this may take a while),
-the computation of the energy norm error
-$\|\tilde u - I_h(u^\star_N)\|_a^2$
-becomes very easy as both FEM functions
-live on the same graded mesh now.
-
-### Tool-Chain
-
-1. Compute the reference mesh and a reference solution on it.
-2. Do the experiment(s) `experiments.py`.
-3. For the results, perform the mesh transfer.
-4. Compute the energy norm errors:
-   `compute_error_norms_squared.py`
-   (This script performs the tedious mesh transfer
-   but does not save the resulting transferred solutions).
-5. Plot the energy norm errors.
-
-## Problem 2 / 3
+## Problem 1 / 2 / 3
 
 For these problems, we merely plot the energy errors
 $\mathrm E (u^\star_N) - \mathrm E (\tilde u)$,
