@@ -151,6 +151,16 @@ and
 $u: \Omega \to \mathbb R$ analytically,
 can be both integrated using the same routine.
 
+In summary, this yields
+$$
+\|u_N^\star - u\|_a^2
+=
+a(u_N^\star, u_N^\star)
++ a(u, u)
+-2 \int_\Omega f u^\star_N 
++2 \int_\Omega \phi(u) u^\star_N.
+$$
+
 An implementation of all of these computations
 is found in the post-processing script
 `compute_energy_norm_errors_squared_problem-4.py`.
