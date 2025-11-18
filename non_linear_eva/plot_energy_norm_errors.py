@@ -4,6 +4,8 @@ from tqdm import tqdm
 from load_save_dumps import load_dump
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.optimize import curve_fit
+
 
 
 def main() -> None:
@@ -25,12 +27,12 @@ def main() -> None:
         n_dof = int(path_to_n_dofs.name)
         n_dofs.append(n_dof)
 
-        current_energy = load_dump(
+        current_energy_norm_error_squared = load_dump(
             path_to_dump=path_to_n_dofs / 'energy_norm_error_squared.pkl')
         criterion_resolved = load_dump(
             path_to_dump=path_to_n_dofs / 'criterion_resolved.pkl')
 
-        energy_norm_errors_squared.append(current_energy)
+        energy_norm_errors_squared.append(current_energy_norm_error_squared)
         criteria_resolved.append(criterion_resolved)
 
     # converting lists to numpy arrays
@@ -56,8 +58,23 @@ def main() -> None:
 
     fig, ax = plt.subplots()
     ax.set_xlabel(r'$n_{\text{DOF}}$')
-    ax.set_ylabel(r'$E(\tilde u) - E(u)$')
+    ax.set_ylabel(r'$\| \tilde u - u \|_a^2$')
     ax.grid(True)
+
+    # plotting ideal convergence order
+    # --------------------------------
+    n_points_for_fit = 2
+    def model(x, m):
+        return -x + m
+    popt, pcov = curve_fit(
+        model,
+        np.log(n_dofs[-n_points_for_fit:]),
+        np.log(energy_norm_errors_squared[-n_points_for_fit:]))
+    m_optimized = popt[0]
+    ax.loglog(n_dofs, np.exp(model(np.log(n_dofs), m_optimized)),
+              color='black', linestyle='--',
+              linewidth=1.5)
+    # --------------------------------
 
     # plot all points connected by a dotted black line
     ax.loglog(

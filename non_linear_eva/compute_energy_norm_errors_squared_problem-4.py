@@ -25,7 +25,10 @@ def main() -> None:
         return 2. * radii**(-4. / 3.) * x * y *(1 - x**2) * (1 - y**2)
 
     # reference value of |u|^2_a
-    energy_norm_squared_exact = 4.687722569536699
+    # corresponding to graded mesh
+    # hmax = 0.00025, n_vertices = 14'678'654
+    # and quadrature rule with degree of exactness equal to 6
+    energy_norm_squared_exact = 4.687722548683771
 
     for path_to_n_dofs in tqdm(list(base_result_path.iterdir())):
         if not path_to_n_dofs.is_dir():
