@@ -11,7 +11,7 @@ n_vertices = size(coordinates, 1);
 % u = zeros(n_vertices, 1);
 % show(elements,coordinates,u);
 
-folder_name = "refined_meshes/n_vertices-" + n_vertices + "_hmax-" + hmax;
+folder_name = "refined_meshes/hmax-" + hmax + "_n_vertices-" + n_vertices;
 mkdir(folder_name);
 save(folder_name + "/coordinates.dat", "coordinates", "-ascii","-double");
 save(folder_name + "/elements.dat", "elements", "-ascii","-double");
