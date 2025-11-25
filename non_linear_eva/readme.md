@@ -101,7 +101,7 @@ on a graded mesh as described above.
 
 ## Problem 4
 This problem is constructed such
-that exact solution $u : \Omega \to \mathbb{R}$ is known.
+that the exact solution $u : \Omega \to \mathbb{R}$ is known.
 Nevertheless, the numerical evaluation of
 the energy norm error turns out to be non-trivial.
 Consider
