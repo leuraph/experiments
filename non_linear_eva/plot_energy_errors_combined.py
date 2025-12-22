@@ -69,7 +69,7 @@ def main() -> None:
 
     fig, ax = plt.subplots()
     ax.set_xlabel(r'$n_{\text{DOF}}$')
-    ax.set_ylabel(r'$E(\tilde u) - E(u^\star_N)$')
+    ax.set_ylabel(r'$E(u^\star_N) - E(\tilde u)$')
     ax.grid(True)
 
     color = plt.cm.Set1(0)
