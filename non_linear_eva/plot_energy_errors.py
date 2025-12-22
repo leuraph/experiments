@@ -13,37 +13,23 @@ from scipy.optimize import curve_fit
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--reference-energy", type=str, required=True)
-    parser.add_argument("--problem", type=int, required=True)
-    parser.add_argument("--default-path", type=str, required=True)
-    parser.add_argument("--arioli-path", type=str, required=True)
-    parser.add_argument("--tail-off-path", type=str, required=True)
+    parser.add_argument("--path", type=str, required=True)
     args = parser.parse_args()
 
-    problem = get_problem(number=args.problem)
-
     path_to_reference_energy = Path(args.reference_energy)
-    path_to_default_results = Path(args.default_path)
-    path_to_arioli_results = Path(args.arioli_path)
-    path_to_tail_off_results = Path(args.tail_off_path)
+    path_to_results = Path(args.path)
 
     file_name = Path(
-        f'problem-{args.problem}.pdf')
+        f'{path_to_results.name}.pdf')
     
     output_path = Path('plots') / file_name
 
     reference_energy = load_dump(
         path_to_dump=path_to_reference_energy)
 
-    # STOPPING CRITERIA
     # -----------------
-    energy_differences_default, n_dofs_default, n_iterations_default = get_energy_diffs(
-        path_to_results=path_to_default_results,
-        reference_energy=reference_energy)
-    energy_differences_arioli, n_dofs_arioli, n_iterations_arioli = get_energy_diffs(
-        path_to_results=path_to_arioli_results,
-        reference_energy=reference_energy)
-    energy_differences_tail_off, n_dofs_tail_off, n_iterations_tail_off = get_energy_diffs(
-        path_to_results=path_to_tail_off_results,
+    energy_differences, n_dofs, n_iterations, resolved = get_energy_diffs(
+        path_to_results=path_to_results,
         reference_energy=reference_energy)
     # -----------------
 
@@ -72,109 +58,37 @@ def main() -> None:
     ax.set_ylabel(r'$E(\tilde u) - E(u^\star_N)$')
     ax.grid(True)
 
-    color = plt.cm.Set1(0)
+    # plot on log-log axes
+    ax.set_xscale('log')
+    ax.set_yscale('log')
+
+    # connect points with a dotted black line (log-log)
     ax.loglog(
-            n_dofs_default[1:],
-            energy_differences_default[1:],
-            linestyle='-',  # continuous line
-            marker='s',     # Square markers
-            color=color,    # Line and marker color
-            markerfacecolor='none',  # Marker fill color
-            markeredgecolor=color,  # Marker outline color
-            alpha=alpha_for_error_plots,       # Transparency for markers
-            markersize=8*paper_scaling,
-            linewidth=2.0*paper_scaling,
-            label='default')
+        n_dofs,
+        energy_differences,
+        linestyle=':',
+        color='black',
+        zorder=1
+    )
 
-    color = plt.cm.Set1(1)
-    ax.loglog(
-            n_dofs_arioli[1:],
-            energy_differences_arioli[1:],
-            linestyle='-',  # continuous line
-            marker='o',     # Circle markers
-            color=color,    # Line and marker color
-            markerfacecolor='none',  # Marker fill color
-            markeredgecolor=color,  # Marker outline color
-            alpha=alpha_for_error_plots,       # Transparency for markers
-            markersize=8*paper_scaling,
-            linewidth=2.0*paper_scaling,
-            label='relative decay')
-
-    color = plt.cm.Set1(2)
-    ax.loglog(
-            n_dofs_tail_off[1:],
-            energy_differences_tail_off[1:],
-            linestyle='-',  # continuous line
-            marker='v',     # Triangle markers
-            color=color,    # Line and marker color
-            markerfacecolor='none',  # Marker fill color
-            markeredgecolor=color,  # Marker outline color
-            alpha=alpha_for_error_plots,       # Transparency for markers
-            markersize=8*paper_scaling,
-            linewidth=2.0*paper_scaling,
-            label='tail-off')
-
-    # plotting ideal convergence order
-    # --------------------------------
-    n_points_for_fit = 2
-    def model(x, m):
-        return -x + m
-    popt, pcov = curve_fit(
-        model,
-        np.log(n_dofs_tail_off[-n_points_for_fit:]),
-        np.log(energy_differences_tail_off[-n_points_for_fit:]))
-    m_optimized = popt[0]
-    ax.loglog(n_dofs_default[1:], np.exp(model(np.log(n_dofs_default[1:]), m_optimized)),
-              color='black', linestyle='--',
-              linewidth=1.5)
-    # --------------------------------
-
-    # # plotting number of iterations on each mesh
-    # # ------------------------------------------
-    # # Create a second y-axis for the second array 'b'
-    # ax_n_iterations = ax.twinx()
-    # ax_n_iterations.set_ylabel('$\mathrm{number}~\mathrm{of}~\mathrm{iterations}$')
-
-    # color = plt.cm.Set1(0)
-    # ax_n_iterations.plot(
-    #     n_dofs_default, n_iterations_default,
-    #     marker='s',  # Square marker
-    #     linestyle=(0, (1, 5)),
-    #     color=color,  # Fill color (RGB tuple)
-    #     markerfacecolor='none',  # Marker fill color
-    #     markeredgecolor=color,  # Marker outline color
-    #     markersize=8*paper_scaling,
-    #     linewidth=2.0*paper_scaling,
-    #     label='$n_{\mathrm{iterations}}$'
-    # )
-
-    # color = plt.cm.Set1(1)
-    # ax_n_iterations.plot(
-    #     n_dofs_arioli, n_iterations_arioli,
-    #     marker='o',  # Circle marker
-    #     linestyle=(0, (1, 5)),
-    #     color=color,  # Fill color (RGB tuple)
-    #     markerfacecolor='none',  # Marker fill color
-    #     markeredgecolor=color,  # Marker outline color
-    #     markersize=8*paper_scaling,
-    #     linewidth=2.0*paper_scaling,
-    #     label='$n_{\mathrm{iterations}}$'
-    # )
-
-    # color = plt.cm.Set1(2)
-    # ax_n_iterations.plot(
-    #     n_dofs_tail_off, n_iterations_tail_off,
-    #     marker='v',  # Triangle marker
-    #     linestyle=(0, (1, 5)),
-    #     color=color,  # Fill color (RGB tuple)
-    #     markerfacecolor='none',  # Marker fill color
-    #     markeredgecolor=color,  # Marker outline color
-    #     markersize=8*paper_scaling,
-    #     linewidth=2.0*paper_scaling,
-    #     label='$n_{\mathrm{iterations}}$'
-    # )
-    # # ------------------------------------------
-
+    # plot resolved points (blue) and non-resolved points (red)
+    resolved_mask = resolved.astype(bool)
+    ax.scatter(
+        n_dofs[resolved_mask],
+        energy_differences[resolved_mask],
+        color='blue',
+        label='resolved',
+        zorder=2,
+        marker='o'
+    )
+    ax.scatter(
+        n_dofs[~resolved_mask],
+        energy_differences[~resolved_mask],
+        color='red',
+        label='not resolved',
+        zorder=2,
+        marker='o'
+    )
     ax.legend(loc='best')
 
     fig.savefig(output_path, dpi=300, bbox_inches="tight")
@@ -191,6 +105,7 @@ def get_energy_diffs(
     energies = []
     n_dofs = []
     n_iterations = []
+    resolved = []
 
     for path_to_n_dofs in tqdm(list(path_to_results.iterdir())):
         if not path_to_n_dofs.is_dir():
@@ -201,21 +116,26 @@ def get_energy_diffs(
         current_energy = load_dump(
             path_to_dump=path_to_n_dofs / 'energy.pkl')
         current_n_iterations = load_dump(
-                path_to_dump=path_to_n_dofs / 'n_iterations.pkl')
+            path_to_dump=path_to_n_dofs / 'n_iterations.pkl')
+        current_resolved = load_dump(
+            path_to_dump=path_to_n_dofs / 'criterion_resolved.pkl')
         
         energies.append(current_energy)
         n_iterations.append(current_n_iterations)
+        resolved.append(current_resolved)
 
     # converting lists to numpy arrays
     energies = np.array(energies)
     n_dofs = np.array(n_dofs)
     n_iterations = np.array(n_iterations)
+    resolved = np.array(resolved)
     
     # sorting corresponding to number of degrees of freedom
     sort_n_dof = n_dofs.argsort()
     n_dofs = n_dofs[sort_n_dof]
     energies = energies[sort_n_dof]
     n_iterations = n_iterations[sort_n_dof]
+    resolved = resolved[sort_n_dof]
 
     energy_differences = energies - reference_energy
     if np.any(energy_differences < 0.0):
@@ -225,7 +145,7 @@ def get_energy_diffs(
             "coarse or the reference solution too rough"
         )
 
-    return energy_differences, n_dofs, n_iterations
+    return energy_differences, n_dofs, n_iterations, resolved
 
 
 if __name__ == '__main__':
