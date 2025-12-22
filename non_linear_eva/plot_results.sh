@@ -5,32 +5,52 @@
 # for the three different stopping criteria.
 # Each plot corresponds to one specific problem.
 
+RESULTS_DIR="results"
+
 # PROBLEM 1
 # ---------
-# python plot_energy_errors_combined.py \
-#     --reference-energy reference_energies/problem-1_hmax-0.0003_alpha-0.9_gamma-10.0.pkl \
-#     --problem 1 \
-#     --default-path results/problem-1_default_theta-0.5_eta-1.0_miniter-10_gtol-1e-08 \
-#     --arioli-path results/problem-1_relative-energy-decay_theta-0.5_eta-1.0_fudge-0.1_miniter-10_tau-1.01_initial_delay-10_delay_increase-5 \
-#     --tail-off-path results/problem-1_energy-tail-off_theta-0.5_eta-1.0_fudge-0.01_miniter-10_batchsize-5
+python plot_energy_errors_combined.py \
+    --reference-energy reference_energies/problem-1_hmax-0.0003_alpha-0.9_gamma-10.0.pkl \
+    --problem 1 \
+    --default-path results/problem-1_default_theta-0.5_eta-1.0_miniter-10_gtol-1e-08 \
+    --arioli-path results/problem-1_relative-energy-decay_theta-0.5_eta-1.0_fudge-0.1_miniter-10_tau-1.01_initial_delay-10_delay_increase-5 \
+    --tail-off-path results/problem-1_energy-tail-off_theta-0.5_eta-1.0_fudge-0.01_miniter-10_batchsize-5
 
 # PROBLEM 2
 # ---------
-# python plot_energy_errors_combined.py \
-#     --reference-energy reference_energies/problem-2_hmax-0.0003_alpha-0.9_gamma-10.0.pkl \
-#     --problem 2 \
-#     --default-path results/problem-2_default_theta-0.5_eta-1.0_miniter-10_gtol-1e-08 \
-#     --arioli-path results/problem-2_relative-energy-decay_theta-0.5_eta-1.0_fudge-0.1_miniter-10_tau-1.01_initial_delay-10_delay_increase-5 \
-#     --tail-off-path results/problem-2_energy-tail-off_theta-0.5_eta-1.0_fudge-0.01_miniter-10_batchsize-5
+python plot_energy_errors_combined.py \
+    --reference-energy reference_energies/problem-2_hmax-0.0003_alpha-0.9_gamma-10.0.pkl \
+    --problem 2 \
+    --default-path results/problem-2_default_theta-0.5_eta-1.0_miniter-10_gtol-1e-08 \
+    --arioli-path results/problem-2_relative-energy-decay_theta-0.5_eta-1.0_fudge-0.1_miniter-10_tau-1.01_initial_delay-10_delay_increase-5 \
+    --tail-off-path results/problem-2_energy-tail-off_theta-0.5_eta-1.0_fudge-0.01_miniter-10_batchsize-5
 
-# PROBLEM 3
-# ---------
-# python plot_energy_errors_combined.py \
-#     --reference-energy reference_energies/problem-3_hmax-0.0003_alpha-0.9_gamma-10.0.pkl \
-#     --problem 3 \
-#     --default-path results/problem-3_default_theta-0.5_eta-1.0_miniter-10_gtol-1e-08 \
-#     --arioli-path results/problem-3_relative-energy-decay_theta-0.5_eta-1.0_fudge-0.1_miniter-10_tau-1.01_initial_delay-10_delay_increase-5 \
-#     --tail-off-path results/problem-3_energy-tail-off_theta-0.5_eta-1.0_fudge-0.01_miniter-10_batchsize-5
+# PROBLEM 3 COMBINED
+# ------------------
+python plot_energy_errors_combined.py \
+    --reference-energy reference_energies/problem-3_hmax-0.0003_alpha-0.9_gamma-10.0.pkl \
+    --problem 3 \
+    --default-path results/problem-3_default_theta-0.5_eta-1.0_miniter-10_gtol-1e-08 \
+    --arioli-path results/problem-3_relative-energy-decay_theta-0.5_eta-1.0_fudge-0.01_miniter-10_tau-1.001_initial_delay-50_delay_increase-5 \
+    --tail-off-path results/problem-3_energy-tail-off_theta-0.5_eta-1.0_fudge-0.01_miniter-10_batchsize-5
+
+# PROBLEM 3 SINGLES
+# -------------------
+# echo "Plotting single results for problem 3"
+# for folder in "$RESULTS_DIR"/problem-*; do
+#     if [ -d "$folder" ]; then
+#         # Extract problem number using parameter expansion and regex
+#         folder_name=$(basename "$folder")
+#         if [[ $folder_name =~ problem-([0-9]+)_ ]]; then
+#             problem_num="${BASH_REMATCH[1]}"
+#             if [[ "$problem_num" == "3" ]]; then
+#                 python plot_energy_errors.py \
+#                     --reference-energy reference_energies/problem-3_hmax-0.0003_alpha-0.9_gamma-10.0.pkl \
+#                     --path "$folder"
+#             fi
+#         fi
+#     fi
+# done
 
 python plot_energy_norm_errors_combined.py \
     --problem 4 \
