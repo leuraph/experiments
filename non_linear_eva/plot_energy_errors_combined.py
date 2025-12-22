@@ -175,7 +175,7 @@ def main() -> None:
     # )
     # # ------------------------------------------
 
-    ax.legend(loc='best')
+    # ax.legend(loc='best')
 
     fig.savefig(output_path, dpi=300, bbox_inches="tight")
 
