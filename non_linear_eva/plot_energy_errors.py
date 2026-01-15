@@ -43,18 +43,18 @@ def main() -> None:
     graphic_scaling = 0.7
     minipage_scaling = 1.0
     paper_scaling = 1/(graphic_scaling * minipage_scaling)
-    alpha_for_error_plots = 0.8
     font_size = 14 * paper_scaling
 
     plt.rcParams["mathtext.fontset"] = "cm"
-    plt.rcParams['xtick.labelsize'] = 16
-    plt.rcParams['ytick.labelsize'] = 16
-    plt.rcParams['axes.labelsize'] = 20
-    plt.rcParams['axes.titlesize'] = 12
-    plt.rcParams['legend.fontsize'] = 16
+    plt.rcParams['xtick.labelsize'] = font_size
+    plt.rcParams['ytick.labelsize'] = font_size
+    plt.rcParams['axes.labelsize'] = font_size
+    plt.rcParams['axes.titlesize'] = font_size
+    plt.rcParams['legend.fontsize'] = font_size
+    plt.rcParams['text.usetex'] = True
 
     fig, ax = plt.subplots()
-    ax.set_xlabel(r'$n_{\text{DOF}}$')
+    ax.set_xlabel("$\mathrm{number}~\mathrm{of}~\mathrm{degrees}~\mathrm{of}~\mathrm{freedom}$")
     ax.set_ylabel(r'$E(\tilde u) - E(u^\star_N)$')
     ax.grid(True)
 

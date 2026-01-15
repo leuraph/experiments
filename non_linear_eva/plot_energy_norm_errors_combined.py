@@ -51,14 +51,15 @@ def main() -> None:
     font_size = 14 * paper_scaling
 
     plt.rcParams["mathtext.fontset"] = "cm"
-    plt.rcParams['xtick.labelsize'] = 16
-    plt.rcParams['ytick.labelsize'] = 16
-    plt.rcParams['axes.labelsize'] = 20
-    plt.rcParams['axes.titlesize'] = 12
+    plt.rcParams['xtick.labelsize'] = font_size
+    plt.rcParams['ytick.labelsize'] = font_size
+    plt.rcParams['axes.labelsize'] = font_size
+    plt.rcParams['axes.titlesize'] = font_size
     plt.rcParams['legend.fontsize'] = 16
+    plt.rcParams['text.usetex'] = True
 
     fig, ax = plt.subplots()
-    ax.set_xlabel(r'$n_{\text{DOF}}$')
+    ax.set_xlabel("$\mathrm{number}~\mathrm{of}~\mathrm{degrees}~\mathrm{of}~\mathrm{freedom}$")
     ax.set_ylabel(r'$\| u - u^\star_N \|^2_a$')
     ax.grid(True)
 
@@ -74,7 +75,7 @@ def main() -> None:
             alpha=alpha_for_error_plots,       # Transparency for markers
             markersize=8*paper_scaling,
             linewidth=2.0*paper_scaling,
-            label='default')
+            label=r"$\mathrm{default}$")
 
     color = plt.cm.Set1(1)
     ax.loglog(
@@ -88,7 +89,7 @@ def main() -> None:
             alpha=alpha_for_error_plots,       # Transparency for markers
             markersize=8*paper_scaling,
             linewidth=2.0*paper_scaling,
-            label='relative decay')
+            label=r"$\mathrm{relative}~\mathrm{energy}~\mathrm{reduction}$")
 
     color = plt.cm.Set1(2)
     ax.loglog(
@@ -102,7 +103,7 @@ def main() -> None:
             alpha=alpha_for_error_plots,       # Transparency for markers
             markersize=8*paper_scaling,
             linewidth=2.0*paper_scaling,
-            label='tail-off')
+            label=r"$\mathrm{energy}~\mathrm{tail-off}$")
 
     # plotting ideal convergence order
     # --------------------------------
@@ -165,7 +166,7 @@ def main() -> None:
     # )
     # # ------------------------------------------
 
-    # ax.legend(loc='best')
+    ax.legend(loc='best')
 
     fig.savefig(output_path, dpi=300, bbox_inches="tight")
 
