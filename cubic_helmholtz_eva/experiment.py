@@ -12,10 +12,18 @@ from p1afempy.mesh import provide_geometric_data
 from scipy.sparse.linalg import spsolve
 from scipy.optimize import fmin_cg
 from utils import show_solution
+from variational_adaptivity.edge_based_variational_adaptivity import get_energy_gains_nonlinear
+from variational_adaptivity.markers import doerfler_marking
+from p1afempy.refinement import refineNVB_edge_based
+from p1afempy.mesh import show_mesh
+
 
 def main() -> None:
-    n_initial_refinements = 5
+    n_initial_refinements = 2
     max_dof = 1e6
+
+    ETA = 0.5
+    THETA = 0.5
 
     problem = get_problem(number=1)
 
@@ -155,6 +163,203 @@ def main() -> None:
     show_solution(
         coordinates=coordinates,
         solution=current_iterate)
+    
+    # fmin_cg with default stopping criterion on initial mesh
+    # -------------------------------------------------------
+    _, edge_to_nodes, _ = \
+        provide_geometric_data(
+            elements=elements,
+            boundaries=boundaries)
+
+    edge_to_nodes_flipped = np.column_stack(
+        [edge_to_nodes[:, 1], edge_to_nodes[:, 0]])
+    boundary = np.logical_or(
+        is_row_in(edge_to_nodes, boundaries[0]),
+        is_row_in(edge_to_nodes_flipped, boundaries[0])
+    )
+    non_boundary = np.logical_not(boundary)
+    edges = edge_to_nodes
+    non_boundary_edges = edge_to_nodes[non_boundary]
+
+    # free nodes / edges
+    n_vertices = coordinates.shape[0]
+    indices_of_free_nodes = np.setdiff1d(
+        ar1=np.arange(n_vertices),
+        ar2=np.unique(boundaries[0].flatten()))
+    free_nodes = np.zeros(n_vertices, dtype=bool)
+    free_nodes[indices_of_free_nodes] = 1
+    free_edges = non_boundary  # integer array (holding actual indices)
+    n_dofs = np.sum(free_nodes)
+
+    # nonlinear EVA
+    # -------------
+    energy_gains = get_energy_gains_nonlinear(
+        coordinates=coordinates,
+        elements=elements,
+        non_boundary_edges=non_boundary_edges,
+        current_iterate=current_iterate,
+        f=f,
+        a_11=a_11,
+        a_12=a_12,
+        a_21=a_21,
+        a_22=a_22,
+        phi=phi,
+        phi_prime=phi_prime,
+        eta=ETA,
+        cubature_rule=CubatureRuleEnum.DAYTAYLOR,
+        verbose=True)
+    
+    # dörfler based on EVA
+    marked_edges = np.zeros(edges.shape[0], dtype=int)
+    marked_non_boundary_egdes = doerfler_marking(
+        input=energy_gains, theta=THETA)
+    marked_edges[free_edges] = marked_non_boundary_egdes
+
+    element_to_edges, edge_to_nodes, boundaries_to_edges =\
+        provide_geometric_data(elements=elements, boundaries=boundaries)
+
+    coordinates, elements, boundaries, current_iterate = \
+        refineNVB_edge_based(
+            coordinates=coordinates,
+            elements=elements,
+            boundary_conditions=boundaries,
+            element2edges=element_to_edges,
+            edge_to_nodes=edge_to_nodes,
+            boundaries_to_edges=boundaries_to_edges,
+            edge2newNode=marked_edges,
+            to_embed=current_iterate)
+    
+    # main loop of the experiment, i.e.,
+    # approximate -> mark -> refine
+    # ----------------------------------
+    while True:
+        _, edge_to_nodes, _ = \
+            provide_geometric_data(
+                elements=elements,
+                boundaries=boundaries)
+
+        edge_to_nodes_flipped = np.column_stack(
+            [edge_to_nodes[:, 1], edge_to_nodes[:, 0]])
+        boundary = np.logical_or(
+            is_row_in(edge_to_nodes, boundaries[0]),
+            is_row_in(edge_to_nodes_flipped, boundaries[0])
+        )
+        non_boundary = np.logical_not(boundary)
+        edges = edge_to_nodes
+        non_boundary_edges = edge_to_nodes[non_boundary]
+
+        # free nodes / edges
+        n_vertices = coordinates.shape[0]
+        indices_of_free_nodes = np.setdiff1d(
+            ar1=np.arange(n_vertices),
+            ar2=np.unique(boundaries[0].flatten()))
+        free_nodes = np.zeros(n_vertices, dtype=bool)
+        free_nodes[indices_of_free_nodes] = 1
+        free_edges = non_boundary  # integer array (holding actual indices)
+        n_dofs = np.sum(free_nodes)
+
+        # midpoint suffices as we consider laplace operator
+        stiffness_matrix = csr_matrix(get_general_stiffness_matrix(
+            coordinates=coordinates,
+            elements=elements,
+            a_11=a_11, a_12=a_12, a_21=a_21, a_22=a_22,
+            cubature_rule=CubatureRuleEnum.DAYTAYLOR))
+
+        right_hand_side_vector = get_right_hand_side(
+            coordinates=coordinates,
+            elements=elements,
+            f=f,
+            cubature_rule=CubatureRuleEnum.DAYTAYLOR)
+
+        def DJ(current_iterate: np.ndarray) -> np.ndarray:
+
+            load_vector_phi = get_load_vector_of_composition_nonlinear_with_fem(
+                f=phi,
+                u=current_iterate,
+                coordinates=coordinates,
+                elements=elements,
+                cubature_rule=CubatureRuleEnum.DAYTAYLOR)
+
+            grad_J = np.zeros(n_vertices, dtype=float)
+            grad_J_on_free_nodes = (
+                stiffness_matrix[free_nodes, :][:, free_nodes].dot(current_iterate[free_nodes])
+                +
+                load_vector_phi[free_nodes]
+                -
+                right_hand_side_vector[free_nodes]
+            )
+            grad_J[free_nodes] = grad_J_on_free_nodes
+            return grad_J
+
+        def J(current_iterate: np.ndarray) -> float:
+            energy = (
+                0.5 * current_iterate.dot(stiffness_matrix.dot(current_iterate))
+                +
+                integrate_composition_nonlinear_with_fem(
+                    f=Phi,
+                    u=current_iterate,
+                    coordinates=coordinates,
+                    elements=elements,
+                    cubature_rule=CubatureRuleEnum.DAYTAYLOR)
+                -
+                right_hand_side_vector.dot(current_iterate)
+            )
+            return energy
+
+        current_iterate, fopt, func_calls, grad_calls, warnflag = \
+            fmin_cg(
+                f=J,
+                x0=current_iterate,
+                fprime=DJ,
+                full_output=True)
+
+
+        # break after we have solved for the first mesh that
+        # exceeds the maximum number of degrees of freedom
+        if n_dofs >= max_dof:
+            print("maximum number of degrees of freedom exceeded, stopping iteration")
+            break
+
+        # nonlinear EVA
+        # -------------
+        energy_gains = get_energy_gains_nonlinear(
+            coordinates=coordinates,
+            elements=elements,
+            non_boundary_edges=non_boundary_edges,
+            current_iterate=current_iterate,
+            f=f,
+            a_11=a_11,
+            a_12=a_12,
+            a_21=a_21,
+            a_22=a_22,
+            phi=phi,
+            phi_prime=phi_prime,
+            eta=ETA,
+            cubature_rule=CubatureRuleEnum.DAYTAYLOR,
+            verbose=True)
+
+        # dörfler based on EVA
+        marked_edges = np.zeros(edges.shape[0], dtype=int)
+        marked_non_boundary_egdes = doerfler_marking(
+            input=energy_gains, theta=THETA)
+        marked_edges[free_edges] = marked_non_boundary_egdes
+
+        element_to_edges, edge_to_nodes, boundaries_to_edges =\
+            provide_geometric_data(elements=elements, boundaries=boundaries)
+
+        coordinates, elements, boundaries, current_iterate = \
+            refineNVB_edge_based(
+                coordinates=coordinates,
+                elements=elements,
+                boundary_conditions=boundaries,
+                element2edges=element_to_edges,
+                edge_to_nodes=edge_to_nodes,
+                boundaries_to_edges=boundaries_to_edges,
+                edge2newNode=marked_edges,
+                to_embed=current_iterate)
+
+        show_mesh(coordinates, elements)
+        # show_solution(coordinates, current_iterate)
 
 
 if __name__ == '__main__':
