@@ -3,6 +3,7 @@
 
 # ignore all venv's
 .venv/
+.cubic-helmholtz-venv
 
 # MATLAB artefact
 *.asv
