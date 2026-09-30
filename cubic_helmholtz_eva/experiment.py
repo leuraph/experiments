@@ -10,6 +10,8 @@ from triangle_cubature.cubature_rule import CubatureRuleEnum
 from ismember import is_row_in
 from p1afempy.mesh import provide_geometric_data
 from scipy.sparse.linalg import spsolve
+from scipy.optimize import fmin_cg
+from utils import show_solution
 
 def main() -> None:
     n_initial_refinements = 5
@@ -80,21 +82,79 @@ def main() -> None:
         cubature_rule=CubatureRuleEnum.MIDPOINT)
     
     n_coordinates = coordinates.shape[0]
-    phi = np.zeros(n_coordinates)
+    auxiliary_solution = np.zeros(n_coordinates)
 
-    phi[free_nodes] = spsolve(
+    auxiliary_solution[free_nodes] = spsolve(
         stiffness_matrix_aux[free_nodes, :][:, free_nodes],
         right_hand_side_vector_aux[free_nodes],
         use_umfpack=True)
     
-    psi_max = np.max(phi)
+    psi_max = np.max(auxiliary_solution)
 
     lamba = 12.
     c = np.sqrt((lamba*psi_max - 1)/(psi_max**3))
     # ------------------------------------------------------
 
-    initial_gues_plus = c*phi
-    initial_gues_minus = -c*phi
+    initial_gues_plus = c*auxiliary_solution
+    initial_gues_minus = -c*auxiliary_solution
+
+    stiffness_matrix = csr_matrix(get_general_stiffness_matrix(
+        coordinates=coordinates,
+        elements=elements,
+        a_11=a_11, a_12=a_12, a_21=a_21, a_22=a_22,
+        cubature_rule=CubatureRuleEnum.DAYTAYLOR))
+
+    right_hand_side_vector = get_right_hand_side(
+        coordinates=coordinates,
+        elements=elements,
+        f=f,
+        cubature_rule=CubatureRuleEnum.DAYTAYLOR)
+
+    def DJ(current_iterate: np.ndarray) -> np.ndarray:
+
+        load_vector_phi = get_load_vector_of_composition_nonlinear_with_fem(
+            f=phi,
+            u=current_iterate,
+            coordinates=coordinates,
+            elements=elements,
+            cubature_rule=CubatureRuleEnum.DAYTAYLOR)
+
+        grad_J = np.zeros(n_vertices, dtype=float)
+        grad_J_on_free_nodes = (
+            stiffness_matrix[free_nodes, :][:, free_nodes].dot(current_iterate[free_nodes])
+            +
+            load_vector_phi[free_nodes]
+            -
+            right_hand_side_vector[free_nodes]
+        )
+        grad_J[free_nodes] = grad_J_on_free_nodes
+        return grad_J
+
+    def J(current_iterate: np.ndarray) -> float:
+        energy = (
+            0.5 * current_iterate.dot(stiffness_matrix.dot(current_iterate))
+            +
+            integrate_composition_nonlinear_with_fem(
+                f=Phi,
+                u=current_iterate,
+                coordinates=coordinates,
+                elements=elements,
+                cubature_rule=CubatureRuleEnum.DAYTAYLOR)
+            -
+            right_hand_side_vector.dot(current_iterate)
+        )
+        return energy
+    
+    current_iterate, f_opt, func_calls, grad_calls, warnflag = \
+        fmin_cg(
+            f=J,
+            x0=initial_gues_minus,
+            fprime=DJ,
+            full_output=True)
+    
+    show_solution(
+        coordinates=coordinates,
+        solution=current_iterate)
 
 
 if __name__ == '__main__':
