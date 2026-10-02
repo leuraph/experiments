@@ -365,6 +365,64 @@ def get_problem_4() -> Problem:
         get_coarse_initial_mesh=get_coarse_L_shape_mesh)
 
 
+def get_problem_5() -> Problem:
+    # ------------
+    # RHS vanishes
+    # ------------
+    def f(r: CoordinatesType) -> float:
+        """returns zeros only"""
+        return np.zeros(r.shape[0], dtype=float)
+
+    # ------------------
+    # Negative Laplacian
+    # ------------------
+    def a_11(r: CoordinatesType) -> np.ndarray:
+        n_vertices = r.shape[0]
+        return - np.ones(n_vertices, dtype=float)
+
+    def a_22(r: CoordinatesType) -> np.ndarray:
+        n_vertices = r.shape[0]
+        return - np.ones(n_vertices, dtype=float)
+
+    def a_12(r: CoordinatesType) -> np.ndarray:
+        n_vertices = r.shape[0]
+        return np.zeros(n_vertices, dtype=float)
+
+    def a_21(r: CoordinatesType) -> np.ndarray:
+        n_vertices = r.shape[0]
+        return np.zeros(n_vertices, dtype=float)
+
+
+    # ---------------------------------
+    # Cubic Helmholtz Setup
+    # with lambda_1 < lambda < lambda_2,
+    # where lambda_1, lambda_2 are the
+    # first and secong eigenvalues of
+    # the negative Laplacian on the
+    # L-shaped domain, respectively;
+    # guaranteed by lambda := 12
+    # ---------------------------------
+    lamba = 12.
+    
+    def phi(u: np.ndarray) -> np.ndarray:
+        return -lamba*u + u**3
+    
+    def Phi(u: np.ndarray) -> np.ndarray:
+        return -lamba*u**2 / 2. + u**4 / 4.
+    
+    def phi_prime(u: np.ndarray) -> np.ndarray:
+        return -lamba*np.ones_like(u) + 3. * u**2
+
+    return Problem(
+        f=f, a_11=a_11, a_12=a_12,
+        a_21=a_21, a_22=a_22,
+        phi=phi, phi_prime=phi_prime, Phi=Phi,
+        get_coarse_initial_mesh=get_coarse_L_shape_mesh,
+        get_initial_guess_on_initial_mesh=
+            lambda mesh: get_initial_guess_for_cubic_helmholtz(
+                mesh, lamba=lamba, sign=1.))
+
+
 def get_problem(number: int) -> Problem:
     if number == 1:
         return get_problem_1()
