@@ -16,6 +16,74 @@ from variational_adaptivity.edge_based_variational_adaptivity import get_energy_
 from variational_adaptivity.markers import doerfler_marking
 from p1afempy.refinement import refineNVB_edge_based
 from p1afempy.mesh import show_mesh
+from custom_callback import AriolisAdaptiveDelayCustomCallback, ConvergedException, EnergyTailOffAveragedCustomCallback
+
+def get_custom_callback(
+        stopping_criterion: str,
+        args: argparse.Namespace,
+        n_dofs: int,
+        compute_energy: Callable[[np.ndarray], float]) -> CustomCallBack:
+    """
+    based on the arguments passed,
+    returns the corresponding custom callback
+    """
+    if stopping_criterion == "energy-tail-off":
+        callback = EnergyTailOffAveragedCustomCallback(
+            batch_size=args.batchsize,
+            min_n_iterations_per_mesh=args.miniter,
+            fudge=args.fudge,
+            compute_energy=compute_energy
+        )
+        return callback
+    elif stopping_criterion == "relative-energy-decay":
+        callback = AriolisAdaptiveDelayCustomCallback(
+            batch_size=1,
+            min_n_iterations_per_mesh=args.miniter,
+            initial_delay=args.initial_delay,
+            delay_increase=args.delay_increase,
+            tau=args.tau,
+            fudge=args.fudge,
+            n_dofs=n_dofs,
+            compute_energy=compute_energy
+        )
+        return callback
+    elif stopping_criterion == "default":
+        callback = CustomCallBack(
+            batch_size=1,
+            min_n_iterations_per_mesh=1,
+            compute_energy=compute_energy
+        )
+        return callback
+    else:
+        raise NotImplementedError(
+            'The custom callback corresponding to the stopping criterion'
+            f'{stopping_criterion} is not implemented.')
+
+
+def get_results_path(args: argparse.Namespace) -> Path:
+    """
+    Returns a Path object for the results directory, based on the stopping criterion and arguments.
+    The path string starts with the problem number and includes the stopping criterion name.
+    """
+    base = f"problem-{args.problem}_{args.stopping_criterion}_"
+    if args.stopping_criterion == "energy-tail-off":
+        path_str = (
+            base +
+            f"theta-{args.theta}_eta-{args.eta}_fudge-{args.fudge}_miniter-{args.miniter}_batchsize-{args.batchsize}"
+        )
+    elif args.stopping_criterion == "relative-energy-decay":
+        path_str = (
+            base +
+            f"theta-{args.theta}_eta-{args.eta}_fudge-{args.fudge}_miniter-{args.miniter}_tau-{args.tau}_initial_delay-{args.initial_delay}_delay_increase-{args.delay_increase}"
+        )
+    elif args.stopping_criterion == "default":
+        path_str = (
+            base +
+            f"theta-{args.theta}_eta-{args.eta}_miniter-{args.miniter}_gtol-{args.gtol}"
+        )
+    else:
+        raise ValueError(f"Unknown stopping criterion: {args.stopping_criterion}")
+    return Path("results/") / Path(path_str)
 
 
 def main() -> None:
