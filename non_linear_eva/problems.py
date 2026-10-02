@@ -2,6 +2,10 @@ from p1afempy.data_structures import \
     BoundaryConditionType, CoordinatesType, ElementsType, BoundaryType
 from typing import Callable
 import numpy as np
+from scipy.sparse.linalg import spsolve
+from scipy.sparse import csr_matrix
+from triangle_cubature.cubature_rule import CubatureRuleEnum
+from p1afempy.solvers import get_general_stiffness_matrix, get_right_hand_side
 
 
 class Mesh:
@@ -111,6 +115,86 @@ def get_coarse_L_shape_mesh() -> Mesh:
         coordinates=coordinates,
         elements=elements,
         boundaries=boundaries)
+
+
+def get_initial_guess_for_cubic_helmholtz(
+        mesh: Mesh, lamba: float, sign: float) -> np.ndarray:
+    """
+    on the (initial) mesh, solve the auxiliary problem
+    -Laplace psi = 1, with homogeneous boundary conditions,
+    then normalize the solution such that, on the vertex
+    where the solution is maximal, the equation
+    -Laplace (c psi) - lamba (c psi) - (c psi)^3 = 0
+    is fulfilled, i.e.,
+    c = sign \sqrt((lamba*psi_max - 1)/(psi_max**3))
+
+    parameters
+    ----------
+    mesh: Mesh
+    lamba: float
+    sign: float
+        either (-1) or (+1)
+    """
+    
+    # ------------
+    # RHS = 1
+    # ------------
+    def f_aux(r: CoordinatesType) -> float:
+        """returns zeros only"""
+        return np.ones(r.shape[0], dtype=float)
+
+    # ------------------
+    # Negative Laplacian
+    # ------------------
+    def a_11_aux(r: CoordinatesType) -> np.ndarray:
+        n_vertices = r.shape[0]
+        return - np.ones(n_vertices, dtype=float)
+
+    def a_22_aux(r: CoordinatesType) -> np.ndarray:
+        n_vertices = r.shape[0]
+        return - np.ones(n_vertices, dtype=float)
+
+    def a_12_aux(r: CoordinatesType) -> np.ndarray:
+        n_vertices = r.shape[0]
+        return np.zeros(n_vertices, dtype=float)
+
+    def a_21_aux(r: CoordinatesType) -> np.ndarray:
+        n_vertices = r.shape[0]
+        return np.zeros(n_vertices, dtype=float)
+
+    stiffness_matrix_aux = csr_matrix(get_general_stiffness_matrix(
+        coordinates=mesh.coordinates,
+        elements=mesh.elements,
+        a_11=a_11_aux, a_12=a_12_aux, a_21=a_21_aux, a_22=a_22_aux,
+        cubature_rule=CubatureRuleEnum.MIDPOINT))
+
+    right_hand_side_vector_aux = get_right_hand_side(
+        coordinates=mesh.coordinates,
+        elements=mesh.elements,
+        f=f_aux,
+        cubature_rule=CubatureRuleEnum.MIDPOINT)
+    
+    n_coordinates = mesh.coordinates.shape[0]
+    auxiliary_solution = np.zeros(n_coordinates)
+
+    n_vertices = mesh.coordinates.shape[0]
+    indices_of_free_nodes = np.setdiff1d(
+        ar1=np.arange(n_vertices),
+        ar2=np.unique(mesh.boundaries[0].flatten()))
+    free_nodes = np.zeros(n_vertices, dtype=bool)
+    free_nodes[indices_of_free_nodes] = 1
+
+    auxiliary_solution[free_nodes] = spsolve(
+        stiffness_matrix_aux[free_nodes, :][:, free_nodes],
+        right_hand_side_vector_aux[free_nodes],
+        use_umfpack=True)
+    
+    psi_max = np.max(auxiliary_solution)
+
+    c = np.sqrt((lamba*psi_max - 1)/(psi_max**3))
+    # ------------------------------------------------------
+
+    return sign * c*auxiliary_solution
 
 
 def get_problem_1() -> Problem:
