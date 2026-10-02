@@ -18,7 +18,7 @@ import argparse
 from variational_adaptivity.edge_based_variational_adaptivity import get_energy_gains_nonlinear
 from variational_adaptivity.markers import doerfler_marking
 from p1afempy.refinement import refineNVB_edge_based
-from problems import get_problem
+from problems import Mesh, get_problem
 from custom_callback import CustomCallBack, EnergyTailOffAveragedCustomCallback, \
     AriolisAdaptiveDelayCustomCallback
 from p1afempy.mesh import show_mesh
@@ -216,9 +216,10 @@ def main() -> None:
     n_dofs = np.sum(free_nodes)
     print(f'DOF = {n_dofs}')
 
-    # initial guess, initialized to zero
-
-    current_iterate = np.zeros(n_vertices, dtype=float)
+    current_iterate = problem.get_initial_guess_on_initial_mesh(
+        Mesh(coordinates=coordinates,
+             elements=elements,
+             boundaries=boundaries))
 
     # fmin_cg with default stopping criterion on initial mesh
     # -------------------------------------------------------
