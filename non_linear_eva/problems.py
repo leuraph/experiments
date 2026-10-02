@@ -19,6 +19,10 @@ class Mesh:
         self.boundaries = boundaries
 
 
+def get_zero_initial_guess(mesh: Mesh) -> np.ndarray:
+    return np.zeros(mesh.coordinates.shape[0], dtype=float)
+
+
 class Problem:
     """
     This class resembles the
@@ -40,6 +44,7 @@ class Problem:
 
     # a function that returns a coarse mesh of the problem's domain
     get_coarse_initial_mesh: Callable[[], Mesh]
+    get_initial_guess_on_initial_mesh: Callable[[Mesh], np.ndarray]
 
     def __init__(
             self,
@@ -51,7 +56,8 @@ class Problem:
             phi: Callable[[np.ndarray], np.ndarray],
             phi_prime: Callable[[np.ndarray], np.ndarray],
             Phi: Callable[[np.ndarray], np.ndarray],
-            get_coarse_initial_mesh: Callable[[], Mesh]):
+            get_coarse_initial_mesh: Callable[[], Mesh],
+            get_initial_guess_on_initial_mesh: Callable[[Mesh], np.ndarray] = get_zero_initial_guess):
         self.f = f
         self.a_11 = a_11
         self.a_12 = a_12
@@ -61,6 +67,7 @@ class Problem:
         self.phi_prime = phi_prime
         self.Phi = Phi
         self.get_coarse_initial_mesh = get_coarse_initial_mesh
+        self.get_initial_guess_on_initial_mesh = get_initial_guess_on_initial_mesh
 
 
 def get_coarse_L_shape_mesh() -> Mesh:
