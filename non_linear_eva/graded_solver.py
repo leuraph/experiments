@@ -5,7 +5,7 @@ from p1afempy.mesh import show_mesh
 import numpy as np
 from math import ceil
 from tqdm import tqdm
-from problems import get_problem
+from problems import get_problem, Mesh
 from p1afempy.solvers import \
     get_general_stiffness_matrix, get_right_hand_side, \
         get_load_vector_of_composition_nonlinear_with_fem
@@ -85,8 +85,13 @@ def main() -> None:
         cubature_rule=CubatureRuleEnum.DAYTAYLOR
     )
 
-    # initial guess set to zero
-    current_iterate = np.zeros(n_vertices)
+    print("initial guess preparation...")
+    current_iterate = problem.get_initial_guess_on_initial_mesh(
+        Mesh(
+            coordinates=coordinates,
+            elements=elements,
+            boundaries=dirichlet)
+    )
 
     n = ceil(gamma * np.log(n_dofs))
 
