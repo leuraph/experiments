@@ -90,7 +90,7 @@ def main() -> None:
         Mesh(
             coordinates=coordinates,
             elements=elements,
-            boundaries=dirichlet)
+            boundaries=[dirichlet])
     )
 
     n = ceil(gamma * np.log(n_dofs))
