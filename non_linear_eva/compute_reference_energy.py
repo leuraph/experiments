@@ -12,21 +12,36 @@ from problems import get_problem, Problem
 from p1afempy.io_helpers import read_coordinates, read_elements
 
 def main() -> None:
+    """
+    Given a pre-computed reference solution u on a reference mesh,
+    this script computes and stores the correspnding reference energy E(u)
+    """
+
+    # PARSER
+    # --------------------------------------------------------------------------
     parser = argparse.ArgumentParser()
-    parser.add_argument("--problem", type=int, required=True)
-    parser.add_argument("--reference-mesh", type=str, required=True)
-    parser.add_argument("--reference-solution", type=str, required=True)
+    parser.add_argument(
+        "--problem",
+        help='problem to be considered',
+        type=int, required=True)
+    parser.add_argument(
+        "--reference-mesh",
+        help='location of the reference mesh to be read',
+        type=str, required=True,)
+    parser.add_argument(
+        "--reference-solution",
+        help='location of where the reference solution shall be stored',
+        type=str, required=True)
     args = parser.parse_args()
+    # --------------------------------------------------------------------------
 
+    # READING DATA
+    # --------------------------------------------------------------------------
     problem = get_problem(number=args.problem)
-
     path_to_ref_solution = Path(args.reference_solution)
     path_to_ref_mesh = Path(args.reference_mesh)
-
-
     path_to_reference_coordinates = path_to_ref_mesh / Path("coordinates.dat")
     path_to_reference_elements = path_to_ref_mesh / Path("elements.dat")
-
     reference_coordinates = read_coordinates(
         path_to_coordinates=path_to_reference_coordinates)
     # we shift the indices by +1 because the reference mesh
@@ -34,25 +49,29 @@ def main() -> None:
     reference_elements = read_elements(
         path_to_elements=path_to_reference_elements, shift_indices=True)
     reference_solution =load_dump(path_to_dump=path_to_ref_solution)
+    # --------------------------------------------------------------------------
 
+    # COMPUTING THE ENERGY E(u)
+    # --------------------------------------------------------------------------
     print(f'computing reference energy for problem {args.problem}...')
-
     reference_energy = compute_energy(
         problem=problem,
         elements=reference_elements,
         coordinates=reference_coordinates,
         current_iterate=reference_solution)
-    
     print(f'reference energy is E_ref = {reference_energy}')
+    # --------------------------------------------------------------------------
 
+    # STORING THE REFERENCE ENERGY E(u)
+    # --------------------------------------------------------------------------
     path_to_reference_energy = (
         Path('reference_energies') / 
         Path(f'{path_to_ref_solution.name}.pkl'))
-
     dump_object(
         obj=reference_energy,
         path_to_file=path_to_reference_energy
     )
+    # --------------------------------------------------------------------------
 
 
 def compute_energy(
