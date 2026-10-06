@@ -24,7 +24,8 @@ def main() -> None:
     parser.add_argument("--gamma", type=float, required=True)
     parser.add_argument("--problem", type=int, required=True)
     parser.add_argument("--mesh-path", type=str, required=True,
-                        help="path to the folder holding the graded mesh to be used")
+                        help="path to the folder holding "
+                        "the graded mesh to be used")
     args = parser.parse_args()
 
     problem_number = args.problem
@@ -35,7 +36,11 @@ def main() -> None:
     match = re.search(r"hmax-([0-9]*\.?[0-9]+)", mesh_path)
     hmax = float(match.group(1))
 
-    output_path = Path('reference_solutions') / Path(f"problem-{problem_number}_hmax-{hmax}_alpha-{alpha}_gamma-{gamma}.pkl")
+    output_path = (
+        Path('reference_solutions') / 
+        Path(
+            f"problem-{problem_number}_"
+            f"hmax-{hmax}_alpha-{alpha}_gamma-{gamma}.pkl"))
 
     problem = get_problem(number=problem_number)
     a_11 = problem.a_11
@@ -85,6 +90,7 @@ def main() -> None:
 
     n = ceil(gamma * np.log(n_dofs))
 
+    print("computing solution...")
     for _ in tqdm(range(n)):
         # this changes in each iteration
         non_linear_load_vector = \
