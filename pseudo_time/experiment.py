@@ -1,4 +1,5 @@
 from cProfile import label
+import select
 from matplotlib import pyplot as plt
 from p1afempy.solvers import \
     get_weighted_stiffness_matrix, get_stiffness_matrix, \
@@ -10,6 +11,47 @@ from scipy.sparse import csr_matrix
 from show_solution import show_solution
 from copy import copy
 import tqdm
+
+
+class AccumulatedErrorEstimator:
+    L_e: float
+    beta: float
+    nu: float
+    norm: callable
+    current_time: float
+    accumulated_sum: float
+
+    def __init__(
+            self,
+            L_e: float,
+            nu: float,
+            beta: float,
+            norm: callable):
+        self.L_e = L_e
+        self.nu = nu
+        self.beta = beta
+        self.norm = norm
+        self.current_time = 0.
+        self.accumulated_sum = 0.
+    
+    def get_current_estimation(self) -> float:
+        global_factor = (
+            (self.beta * self.L_e**2)/
+            (2.*self.nu**2))
+        current_time_factor = np.exp(-0.5*self.nu*self.current_time)
+        return (
+            np.sqrt(
+                global_factor * 
+                current_time_factor * 
+                self.accumulated_sum))
+
+    
+    def update_estimator(self, u_new, u_old, t_new, t_old):
+        self.current_time = t_new
+
+        du = u_new - u_old
+        local_weight = np.exp(0.5*self.nu*t_new) - np.exp(0.5*self.nu*t_old)
+        self.accumulated_sum += self.norm(du)**2 * local_weight
 
 
 # Manufactured solution
@@ -68,9 +110,9 @@ beta = 1.
 eta_c = 1
 
 def main() -> None:
-    n_initial_iterations = 10
-    n_initial_refinements = 7
-    max_n_iteration_steps = 10
+    n_initial_iterations = 5
+    n_initial_refinements = 5
+    max_n_iteration_steps = 200
     dt = 0.1
 
     # Coarse triangulation of L-shaped domain
@@ -206,6 +248,12 @@ def main() -> None:
 
     direct_error_estimations = []
     splitted_error_estimations_pt1 = []
+    splitted_error_estimations_pt2 = []
+    accumulated_estimator = AccumulatedErrorEstimator(
+        L_e=L_1,
+        nu=nu_1,
+        beta=beta,
+        norm=norm)
 
     print('solving the problem...')
     for k in tqdm.tqdm(range(max_n_iteration_steps)):
@@ -239,12 +287,31 @@ def main() -> None:
             splitted_error_estimator_part_1(
                 u_init=u_initial,
                 t=(k+1)*dt))
+        
+        accumulated_estimator.update_estimator(
+            u_new=current_iterate,
+            u_old=old_iterate,
+            t_new=(k+1)*dt,
+            t_old=k*dt)
+        splitted_error_estimations_pt2.append(
+            accumulated_estimator.get_current_estimation())
 
         old_iterate = copy(current_iterate)
 
 
+    splitted_error_estimations_pt1 = np.array(
+        splitted_error_estimations_pt1)
+    splitted_error_estimations_pt2 = np.array(
+        splitted_error_estimations_pt2)
+    splitted_error_estimator = (
+        splitted_error_estimations_pt1
+        +
+        splitted_error_estimations_pt2)
+
     plt.semilogy(direct_error_estimations, label='direct')
     plt.semilogy(splitted_error_estimations_pt1, label='split pt.1')
+    plt.semilogy(splitted_error_estimations_pt2, label='split pt.2')
+    plt.semilogy(splitted_error_estimator, label='split total')
     plt.legend()
     plt.show()
     # show_solution(coordinates=coordinates, solution=current_iterate)
