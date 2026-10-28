@@ -112,7 +112,7 @@ eta_c = 1
 def main() -> None:
     n_initial_iterations = 5
     n_initial_refinements = 5
-    max_n_iteration_steps = 200
+    max_n_iteration_steps = 400
     dt = 0.1
 
     # Coarse triangulation of L-shaped domain
@@ -308,10 +308,18 @@ def main() -> None:
         +
         splitted_error_estimations_pt2)
 
+    to_fit_linearly_y = np.log(splitted_error_estimator[-50:])
+    to_fit_linearly_x = np.arange(max_n_iteration_steps)[-50:]
+    m, q = np.polyfit(to_fit_linearly_x, to_fit_linearly_y, 1)
+    to_plot_logarithmically = (
+        np.exp(q) * np.exp(m * np.arange(max_n_iteration_steps)))
+
     plt.semilogy(direct_error_estimations, label='direct')
+    plt.semilogy(to_plot_logarithmically, label='fit', color='black', linestyle='--')
     plt.semilogy(splitted_error_estimations_pt1, label='split pt.1')
     plt.semilogy(splitted_error_estimations_pt2, label='split pt.2')
     plt.semilogy(splitted_error_estimator, label='split total')
+    plt.semilogy()
     plt.legend()
     plt.show()
     # show_solution(coordinates=coordinates, solution=current_iterate)
