@@ -13,6 +13,77 @@ from copy import copy
 import tqdm
 
 
+def get_restarted_euler_error_estimator(
+        grad_energy: np.ndarray,
+        eta_m: float,
+        alpha: float,
+        beta: float,
+        dt: float,
+        norm
+) -> float:
+    """
+    Returns an error estimate for the euler error
+    for one (restarted) step of size dt, i.e.,
+
+    parameters
+    ----------
+    grad_energy: np.ndarray
+        Riesz Representative J_X E'(u) in the P1FEM Lagrange basis
+    eta_m: float
+        monotonicity constant of E'
+    alpha: float
+        coercivity constant of A
+    beta: float
+        boundedness constant of A
+    dt: float
+        step-size
+    norm
+        Hilbert space norm, i.e. norm(u) := \|u\|_X
+    """
+    return norm(grad_energy)/eta_m * np.exp(-(alpha*eta_m)/(beta**2) * dt)
+
+
+def get_restarted_relaxation_estimate(
+        u_old: np.ndarray,
+        u_new: np.ndarray,
+        eta_m: float,
+        alpha: float,
+        beta: float,
+        L: float,
+        dt: float,
+        norm
+) -> float:
+    """
+    Returns an error estimate for the euler error
+    for one (restarted) step of size dt, i.e.,
+
+    parameters
+    ----------
+    u_old: np.ndarray
+        u^{n}_N
+    u_new: np.ndarray
+        u^{n+1}_N
+    eta_m: float
+        monotonicity constant of E'
+    alpha: float
+        coercivity constant of A
+    beta: float
+        boundedness constant of A
+    L: float
+        Lipschitz constant of E
+    dt: float
+        step-size
+    norm
+        Hilbert space norm, i.e. norm(u) := \|u\|_X
+    """
+    return (
+        np.sqrt((beta)/(2.*alpha)) 
+        * (L / eta_m) 
+        * norm(u_new - u_old) 
+        * np.sqrt(1. - np.exp(-0.5 * eta_m * dt))
+    )
+
+
 class AccumulatedErrorEstimator:
     L_e: float
     beta: float
@@ -112,7 +183,7 @@ eta_c = 1
 def main() -> None:
     n_initial_iterations = 5
     n_initial_refinements = 5
-    max_n_iteration_steps = 400
+    max_n_iteration_steps = 50
     dt = 0.1
 
     # Coarse triangulation of L-shaped domain
@@ -254,6 +325,9 @@ def main() -> None:
         nu=nu_1,
         beta=beta,
         norm=norm)
+    
+    restarted_euler_error_estimations = []
+    restarted_relaxation_error_estimations = []
 
     print('solving the problem...')
     for k in tqdm.tqdm(range(max_n_iteration_steps)):
@@ -263,19 +337,48 @@ def main() -> None:
             elements=elements,
             u=current_iterate,
             mu=mu_1))
-
+        
+        # # Computing J_X E'(u^n_N)
         b = (
-            stiffness_matrix.dot(current_iterate)
+            weighted_stiffness_matrix[free_nodes,:][:, free_nodes].dot(
+                current_iterate[free_nodes])
             -
-            dt * weighted_stiffness_matrix.dot(current_iterate)
-            +
-            dt * load_vector
+            load_vector[free_nodes]
         )
 
-        current_iterate[free_nodes] = spsolve(
+        grad_energy = np.zeros(n_vertices)
+        grad_energy[free_nodes] = spsolve(
             stiffness_matrix[free_nodes, :][:, free_nodes],
-            b[free_nodes],
-            use_umfpack=True)
+            b,
+            use_umfpack=True
+        )
+
+        current_iterate[free_nodes] = (
+            old_iterate[free_nodes] - dt * grad_energy[free_nodes]
+        )
+
+        restarted_euler_error_estimations.append(
+            get_restarted_euler_error_estimator(
+                grad_energy=grad_energy,
+                eta_m=nu_1,
+                alpha=eta_c,
+                beta=beta,
+                dt=dt,
+                norm=norm
+            )
+        )
+        restarted_relaxation_error_estimations.append(
+            get_restarted_relaxation_estimate(
+                u_old=old_iterate,
+                u_new=current_iterate,
+                eta_m=nu_1,
+                alpha=eta_c,
+                beta=beta,
+                L=L_1,
+                dt=dt,
+                norm=norm
+            )
+        )
         
         direct_error_estimations.append(
             direct_error_estimator(
@@ -307,6 +410,16 @@ def main() -> None:
         splitted_error_estimations_pt1
         +
         splitted_error_estimations_pt2)
+    
+    restarted_euler_error_estimations = np.array(
+        restarted_euler_error_estimations)
+    restarted_relaxation_error_estimations = np.array(
+        restarted_relaxation_error_estimations
+    )
+    restarted_estimations = (
+        restarted_euler_error_estimations
+        + restarted_relaxation_error_estimations
+    )
 
     to_fit_linearly_y = np.log(splitted_error_estimator[-50:])
     to_fit_linearly_x = np.arange(max_n_iteration_steps)[-50:]
@@ -315,6 +428,7 @@ def main() -> None:
         np.exp(q) * np.exp(m * np.arange(max_n_iteration_steps)))
 
     plt.semilogy(direct_error_estimations, label='direct')
+    plt.semilogy(restarted_estimations, label='restarted')
     plt.semilogy(to_plot_logarithmically, label='fit', color='black', linestyle='--')
     plt.semilogy(splitted_error_estimations_pt1, label='split pt.1')
     plt.semilogy(splitted_error_estimations_pt2, label='split pt.2')
