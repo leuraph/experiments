@@ -11,6 +11,7 @@ from scipy.sparse import csr_matrix
 from show_solution import show_solution
 from copy import copy
 import tqdm
+from scipy.optimize import root_scalar
 
 
 def get_restarted_euler_error_estimator(
@@ -82,6 +83,47 @@ def get_restarted_relaxation_estimate(
         * norm(u_new - u_old) 
         * np.sqrt(1. - np.exp(-0.5 * eta_m * dt))
     )
+
+def get_restarted_estimator(
+        grad_energy_norm: np.ndarray,
+        eta_m: float,
+        alpha: float,
+        beta: float,
+        L: float,
+        dt: float
+) -> float:
+    return grad_energy_norm * (
+        (
+            (1./eta_m)
+            * np.exp(-(alpha*eta_m)/(beta**2) * dt)
+        )
+        +
+        (
+            np.sqrt((beta)/(2.*alpha)) 
+            * (L / eta_m)
+            * dt
+            * np.sqrt(1. - np.exp(-0.5 * eta_m * dt))
+        )
+    )
+
+
+def get_restarted_estimator_derivative(
+        grad_energy_norm: np.ndarray,
+        eta_m: float,
+        alpha: float,
+        beta: float,
+        L: float,
+        dt: float
+) -> float:
+    alpha_tilde = (alpha*eta_m)/(beta**2)
+    beta_tilde =  np.sqrt((beta)/(2.*alpha)) * L / eta_m
+
+    return grad_energy_norm * (
+        -alpha_tilde*np.exp(-alpha_tilde*dt)/eta_m 
+        + 
+        0.25*beta_tilde*eta_m*dt*np.exp(-0.5*eta_m*dt)/np.sqrt(1 - np.exp(-0.5*eta_m*dt)) 
+        + 
+        beta_tilde*np.sqrt(1 - np.exp(-0.5*eta_m*dt)))
 
 
 class AccumulatedErrorEstimator:
@@ -328,6 +370,7 @@ def main() -> None:
     
     restarted_euler_error_estimations = []
     restarted_relaxation_error_estimations = []
+    dts = []
 
     print('solving the problem...')
     for k in tqdm.tqdm(range(max_n_iteration_steps)):
@@ -352,6 +395,28 @@ def main() -> None:
             b,
             use_umfpack=True
         )
+        grad_energy_norm = norm(grad_energy)
+        estimator = lambda s: get_restarted_estimator(
+            grad_energy_norm=grad_energy_norm,
+            eta_m=nu_1,
+            alpha=eta_c,
+            beta=beta,
+            L=L,
+            dt=s
+        )
+        estimator_diff = lambda s: get_restarted_estimator_derivative(
+            grad_energy_norm=grad_energy_norm,
+            eta_m=nu_1,
+            alpha=eta_c,
+            beta=beta,
+            L=L,
+            dt=s
+        )
+        dt = root_scalar(f=estimator_diff, x0=dt).root
+        dts.append(dt)
+        s_array = np.linspace(0., 0.5, 100)
+        # plt.plot(s_array, [estimator(s) for s in s_array])
+        # plt.show()
 
         current_iterate[free_nodes] = (
             old_iterate[free_nodes] - dt * grad_energy[free_nodes]
