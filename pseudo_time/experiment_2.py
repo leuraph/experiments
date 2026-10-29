@@ -1,5 +1,3 @@
-from cProfile import label
-import select
 from matplotlib import pyplot as plt
 from p1afempy.solvers import \
     get_weighted_stiffness_matrix, get_stiffness_matrix, \
@@ -8,7 +6,6 @@ from p1afempy import refinement
 import numpy as np
 from scipy.sparse.linalg import spsolve
 from scipy.sparse import csr_matrix
-from show_solution import show_solution
 from copy import copy
 import tqdm
 from scipy.optimize import root_scalar
@@ -124,47 +121,6 @@ def get_restarted_estimator_derivative(
         0.25*beta_tilde*eta_m*dt*np.exp(-0.5*eta_m*dt)/np.sqrt(1 - np.exp(-0.5*eta_m*dt)) 
         + 
         beta_tilde*np.sqrt(1 - np.exp(-0.5*eta_m*dt)))
-
-
-class AccumulatedErrorEstimator:
-    L_e: float
-    beta: float
-    nu: float
-    norm: callable
-    current_time: float
-    accumulated_sum: float
-
-    def __init__(
-            self,
-            L_e: float,
-            nu: float,
-            beta: float,
-            norm: callable):
-        self.L_e = L_e
-        self.nu = nu
-        self.beta = beta
-        self.norm = norm
-        self.current_time = 0.
-        self.accumulated_sum = 0.
-    
-    def get_current_estimation(self) -> float:
-        global_factor = (
-            (self.beta * self.L_e**2)/
-            (2.*self.nu**2))
-        current_time_factor = np.exp(-0.5*self.nu*self.current_time)
-        return (
-            np.sqrt(
-                global_factor * 
-                current_time_factor * 
-                self.accumulated_sum))
-
-    
-    def update_estimator(self, u_new, u_old, t_new, t_old):
-        self.current_time = t_new
-
-        du = u_new - u_old
-        local_weight = np.exp(0.5*self.nu*t_new) - np.exp(0.5*self.nu*t_old)
-        self.accumulated_sum += self.norm(du)**2 * local_weight
 
 
 # Manufactured solution
@@ -300,31 +256,6 @@ def main() -> None:
             u_old: np.ndarray,
             dt: float) -> float:
         return (1. + (beta)/(dt * nu_1))*norm(u=u_new - u_old)
-    
-    def splitted_error_estimator_part_1(
-            u_init: np.ndarray,
-            t: float):
-        M = csr_matrix(get_weighted_stiffness_matrix(
-            coordinates=coordinates,
-            elements=elements,
-            u=u_init,
-            mu=mu_1))
-        F = get_right_hand_side(
-            coordinates=coordinates,
-            elements=elements,
-            f=rhs_function_1,
-            cubature_rule=CubatureRuleEnum.DAYTAYLOR)
-        As = csr_matrix(get_stiffness_matrix(
-            coordinates=coordinates,
-            elements=elements))
-        E = np.zeros(n_vertices)
-        E[free_nodes] = spsolve(
-            As[free_nodes,:][:,free_nodes],
-            M[free_nodes,:][:, free_nodes].dot(
-                u_init[free_nodes])
-            - F[free_nodes])
-        
-        return (norm(E)/nu_1) * np.exp(-((nu_1 * eta_c)/(beta**2))*t)
         
 
     # load vector does not change during iterations
@@ -360,13 +291,6 @@ def main() -> None:
     old_iterate = copy(current_iterate)
 
     direct_error_estimations = []
-    splitted_error_estimations_pt1 = []
-    splitted_error_estimations_pt2 = []
-    accumulated_estimator = AccumulatedErrorEstimator(
-        L_e=L_1,
-        nu=nu_1,
-        beta=beta,
-        norm=norm)
     
     restarted_euler_error_estimations = []
     restarted_relaxation_error_estimations = []
@@ -401,7 +325,7 @@ def main() -> None:
             eta_m=nu_1,
             alpha=eta_c,
             beta=beta,
-            L=L,
+            L=L_1,
             dt=s
         )
         estimator_diff = lambda s: get_restarted_estimator_derivative(
@@ -409,7 +333,7 @@ def main() -> None:
             eta_m=nu_1,
             alpha=eta_c,
             beta=beta,
-            L=L,
+            L=L_1,
             dt=s
         )
         dt = root_scalar(f=estimator_diff, x0=dt).root
@@ -450,31 +374,9 @@ def main() -> None:
                 u_new=current_iterate,
                 u_old=old_iterate,
                 dt=dt))
-        
-        splitted_error_estimations_pt1.append(
-            splitted_error_estimator_part_1(
-                u_init=u_initial,
-                t=(k+1)*dt))
-        
-        accumulated_estimator.update_estimator(
-            u_new=current_iterate,
-            u_old=old_iterate,
-            t_new=(k+1)*dt,
-            t_old=k*dt)
-        splitted_error_estimations_pt2.append(
-            accumulated_estimator.get_current_estimation())
 
         old_iterate = copy(current_iterate)
 
-
-    splitted_error_estimations_pt1 = np.array(
-        splitted_error_estimations_pt1)
-    splitted_error_estimations_pt2 = np.array(
-        splitted_error_estimations_pt2)
-    splitted_error_estimator = (
-        splitted_error_estimations_pt1
-        +
-        splitted_error_estimations_pt2)
     
     restarted_euler_error_estimations = np.array(
         restarted_euler_error_estimations)
@@ -486,22 +388,11 @@ def main() -> None:
         + restarted_relaxation_error_estimations
     )
 
-    to_fit_linearly_y = np.log(splitted_error_estimator[-50:])
-    to_fit_linearly_x = np.arange(max_n_iteration_steps)[-50:]
-    m, q = np.polyfit(to_fit_linearly_x, to_fit_linearly_y, 1)
-    to_plot_logarithmically = (
-        np.exp(q) * np.exp(m * np.arange(max_n_iteration_steps)))
-
     plt.semilogy(direct_error_estimations, label='direct')
     plt.semilogy(restarted_estimations, label='restarted')
-    plt.semilogy(to_plot_logarithmically, label='fit', color='black', linestyle='--')
-    plt.semilogy(splitted_error_estimations_pt1, label='split pt.1')
-    plt.semilogy(splitted_error_estimations_pt2, label='split pt.2')
-    plt.semilogy(splitted_error_estimator, label='split total')
     plt.semilogy()
     plt.legend()
     plt.show()
-    # show_solution(coordinates=coordinates, solution=current_iterate)
 
 
 if __name__ == '__main__':
