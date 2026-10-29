@@ -121,5 +121,63 @@ $$
 \right).
 $$
 
+# Experiments
+
+The experiments consider the following setup.
+
+- __Problem:__ Problem 1
+
+- __Precodnitioner:__
+  $\langle A u, v \rangle_{\mathbb X' \times \mathbb X} 
+  := \langle u, v \rangle_{\mathbb X}
+  $
+
+- __Inner Product:__
+  $\langle u, v \rangle_{\mathbb X}
+  := \langle \nabla u, \nabla v \rangle_{L_2(\Omega)}$
+
+Note that this choice of the preconditioner $A$ implies that
+- $\beta = 1$,
+- $\eta_{\text{c}} = 1$,
+as we have
+$$
+\langle A u, u \rangle = \|u\|^2_{\mathbb X}
+$$
+by choice and, further,
+$$
+\langle A u, v \rangle \leq \|u\|_{\mathbb X} \| v \|_{\mathbb X},
+$$
+due to Cauchy-Schwarz.
+
+## Experiment 1
+In this experiment we compute an upper bound
+of the error by insertion of one global dynamical 
+system for all the time steps, i.e.,
+$$
+\|u^n_N - u^\star_N\|_X
+\leq
+\|u^n_N - u(t_n)\|_X
++
+\|u(t_n) - u^\star_N\|_X,
+$$
+where $u(t_0) = u^0_N$.
+The euler error is then translated into a weighted
+of all local contributions.
+
+## Experiment 2
+In this experiment, we compute an upper bound
+of the error by insertion of the dynamical system
+that is restarted at every iteration, i.e.,
+$$
+\|u^{n+1}_N - u^\star_N\|_X
+\leq
+\|u^{n+1}_N - u(t_{n+1})\|_X
++
+\|u(t_{n+1}) - u^\star_N\|_X,
+$$
+where $u(t_n) = u^n_N$.
+The weighted sum euler estimate from experiment 1
+then turns into one single local contribution.
+
 ### References
 - [HW20] 
