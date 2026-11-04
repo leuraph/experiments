@@ -96,10 +96,10 @@ def get_restarted_estimator(
         )
         +
         (
-            np.sqrt((beta)/(2.*alpha)) 
+            np.sqrt(beta/alpha)
             * (L / eta_m)
             * dt
-            * np.sqrt(1. - np.exp(-0.5 * eta_m * dt))
+            * np.sqrt(1. - np.exp(- eta_m/beta * dt))
         )
     )
 

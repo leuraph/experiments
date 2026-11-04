@@ -108,7 +108,7 @@ and, further,
 $$
 \|u^{n+1}_N - u(t_{n+1})\|^2_A
 \leq
-\frac{\beta L_E^2}{2\eta_{\text{m}}^2} \text{exp}
+\frac{\beta L_E^2}{\eta_{\text{m}}^2} \text{exp}
 \left(
     -\frac{\eta_{\text m}}{2}t_{n+1})
 \right)
