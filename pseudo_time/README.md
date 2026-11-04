@@ -121,6 +121,27 @@ $$
 \right).
 $$
 
+## Euler error with restarted dynamical system
+if, in each step, we restart the dynamical system, i.e.,
+$$
+A[u^n_N] u'(t) = -E'(u(t)),
+\quad
+u(t_n) = u^n_N,
+$$
+we have the bound
+$$
+\|u^{n+1}_N - u(t_{n+1})\|_X^2
+\leq
+\frac{L_E^2 \beta_A}{\eta_m^2 \alpha}
+\|u^{n+1}_N - u^n_N\|_X^2
+\left[
+    1 - \exp
+    \left(
+        -\frac{\eta_n}{\beta_A}\Delta \tau_n
+    \right)
+\right].
+$$
+
 # Experiments
 
 The experiments consider the following setup.
