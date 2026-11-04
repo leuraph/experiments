@@ -9,6 +9,8 @@ from scipy.sparse import csr_matrix
 from copy import copy
 import tqdm
 from scipy.optimize import root_scalar
+import matplotlib.pyplot as plt
+from pathlib import Path
 
 
 def get_restarted_euler_error_estimator(
@@ -388,11 +390,25 @@ def main() -> None:
         + restarted_relaxation_error_estimations
     )
 
-    plt.semilogy(direct_error_estimations, label='direct')
-    plt.semilogy(restarted_estimations, label='restarted')
-    plt.semilogy()
-    plt.legend()
-    plt.show()
+    plt.rcParams["mathtext.fontset"] = "cm"
+    plt.rcParams['xtick.labelsize'] = 14
+    plt.rcParams['ytick.labelsize'] = 14
+    plt.rcParams['axes.labelsize'] = 14
+    plt.rcParams['axes.titlesize'] = 14
+    plt.rcParams['legend.fontsize'] = 16
+    plt.rcParams['text.usetex'] = True
+
+    fig, ax = plt.subplots()
+    ax.set_xlabel("$\mathrm{number}~\mathrm{of}~\mathrm{iterations}$")
+    ax.set_ylabel(r'$\mathrm{estimator}$')
+    ax.grid(True)
+
+    ax.semilogy(direct_error_estimations, label='direct')
+    ax.semilogy(restarted_estimations, label='restarted')
+    ax.legend(loc='best')
+
+    output_path = Path('plots') / Path('restarted_estimator.pdf')
+    fig.savefig(output_path, dpi=300, bbox_inches="tight")
 
 
 if __name__ == '__main__':
