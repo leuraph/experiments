@@ -142,6 +142,44 @@ $$
 \right].
 $$
 
+## Euler error with restarted dynamical system and Techniques from [NSV00]
+
+### Using monotonicity only
+$$
+\|u^{n+1}_N - u_N(t_{n+1})\|_X^2
+\leq
+\frac{-(\Delta \tau_n)^2}{\alpha}
+\left[
+    \frac{E(u^n_N) - E(u^{n+1}_N)}{\Delta \tau_n}
+    -
+    \beta_A
+    \left\|
+        \frac{u^{n+1}_N - u^{n}_N}{\Delta \tau_n}
+    \right\|_X^2
+\right]
+$$
+
+### Using __strong__ monotonicity
+$$
+\|u^{n+1}_N - u_N(t_{n+1})\|_X^2
+\leq
+\frac{-2\beta_A \Delta \tau_n}{\alpha \eta_m}
+\left(
+    \frac{E(u^n_N) - E(u^{n+1}_N)}{\Delta \tau_n}
+    -
+    \beta_A
+    \left\|
+        \frac{u^{n+1}_N - u^{n}_N}{\Delta \tau_n}
+    \right\|_X^2
+\right)
+\left(
+    1 + \frac{\beta_A}{\eta_m}
+    \left(
+        e^{-\frac{\eta_m}{\beta_A} \Delta \tau_n} - 1
+    \right)
+\right)
+$$
+
 # Experiments
 
 The experiments consider the following setup.
