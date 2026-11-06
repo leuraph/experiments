@@ -1,7 +1,9 @@
 from matplotlib import pyplot as plt
+from sympy import E
 from p1afempy.solvers import \
     get_weighted_stiffness_matrix, get_stiffness_matrix, \
-        get_right_hand_side, CubatureRuleEnum
+        get_right_hand_side, CubatureRuleEnum, \
+            integrate_nonlinearity_of_gradient_p1_squared
 from p1afempy import refinement
 import numpy as np
 from scipy.sparse.linalg import spsolve
@@ -14,12 +16,13 @@ from pathlib import Path
 
 
 def get_restarted_euler_error_estimator(
-        grad_energy: np.ndarray,
-        eta_m: float,
+        u_old: np.ndarray,
+        u_new: np.ndarray,
         alpha: float,
         beta: float,
         dt: float,
-        norm
+        norm,
+        E
 ) -> float:
     """
     Returns an error estimate for the euler error
@@ -40,18 +43,23 @@ def get_restarted_euler_error_estimator(
     norm
         Hilbert space norm, i.e. norm(u) := \|u\|_X
     """
-    return norm(grad_energy)/eta_m * np.exp(-(alpha*eta_m)/(beta**2) * dt)
+    err_squared = (
+        -(dt**2/alpha)*(
+            (E(u_old) - E(u_new))/(dt)
+            -
+            beta * norm((u_new - u_old)/dt)**2
+        )
+    )
+    return np.sqrt(err_squared)
 
 
 def get_restarted_relaxation_estimate(
-        u_old: np.ndarray,
-        u_new: np.ndarray,
         eta_m: float,
         alpha: float,
         beta: float,
         L: float,
         dt: float,
-        norm
+        grad_energy_norm: float
 ) -> float:
     """
     Returns an error estimate for the euler error
@@ -77,52 +85,58 @@ def get_restarted_relaxation_estimate(
         Hilbert space norm, i.e. norm(u) := \|u\|_X
     """
     return (
-        np.sqrt((beta)/(2.*alpha)) 
-        * (L / eta_m) 
-        * norm(u_new - u_old) 
-        * np.sqrt(1. - np.exp(-0.5 * eta_m * dt))
-    )
+            (grad_energy_norm/eta_m)
+            *
+            np.exp(-(alpha*eta_m)/(beta**2) * dt)
+        )
 
 def get_restarted_estimator(
-        grad_energy_norm: np.ndarray,
+        u_old: np.ndarray,
+        u_new: np.ndarray,
         eta_m: float,
         alpha: float,
         beta: float,
         L: float,
-        dt: float
+        dt: float,
+        norm,
+        E,
+        grad_energy_norm: float
 ) -> float:
-    return grad_energy_norm * (
-        (
-            (1./eta_m)
-            * np.exp(-(alpha*eta_m)/(beta**2) * dt)
-        )
-        +
-        (
-            np.sqrt(beta/alpha)
-            * (L / eta_m)
-            * dt
-            * np.sqrt(1. - np.exp(- eta_m/beta * dt))
-        )
+    restarted_euler_error_estimator = get_restarted_euler_error_estimator(
+        u_old=u_old,
+        u_new=u_new,
+        alpha=alpha,
+        beta=beta,
+        dt=dt,
+        norm=norm,
+        E=E
     )
+    relaxation_estimate = get_restarted_relaxation_estimate(
+        eta_m=eta_m,
+        alpha=alpha,
+        beta=beta,
+        L=L,
+        dt=dt,
+        grad_energy_norm=grad_energy_norm
+    )
+    return restarted_euler_error_estimator + relaxation_estimate
 
 
-def get_restarted_estimator_derivative(
-        grad_energy_norm: np.ndarray,
-        eta_m: float,
-        alpha: float,
-        beta: float,
-        L: float,
-        dt: float
+def get_energy(
+    coordinates,
+    elements,
+    u: np.ndarray,
+    Phi,
+    load_vector
 ) -> float:
-    alpha_tilde = (alpha*eta_m)/(beta**2)
-    beta_tilde =  np.sqrt((beta)/(2.*alpha)) * L / eta_m
-
-    return grad_energy_norm * (
-        -alpha_tilde*np.exp(-alpha_tilde*dt)/eta_m 
-        + 
-        0.25*beta_tilde*eta_m*dt*np.exp(-0.5*eta_m*dt)/np.sqrt(1 - np.exp(-0.5*eta_m*dt)) 
-        + 
-        beta_tilde*np.sqrt(1 - np.exp(-0.5*eta_m*dt)))
+    return (
+        0.5 * integrate_nonlinearity_of_gradient_p1_squared(
+            coordinates=coordinates,
+            elements=elements,
+            u=u,
+            f=Phi)
+        -
+        load_vector.dot(u))
 
 
 # Manufactured solution
@@ -143,6 +157,10 @@ def analytical_solution_safe(x, y):
 def mu_1(t):
     return 1. + np.exp(-t)
 
+def Phi_1(s):
+    """The potential of mu_1, i.e., \int_0^s \mu_1(t) dt"""
+    return s + 1 - np.exp(-s)
+
 def rhs_function_1(r):
     x, y = r[:, 0], r[:, 1]
     return (np.exp(-2) + 1)*(80*x*y**3*(1 - x**2)*(1 - y**2)/(9*(x**2 + y**2)**(8/3)) + 32*x*y**3*(1 - x**2)/(3*(x**2 + y**2)**(5/3)) - 8*x*y*(1 - x**2)*(1 - y**2)/(x**2 + y**2)**(5/3) - 12*x*y*(1 - x**2)/(x**2 + y**2)**(2/3)) + (np.exp(-2) + 1)*(80*x**3*y*(1 - x**2)*(1 - y**2)/(9*(x**2 + y**2)**(8/3)) + 32*x**3*y*(1 - y**2)/(3*(x**2 + y**2)**(5/3)) - 8*x*y*(1 - x**2)*(1 - y**2)/(x**2 + y**2)**(5/3) - 12*x*y*(1 - y**2)/(x**2 + y**2)**(2/3))
@@ -159,6 +177,10 @@ L_1  = 3*M_mu_1
 # ------------------------------------------------------------------------------
 def mu_2(t):
     return 1./(1+t) + 0.5
+
+def Phi_2(s):
+    """The potential of mu_2, i.e., \int_0^s \mu_2(t) dt"""
+    return 0.5 * s + np.log(s + 1)
 
 def rhs_function_2(r):
     x, y = r[:, 0], r[:, 1]
@@ -183,8 +205,8 @@ eta_c = 1
 def main() -> None:
     n_initial_iterations = 5
     n_initial_refinements = 6
-    max_n_iteration_steps = 400
-    dt = 0.1
+    max_n_iteration_steps = 200
+    dt = 0.05
 
     # Coarse triangulation of L-shaped domain
     coordinates = np.array([
@@ -291,12 +313,16 @@ def main() -> None:
 
     u_initial = copy(current_iterate)
     old_iterate = copy(current_iterate)
-
-    direct_error_estimations = []
     
-    restarted_euler_error_estimations = []
-    restarted_relaxation_error_estimations = []
-    dts = []
+    energy_dissipation_error_estimators = []
+
+    E = lambda u: get_energy(
+        coordinates=coordinates,
+        elements=elements,
+        u=u,
+        Phi=Phi_1,
+        load_vector=load_vector
+    )
 
     print('solving the problem...')
     for k in tqdm.tqdm(range(max_n_iteration_steps)):
@@ -322,44 +348,13 @@ def main() -> None:
             use_umfpack=True
         )
         grad_energy_norm = norm(grad_energy)
-        estimator = lambda s: get_restarted_estimator(
-            grad_energy_norm=grad_energy_norm,
-            eta_m=nu_1,
-            alpha=eta_c,
-            beta=beta,
-            L=L_1,
-            dt=s
-        )
-        estimator_diff = lambda s: get_restarted_estimator_derivative(
-            grad_energy_norm=grad_energy_norm,
-            eta_m=nu_1,
-            alpha=eta_c,
-            beta=beta,
-            L=L_1,
-            dt=s
-        )
-        dt = root_scalar(f=estimator_diff, x0=dt).root
-        dts.append(dt)
-        s_array = np.linspace(0., 0.5, 100)
-        # plt.plot(s_array, [estimator(s) for s in s_array])
-        # plt.show()
 
         current_iterate[free_nodes] = (
             old_iterate[free_nodes] - dt * grad_energy[free_nodes]
         )
 
-        restarted_euler_error_estimations.append(
-            get_restarted_euler_error_estimator(
-                grad_energy=grad_energy,
-                eta_m=nu_1,
-                alpha=eta_c,
-                beta=beta,
-                dt=dt,
-                norm=norm
-            )
-        )
-        restarted_relaxation_error_estimations.append(
-            get_restarted_relaxation_estimate(
+        energy_dissipation_error_estimators.append(
+            get_restarted_estimator(
                 u_old=old_iterate,
                 u_new=current_iterate,
                 eta_m=nu_1,
@@ -367,28 +362,16 @@ def main() -> None:
                 beta=beta,
                 L=L_1,
                 dt=dt,
-                norm=norm
+                norm=norm,
+                E=E,
+                grad_energy_norm=grad_energy_norm
             )
         )
-        
-        direct_error_estimations.append(
-            direct_error_estimator(
-                u_new=current_iterate,
-                u_old=old_iterate,
-                dt=dt))
 
         old_iterate = copy(current_iterate)
 
-    
-    restarted_euler_error_estimations = np.array(
-        restarted_euler_error_estimations)
-    restarted_relaxation_error_estimations = np.array(
-        restarted_relaxation_error_estimations
-    )
-    restarted_estimations = (
-        restarted_euler_error_estimations
-        + restarted_relaxation_error_estimations
-    )
+    energy_dissipation_error_estimators = np.array(
+        energy_dissipation_error_estimators)
 
     plt.rcParams["mathtext.fontset"] = "cm"
     plt.rcParams['xtick.labelsize'] = 14
@@ -403,12 +386,14 @@ def main() -> None:
     ax.set_ylabel(r'$\mathrm{estimator}$')
     ax.grid(True)
 
-    ax.semilogy(direct_error_estimations, label='direct')
-    ax.semilogy(restarted_estimations, label='restarted')
+    # ax.semilogy(direct_error_estimations, label='direct')
+    ax.semilogy(energy_dissipation_error_estimators, label='restarted')
     ax.legend(loc='best')
 
-    output_path = Path('plots') / Path('restarted_estimator.pdf')
-    fig.savefig(output_path, dpi=300, bbox_inches="tight")
+    plt.show()
+
+    # output_path = Path('plots') / Path('restarted_estimator.pdf')
+    # fig.savefig(output_path, dpi=300, bbox_inches="tight")
 
 
 if __name__ == '__main__':
