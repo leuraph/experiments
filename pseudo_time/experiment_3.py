@@ -15,6 +15,29 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 
 
+def get_restarted_estimator_old(
+        grad_energy_norm: np.ndarray,
+        eta_m: float,
+        alpha: float,
+        beta: float,
+        L: float,
+        dt: float
+) -> float:
+    return grad_energy_norm * (
+        (
+            (1./eta_m)
+            * np.exp(-(alpha*eta_m)/(beta**2) * dt)
+        )
+        +
+        (
+            np.sqrt(beta/alpha)
+            * (L / eta_m)
+            * dt
+            * np.sqrt(1. - np.exp(- eta_m/beta * dt))
+        )
+    )
+
+
 def get_restarted_euler_error_estimator(
         u_old: np.ndarray,
         u_new: np.ndarray,
@@ -315,6 +338,7 @@ def main() -> None:
     old_iterate = copy(current_iterate)
     
     energy_dissipation_error_estimators = []
+    restarted_error_estimators = []
 
     E = lambda u: get_energy(
         coordinates=coordinates,
@@ -367,11 +391,23 @@ def main() -> None:
                 grad_energy_norm=grad_energy_norm
             )
         )
+        restarted_error_estimators.append(
+            get_restarted_estimator_old(
+                grad_energy_norm=grad_energy_norm,
+                eta_m=nu_1,
+                alpha=eta_c,
+                beta=beta,
+                L=L_1,
+                dt=dt
+            )
+        )
 
         old_iterate = copy(current_iterate)
 
     energy_dissipation_error_estimators = np.array(
         energy_dissipation_error_estimators)
+    restarted_error_estimators = np.array(
+        restarted_error_estimators)
 
     plt.rcParams["mathtext.fontset"] = "cm"
     plt.rcParams['xtick.labelsize'] = 14
@@ -387,7 +423,8 @@ def main() -> None:
     ax.grid(True)
 
     # ax.semilogy(direct_error_estimations, label='direct')
-    ax.semilogy(energy_dissipation_error_estimators, label='restarted')
+    ax.semilogy(energy_dissipation_error_estimators, label='restarted [NSV00]')
+    ax.semilogy(restarted_error_estimators, label='restarted [BLW]')
     ax.legend(loc='best')
 
     plt.show()
