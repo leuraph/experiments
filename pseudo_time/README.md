@@ -18,6 +18,21 @@ $$
 on a fixed discrete subspace $\mathbb X_N \subset \mathbb X$.
 
 # Problems
+We consider problems of the form
+$$
+-\nabla \cdot \Big(\mu(|\nabla u|^2) \nabla u\Big) = f.
+$$
+The energy for this kind of problem is given by
+$$
+E(u) =
+\frac12\int_\Omega \Phi(|\nabla u|^2) ~\mathrm dx
+- \int_\Omega f u~\mathrm dx,
+$$
+where
+$$
+\Phi(s) := \int_0^s \mu(\tau)~\mathrm d\tau.
+$$
+
 
 ## Problem 1
 
@@ -30,6 +45,14 @@ on the L-shaped domain.
 The nonlinearity $\mu$ is take to be
 $$
 \mu (t) := 1 + e^{-t}.
+$$
+The corresponding potential is
+$$
+\Phi(s)
+=
+\int_0^s \mu(\tau)~\mathrm d\tau
+=
+s + 1 - e^{-s}
 $$
 Then, we have
 $$
@@ -51,6 +74,14 @@ on the L-shaped domain.
 The nonlinearity $\mu$ is take to be
 $$
 \mu (t) := (1 + t)^{-1} + \frac12.
+$$
+The corresponding potential is
+$$
+\Phi(s)
+=
+\int_0^s \mu(\tau)~\mathrm d\tau
+=
+\frac12 s + \ln (s + 1)
 $$
 Then, we have
 $$
@@ -87,12 +118,18 @@ two contributions
 $$
 \Big\|u^{n}_N - u^\star_N\Big\|_{\mathbb X}
 \leq
-\Big\|u^\star_N - u(t_n)\Big\|_{\mathbb X}
+\underbrace{
+    \Big\|u^\star_N - u(t_n)\Big\|_{\mathbb X}
+}_{\text{Relaxation error}}
 +
-\Big\|u(t_n) - u^{n}_N\Big\|_{\mathbb X}.
+\underbrace{
+    \Big\|u(t_n) - u^{n}_N\Big\|_{\mathbb X}
+}_{\text{Euler error}}.
 $$
 
-Then, we have
+### Relaxation Error
+
+Assuming $u_N(t_0) = u^0_N$, the relaxation error can be bunded by
 $$
 \Big\|
     u_N^\star - u(t)
@@ -102,9 +139,11 @@ $$
 \text{exp}
 \left[
     -\frac{\eta_{\text{c}} \eta_{\text{m}} t}{\beta^2}
-\right],
+\right].
 $$
-and, further,
+
+### Euler error 1
+Assuming $u_N(t_0) = u^0_N$, the Euler error can be bounded by
 $$
 \|u^{n+1}_N - u(t_{n+1})\|^2_A
 \leq
@@ -121,7 +160,11 @@ $$
 \right).
 $$
 
-## Euler error with restarted dynamical system
+__Note__: We realized that the above estimate can be readily
+improved if, in each step, we consider a new dynamical system
+that is started at the current iterate, see below.
+
+### Euler error 2
 if, in each step, we restart the dynamical system, i.e.,
 $$
 A[u^n_N] u'(t) = -E'(u(t)),
@@ -142,9 +185,20 @@ $$
 \right].
 $$
 
-## Euler error with restarted dynamical system and Techniques from [NSV00]
+### Euler error 3/4
 
-### Using monotonicity only
+Restarting the dynamical system at each step and considering
+the piecewise constant preconditioner $A[\cdot]$, i.e.,
+as above, considering
+$$
+A[u^n_N] u'(t) = -E'(u(t)),
+\quad
+u(t_n) = u^n_N,
+$$
+allows us to use the results/techniques of [NSV00] to estimate the
+Euler error as follows.
+
+#### Using monotonicity only (Euler error 3)
 $$
 \|u^{n+1}_N - u_N(t_{n+1})\|_X^2
 \leq
@@ -159,7 +213,7 @@ $$
 \right]
 $$
 
-### Using __strong__ monotonicity
+#### Using __strong__ monotonicity (Euler error 4)
 $$
 \|u^{n+1}_N - u_N(t_{n+1})\|_X^2
 \leq
@@ -237,6 +291,21 @@ $$
 where $u(t_n) = u^n_N$.
 The weighted sum euler estimate from experiment 1
 then turns into one single local contribution.
+
+## Experiment 3
+In this experiment, we compute an upper bound
+of the error by insertion of the dynamical system
+that is restarted at every iteration, i.e.,
+$$
+\|u^{n+1}_N - u^\star_N\|_X
+\leq
+\|u^{n+1}_N - u(t_{n+1})\|_X
++
+\|u(t_{n+1}) - u^\star_N\|_X,
+$$
+where $u(t_n) = u^n_N$.
+Here, for the euler error, we use the estimators
+derived with the [NSV00] technique. 
 
 ### References
 - [HW20] 

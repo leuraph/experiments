@@ -13,6 +13,9 @@ import tqdm
 from scipy.optimize import root_scalar
 import matplotlib.pyplot as plt
 from pathlib import Path
+from error_estimators import \
+    relaxation_error_estimator, euler_error_estimator_2, \
+        euler_error_estimator_3, direct_error_estimator
 
 
 def get_restarted_estimator_old(
@@ -229,7 +232,7 @@ def main() -> None:
     n_initial_iterations = 5
     n_initial_refinements = 6
     max_n_iteration_steps = 200
-    dt = 0.05
+    dt = 0.2
 
     # Coarse triangulation of L-shaped domain
     coordinates = np.array([
@@ -297,12 +300,6 @@ def main() -> None:
             stiffness_matrix[free_nodes,:][:, free_nodes].dot(
                 u[free_nodes]))
         return np.sqrt(sqrt_arg)
-    
-    def direct_error_estimator(
-            u_new: np.ndarray,
-            u_old: np.ndarray,
-            dt: float) -> float:
-        return (1. + (beta)/(dt * nu_1))*norm(u=u_new - u_old)
         
 
     # load vector does not change during iterations
@@ -336,9 +333,11 @@ def main() -> None:
 
     u_initial = copy(current_iterate)
     old_iterate = copy(current_iterate)
-    
-    energy_dissipation_error_estimators = []
-    restarted_error_estimators = []
+
+    direct_error_estimators = []
+    relaxation_error_estimators = []
+    euler_error_estimators_2 = []
+    euler_error_estimators_3 = []
 
     E = lambda u: get_energy(
         coordinates=coordinates,
@@ -377,37 +376,49 @@ def main() -> None:
             old_iterate[free_nodes] - dt * grad_energy[free_nodes]
         )
 
-        energy_dissipation_error_estimators.append(
-            get_restarted_estimator(
+        # Collecting all the error estimators
+        direct_error_estimators.append(
+            direct_error_estimator(
+                u_new=current_iterate,
+                u_old=old_iterate,
+                dt=dt,
+                beta=beta,
+                eta_m=nu_1,
+                norm=norm))
+        relaxation_error_estimators.append(
+            relaxation_error_estimator(
+                alpha=eta_c,
+                eta_m=nu_1,
+                beta=beta,
+                dt=dt,
+                grad_energy_norm=grad_energy_norm))
+        euler_error_estimators_2.append(
+            euler_error_estimator_2(
                 u_old=old_iterate,
                 u_new=current_iterate,
-                eta_m=nu_1,
                 alpha=eta_c,
                 beta=beta,
+                eta_m=nu_1,
                 L=L_1,
                 dt=dt,
-                norm=norm,
-                E=E,
-                grad_energy_norm=grad_energy_norm
-            )
-        )
-        restarted_error_estimators.append(
-            get_restarted_estimator_old(
-                grad_energy_norm=grad_energy_norm,
-                eta_m=nu_1,
+                norm=norm))
+        euler_error_estimators_3.append(
+            euler_error_estimator_3(
+                u_old=old_iterate,
+                u_new=current_iterate,
                 alpha=eta_c,
                 beta=beta,
-                L=L_1,
-                dt=dt
-            )
-        )
+                dt=dt,
+                norm=norm,
+                E=E))
+
 
         old_iterate = copy(current_iterate)
-
-    energy_dissipation_error_estimators = np.array(
-        energy_dissipation_error_estimators)
-    restarted_error_estimators = np.array(
-        restarted_error_estimators)
+    
+    direct_error_estimators = np.array(direct_error_estimators)
+    relaxation_error_estimators = np.array(relaxation_error_estimators)
+    euler_error_estimators_2 = np.array(euler_error_estimators_2)
+    euler_error_estimators_3 = np.array(euler_error_estimators_3)
 
     plt.rcParams["mathtext.fontset"] = "cm"
     plt.rcParams['xtick.labelsize'] = 14
@@ -422,15 +433,14 @@ def main() -> None:
     ax.set_ylabel(r'$\mathrm{estimator}$')
     ax.grid(True)
 
-    # ax.semilogy(direct_error_estimations, label='direct')
-    ax.semilogy(energy_dissipation_error_estimators, label='restarted [NSV00]')
-    ax.semilogy(restarted_error_estimators, label='restarted [BLW]')
+    ax.semilogy(direct_error_estimators, label='direct error estimator')
+    ax.semilogy(relaxation_error_estimators, label='relaxation error estimator')
+    ax.semilogy(euler_error_estimators_2, label='euler error estimator 2')
+    ax.semilogy(euler_error_estimators_3, label='euler error estimator 3')
     ax.legend(loc='best')
 
-    plt.show()
-
-    # output_path = Path('plots') / Path('restarted_estimator.pdf')
-    # fig.savefig(output_path, dpi=300, bbox_inches="tight")
+    output_path = Path('plots') / Path('error_estimators.pdf')
+    fig.savefig(output_path, dpi=300, bbox_inches="tight")
 
 
 if __name__ == '__main__':
